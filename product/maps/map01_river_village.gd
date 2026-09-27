@@ -1,5 +1,23 @@
 extends Node3D
 
+@export var next_chapter: PackedScene
+
+const BOUNDARY_POSITION := Vector3(0, 0, -34.0)
+const BOUNDARY_RANGE := 4.5
+const CHAPTER_GOALS := [
+	"Accept Isa's rescue request",
+	"Finish sword, bow, and old lamp lessons",
+	"Choose and practice the first elemental skill",
+	"Rescue the bridge resident and relight the bridge lamp",
+	"Defeat the pillar guards and speak with Isa before leaving",
+	"Activate the passage with the old lamp",
+]
+
+var boundary_panel: ColorRect
+var boundary_text: Label
+var player: CharacterBody3D
+var boundary_open: bool = false
+
 ## A small, continuous MAP01 route: safe square -> river bridge -> training marker.
 ## The bank opening leaves the bridge as the solid crossing at player scale.
 
@@ -40,7 +58,16 @@ func _ready() -> void:
 		_block("BridgeRail_%s" % str(side), Vector3(0.22, 0.85, 8.5), Vector3(side * 2.25, 0.55, -17), WOOD)
 		for z in [-20.8, -17.0, -13.2]:
 			_block("RailPost_%s_%s" % [str(side), str(z)], Vector3(0.34, 1.3, 0.34), Vector3(side * 2.25, 0.65, z), WOOD)
+	# The physical south edge remains solid for Aelor, while the camera can pass
+	# through its separate collision layer instead of collapsing into the player.
 	_block("SouthBoundary", Vector3(48, 2.6, 0.8), Vector3(0, 1.3, 16.4), STONE)
+	var south_wall := get_node("SouthBoundary") as StaticBody3D
+	south_wall.collision_layer = 4
+	var south_mesh := south_wall.get_node("Mesh") as MeshInstance3D
+	var south_material := south_mesh.material_override as StandardMaterial3D
+	south_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	south_material.albedo_color.a = 0.12
+	south_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 	_block("NorthBoundary", Vector3(48, 2.6, 0.8), Vector3(0, 1.3, -36.4), STONE)
 	_block("WestBoundary", Vector3(0.8, 2.6, 53), Vector3(-24.4, 1.3, -10), STONE)
 	_block("EastBoundary", Vector3(0.8, 2.6, 53), Vector3(24.4, 1.3, -10), STONE)
@@ -57,6 +84,7 @@ func _ready() -> void:
 	for x in [-1.35, 0.0, 1.35]:
 		_block("TrainingStone_%s" % str(x), Vector3(0.82, 3.2, 0.82), Vector3(x, 1.6, -32), STONE)
 	_block("TrainingLintel", Vector3(4.1, 0.65, 0.95), Vector3(0, 3.5, -32), STONE)
+	_build_first_boundary()
 	var ui := CanvasLayer.new()
 	ui.name = "RouteUI"
 	add_child(ui)
@@ -66,6 +94,69 @@ func _ready() -> void:
 	label.position = Vector2(24, 18)
 	label.add_theme_font_size_override("font_size", 18)
 	ui.add_child(label)
+	boundary_panel = ColorRect.new()
+	boundary_panel.name = "ChapterBoundaryPanel"
+	boundary_panel.position = Vector2(765, 560)
+	boundary_panel.size = Vector2(490, 105)
+	boundary_panel.color = Color(0.025, 0.055, 0.085, 0.88)
+	boundary_panel.visible = false
+	ui.add_child(boundary_panel)
+	boundary_text = Label.new()
+	boundary_text.name = "ChapterBoundaryText"
+	boundary_text.position = Vector2(14, 12)
+	boundary_text.size = Vector2(462, 80)
+	boundary_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	boundary_text.add_theme_font_size_override("font_size", 18)
+	boundary_text.add_theme_color_override("font_color", Color(0.89, 0.94, 0.98))
+	boundary_panel.add_child(boundary_text)
+	player = get_parent().get_node_or_null("Aelor") as CharacterBody3D
+
+func _process(_delta: float) -> void:
+	if player == null:
+		return
+	var nearby := player.global_position.distance_to(BOUNDARY_POSITION) <= BOUNDARY_RANGE
+	boundary_panel.visible = nearby
+	if nearby and not boundary_open:
+		boundary_text.text = "FOREST MEADOW  |  Chapter passage sealed\nPress E to read the missing Chapter 1 goals."
+	if not nearby:
+		boundary_open = false
+		boundary_panel.position.y = 560
+		boundary_panel.size.y = 105
+		boundary_text.size.y = 80
+
+func _unhandled_input(event: InputEvent) -> void:
+	if player == null or not boundary_panel.visible or not event.is_action_pressed("interact"):
+		return
+	boundary_open = true
+	boundary_panel.position.y = 314
+	boundary_panel.size.y = 350
+	boundary_text.size.y = 326
+	boundary_text.text = "FOREST MEADOW  |  Passage sealed\nMissing Chapter 1 goals:\n - " + "\n - ".join(CHAPTER_GOALS)
+	get_viewport().set_input_as_handled()
+
+func _build_first_boundary() -> void:
+	# family_id: chapter_boundary_pillar. One self-authored semantic singleton,
+	# assembled from the map's existing stone and emissive box primitives.
+	for side in [-1.0, 1.0]:
+		_block("ChapterPillar_%s" % str(side), Vector3(1.1, 5.6, 1.1), Vector3(side * 3.2, 2.8, -34), STONE)
+		_boundary_glow("ChapterRune_%s" % str(side), Vector3(0.18, 3.6, 0.08), Vector3(side * 3.2, 2.9, -33.39))
+	_block("ChapterLintel", Vector3(7.5, 0.8, 1.2), Vector3(0, 5.5, -34), STONE)
+	_boundary_glow("ChapterLintelRune", Vector3(4.7, 0.12, 0.08), Vector3(0, 5.5, -33.35))
+
+func _boundary_glow(name_: String, size: Vector3, at: Vector3) -> void:
+	var mesh := MeshInstance3D.new()
+	mesh.name = name_
+	mesh.position = at
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.19, 0.52, 0.79)
+	material.emission_enabled = true
+	material.emission = Color(0.09, 0.35, 0.64)
+	material.emission_energy_multiplier = 1.6
+	mesh.material_override = material
+	add_child(mesh)
 
 func _block(name_: String, size: Vector3, at: Vector3, color: Color, solid: bool = true) -> void:
 	var parent: Node3D = StaticBody3D.new() if solid else Node3D.new()
