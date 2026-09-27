@@ -1,13 +1,19 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="PackedScene" path="res://assets/aelor/Male_Ranger.gltf" id="2_ranger"]
+[ext_resource type="PackedScene" path="res://maps/map01_river_village.tscn" id="3_village"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_player"]
 radius = 0.38
 height = 1.9
 
+[sub_resource type="SphereShape3D" id="Shape_camera"]
+radius = 0.28
+
 [node name="MovementSlice" type="Node3D"]
+
+[node name="RiverVillage" parent="." instance=ExtResource("3_village")]
 
 [node name="Aelor" type="CharacterBody3D" parent="."]
 position = Vector3(0, 1.02, 4)
@@ -31,7 +37,8 @@ rotation = Vector3(-0.2, 0, 0)
 [node name="SpringArm" type="SpringArm3D" parent="Aelor/CameraPivot"]
 spring_length = 4.1
 collision_mask = 1
-margin = 0.12
+margin = 0.2
+shape = SubResource("Shape_camera")
 
 [node name="Camera3D" type="Camera3D" parent="Aelor/CameraPivot/SpringArm"]
 current = true
