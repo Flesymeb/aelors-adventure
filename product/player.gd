@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 @export var walk_speed: float = 4.8
+@export var sprint_speed: float = 7.8
 @export var acceleration: float = 18.0
 @export var turn_speed: float = 10.0
 @export var mouse_sensitivity: float = 0.0025
@@ -31,11 +32,11 @@ func _make_face() -> void:
 	var face := MeshInstance3D.new()
 	face.name = "InsetFace"
 	var head := SphereMesh.new()
-	head.radius = 0.105
-	head.height = 0.20
+	head.radius = 0.075
+	head.height = 0.14
 	face.mesh = head
-	face.position = Vector3(0.0, 1.58, 0.09)
-	face.scale.z = 0.18
+	face.position = Vector3(0.0, 1.66, 0.015)
+	face.scale.z = 0.13
 	var skin := StandardMaterial3D.new()
 	skin.albedo_color = Color(0.39, 0.28, 0.21)
 	skin.roughness = 0.95
@@ -45,10 +46,10 @@ func _make_face() -> void:
 		var eye := MeshInstance3D.new()
 		eye.name = "InsetEyeL" if side < 0.0 else "InsetEyeR"
 		var eye_mesh := SphereMesh.new()
-		eye_mesh.radius = 0.011
-		eye_mesh.height = 0.017
+		eye_mesh.radius = 0.007
+		eye_mesh.height = 0.012
 		eye.mesh = eye_mesh
-		eye.position = Vector3(side * 0.044, 1.605, 0.112)
+		eye.position = Vector3(side * 0.032, 1.68, 0.027)
 		var dark := StandardMaterial3D.new()
 		dark.albedo_color = Color(0.065, 0.05, 0.04)
 		eye.material_override = dark
@@ -71,7 +72,8 @@ func _physics_process(delta: float) -> void:
 	var direction := camera_pivot.global_basis * Vector3(axis.x, 0.0, axis.y)
 	direction.y = 0.0
 	direction = direction.normalized()
-	var target_velocity := direction * walk_speed
+	var movement_speed := sprint_speed if Input.is_action_pressed("sprint") else walk_speed
+	var target_velocity := direction * movement_speed
 	velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
 	if is_on_floor():
