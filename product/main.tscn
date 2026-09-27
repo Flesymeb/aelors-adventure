@@ -1,0 +1,39 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://player.gd" id="1_player"]
+[ext_resource type="PackedScene" path="res://assets/aelor/Male_Ranger.gltf" id="2_ranger"]
+
+[sub_resource type="CapsuleShape3D" id="Shape_player"]
+radius = 0.38
+height = 1.9
+
+[node name="MovementSlice" type="Node3D"]
+
+[node name="Aelor" type="CharacterBody3D" parent="."]
+position = Vector3(0, 1.02, 4)
+collision_layer = 2
+collision_mask = 1
+floor_snap_length = 0.25
+script = ExtResource("1_player")
+
+[node name="Collision" type="CollisionShape3D" parent="Aelor"]
+shape = SubResource("Shape_player")
+
+[node name="Visual" type="Node3D" parent="Aelor"]
+position = Vector3(0, -1.02, 0)
+
+[node name="Ranger" parent="Aelor/Visual" instance=ExtResource("2_ranger")]
+
+[node name="CameraPivot" type="Node3D" parent="Aelor"]
+position = Vector3(0, 0.6, 0)
+rotation = Vector3(-0.2, 0, 0)
+
+[node name="SpringArm" type="SpringArm3D" parent="Aelor/CameraPivot"]
+spring_length = 4.1
+collision_mask = 1
+margin = 0.12
+
+[node name="Camera3D" type="Camera3D" parent="Aelor/CameraPivot/SpringArm"]
+current = true
+fov = 65.0
+near = 0.08
