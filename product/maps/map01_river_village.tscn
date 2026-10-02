@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://maps/map01_river_village.gd" id="1_map"]
-
-[node name="RiverVillage" type="Node3D"]
-script = ExtResource("1_map")
