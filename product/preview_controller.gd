@@ -87,7 +87,7 @@ func _add_help() -> void:
 	layout.add_theme_constant_override("separation", 7)
 	layer.add_child(layout)
 	var help := Label.new()
-	help.text = "WASD move · Mouse look · Space jump · Shift run · E shoulder\nUnarmed · Weapons require ownership · V first/third person\nC crouch · Z prone · F roll · Alt dodge · Shift sprint\n3 skin · 4 dusk/day · G graphics · R respawn · Esc cursor"
+	help.text = "WASD move · Mouse look · Space jump · Shift run · Tab shoulder\nUnarmed · Weapons require ownership · V first/third person\nC crouch · Z prone · F roll · Alt dodge · Shift sprint\n3 skin · 4 dusk/day · G graphics · R respawn · Esc cursor"
 	_add_hud_card(layout, help, 15)
 	weapon_label = Label.new()
 	_add_hud_card(layout, weapon_label, 13)

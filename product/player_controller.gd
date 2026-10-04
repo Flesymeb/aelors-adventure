@@ -202,7 +202,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_1: request_weapon("sword")
 			KEY_2: request_weapon("bow")
 			KEY_3: cycle_skin()
-			KEY_E: shoulder_side *= -1.0
+			KEY_TAB: shoulder_side *= -1.0
 			KEY_V: toggle_perspective()
 			KEY_C: traversal.request_posture("crouch")
 			KEY_Z: traversal.request_posture("prone")
