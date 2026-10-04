@@ -1,0 +1,10 @@
+Isha source model: medieval_poor_woman by tech.service.allwe
+https://sketchfab.com/3d-models/medieval-poor-woman-5f4a482049834f0aac97f2af97efc9c2
+Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
+Changes: normalized scale, opaque materials, source-rest sleeve binding and stationary skeletal breathing. Original GLB retained byte-for-byte.
+
+EB Garamond: Copyright 2017 The EB Garamond Project Authors. OFL-1.1. Full notice: garamond/LICENSE.txt
+Zhuque Fangsong: Copyright 2023 Zhejiang JadeFoci Technology Co. LTD. OFL-1.1. Full notice: zhuque/LICENSE.txt
+Kenney Fantasy UI Borders and Interface Sounds: CC0-1.0. Full notices: borders/License.txt and sounds/License.txt.
+
+Mechanism comparison: Dialogic (MIT, Emilio Coppola), portrait highlight and logical dialogue separation inspected. No Dialogic source code copied.

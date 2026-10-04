@@ -34,7 +34,8 @@ const CONTROL_LABELS := {
 # E/F retain interaction/lamp ownership, including while their systems are locked.
 const RESERVED_KEYS := [KEY_E, KEY_F, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
 	KEY_5, KEY_G, KEY_R, KEY_M, KEY_J, KEY_K, KEY_ESCAPE, KEY_F10,
-	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN]
+	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN,
+	KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F11]
 const CONTROLS_FILE := "user://locomotion_controls.cfg"
 var effective_bindings: Dictionary = CONTROL_DEFAULTS.duplicate()
 var controls_open := false
@@ -278,12 +279,22 @@ func _save_controls() -> String:
 
 
 func _block_held_controls() -> void:
-	for key in effective_bindings.values():
+	for key in effective_bindings.values() + [KEY_E, KEY_F]:
 		if Input.is_key_pressed(key):
 			blocked_keys[key] = true
 	for button in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 		if Input.is_mouse_button_pressed(button):
 			blocked_mouse[button] = true
+
+
+func track_modal_input(event: InputEvent) -> void:
+	# The pause owner still receives releases while this actor is pausable.
+	if event is InputEventKey:
+		if event.pressed: blocked_keys[event.keycode] = true
+		else: blocked_keys.erase(event.keycode)
+	elif event is InputEventMouseButton:
+		if event.pressed: blocked_mouse[event.button_index] = true
+		else: blocked_mouse.erase(event.button_index)
 
 
 func set_controls_open(open: bool) -> void:

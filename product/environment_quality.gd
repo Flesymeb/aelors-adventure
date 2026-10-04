@@ -10,6 +10,7 @@ var enhanced := false
 var terrain_surfaces := 0
 var filtered_materials := 0
 var environment: Environment
+@export var developer_lamp_overlay := false
 
 func configure(map: Node3D) -> void:
 	village = map
@@ -38,7 +39,11 @@ func configure(map: Node3D) -> void:
 	_bind_materials()
 	set_dusk(false)
 	apply_quality()
-	_add_lamps.call_deferred()
+	# Authored village fixtures remain. The optional demo overlay has no globe
+	# collider and can cross the shipped shoulder camera at the opening route.
+	# Retire it in player builds; opt in only for same-pose isolation research.
+	if developer_lamp_overlay:
+		_add_lamps.call_deferred()
 
 func _bind_materials() -> void:
 	var terrain := ShaderMaterial.new()
@@ -124,6 +129,7 @@ func _add_lamps() -> void:
 			continue
 		var post := StaticBody3D.new()
 		post.name = "WarmLantern"
+		post.add_to_group("opening_lamp_overlay")
 		village.add_child(post)
 		post.global_position = hit.position
 		var pole := MeshInstance3D.new()
@@ -167,3 +173,16 @@ func _add_lamps() -> void:
 		lamps.append(lamp)
 	set_dusk(dusk)
 	apply_quality()
+
+func toggle_developer_lamps() -> void:
+	developer_lamp_overlay = not developer_lamp_overlay
+	var existing := get_tree().get_nodes_in_group("opening_lamp_overlay")
+	if developer_lamp_overlay and existing.is_empty():
+		_add_lamps.call_deferred()
+	else:
+		for post in existing:
+			post.visible = developer_lamp_overlay
+			post.collision_layer = 1 if developer_lamp_overlay else 0
+			for child in post.get_children():
+				if child is OmniLight3D:
+					child.light_energy = (2.4 if dusk else 0.8) if developer_lamp_overlay else 0.0

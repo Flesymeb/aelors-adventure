@@ -1,0 +1,56 @@
+{
+  "D01": {
+    "speaker": "伊莎",
+    "text": "怪物把父亲和另外三个人带走了。我看见它们穿过桥，去了林子那边。",
+    "next": "D02"
+  },
+  "D02": {
+    "speaker": "伊莎",
+    "text": "求你把他们带回来。赫斯在广场救治伤者，他会帮你准备。",
+    "choices": [
+      {
+        "text": "我会把他们带回来。",
+        "next": "promise",
+        "accept": true
+      },
+      {
+        "text": "他们往哪里去了？",
+        "next": "ask_direction"
+      },
+      {
+        "text": "我该先找谁帮忙？",
+        "next": "ask_help"
+      }
+    ]
+  },
+  "direction": {
+    "speaker": "伊莎",
+    "text": "我看见它们带着四个人穿过桥，往林子那边去了。先到广场找赫斯，他会帮你准备。",
+    "next": "D02"
+  },
+  "help": {
+    "speaker": "伊莎",
+    "text": "赫斯在广场救治伤者。你可以先向他求助，不必独自追过去。",
+    "next": "D02"
+  },
+  "D03": {
+    "speaker": "伊莎",
+    "text": "先让赫斯教你用剑，再找罗恩学弓。我把父亲的旧灯找出来，你回来拿。",
+    "next": "close"
+  },
+  "promise": {
+    "speaker": "艾洛",
+    "text": "我会把他们带回来。我先去找赫斯。",
+    "next": "D03"
+  },
+  "ask_direction": {
+    "speaker": "艾洛",
+    "text": "他们往哪里去了？",
+    "next": "direction"
+  },
+  "ask_help": {
+    "speaker": "艾洛",
+    "text": "我该先找谁帮忙？",
+    "next": "help"
+  }
+}

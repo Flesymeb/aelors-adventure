@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "actor": {
+    "entry": "res://Isha.tscn",
+    "source": "https://sketchfab.com/3d-models/medieval-poor-woman-5f4a482049834f0aac97f2af97efc9c2",
+    "author": "tech.service.allwe",
+    "license": "CC-BY-4.0",
+    "resource": "res://assets/dialogue/woman_comparison.glb",
+    "receipt": "assets/dialogue/woman_comparison.glb.receipt.json",
+    "adapter": "res://isha_npc.gd",
+    "adaptations": [
+      "normalize measured bounds to 1.72m",
+      "opaque material rendering",
+      "bind rigid source sleeves through measured skeleton rest",
+      "skeletal idle breathing; stationary NPC"
+    ]
+  },
+  "fonts": [
+    {
+      "resource": "res://assets/dialogue/garamond/EBGaramond.ttf",
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/tree/main/ofl/ebgaramond"
+    },
+    {
+      "resource": "res://assets/dialogue/zhuque/ZhuqueFangsong-Regular.ttf",
+      "license": "OFL-1.1",
+      "source": "https://github.com/TrionesType/zhuque/releases/tag/v0.212"
+    }
+  ],
+  "interface": {
+    "source": "https://kenney.nl/assets/fantasy-ui-borders",
+    "license": "CC0-1.0",
+    "reading_surface": "assets/dialogue/borders/PNG/Default/Panel/panel-013.png",
+    "choice_frame": "assets/dialogue/borders/PNG/Default/Panel/panel-003.png",
+    "notes": "Border pack is bound; textured parchment and portrait art remain unqualified."
+  },
+  "audio": {
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "license": "CC0-1.0",
+    "advance": "assets/dialogue/sounds/Audio/select_007.ogg",
+    "confirm": "assets/dialogue/sounds/Audio/confirmation_001.ogg"
+  },
+  "portraits": {
+    "status": "missing_qualified_resources",
+    "required": [
+      "assets/dialogue/aelor_portrait.png",
+      "assets/dialogue/isha_portrait.png"
+    ],
+    "identity_contract": [
+      "retained complete green-hooded brown-haired Ranger",
+      "grey dress and bonnet source Isha; mature proportions"
+    ],
+    "reason": "No qualified matching half-body illustration found; remote portrait pack failed free-download acquisition; authorized generation provider not configured."
+  }
+}

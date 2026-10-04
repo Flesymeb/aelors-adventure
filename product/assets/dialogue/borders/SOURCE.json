@@ -1,0 +1,10 @@
+{
+  "source_url": "https://kenney.nl/assets/fantasy-ui-borders",
+  "original_zip_sha256": "59532da3bd61195a425585455b40baa6cbf1eda8227c42adcef31a535a737769",
+  "omitted_members": [
+    "Visit Kenney.url",
+    "Visit Patreon.url"
+  ],
+  "reason": "URL shortcuts are acquisition metadata, not runtime assets; original download preserved separately",
+  "qualification": "downloaded candidate; runtime UI not assessed"
+}
