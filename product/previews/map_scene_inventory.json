@@ -1,0 +1,600 @@
+[
+  {
+    "authority": "scene_structure_only_not_walkability",
+    "counts": {
+      "Camera3D": 1,
+      "CollisionShape3D": 2701,
+      "DirectionalLight3D": 1,
+      "MeshInstance3D": 4686,
+      "MultiMeshInstance3D": 63,
+      "Node3D": 4819,
+      "StaticBody3D": 2701,
+      "WorldEnvironment": 1
+    },
+    "landmarks": [
+      {
+        "path": "Terrain",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Terrain/EA03/EA03_Terrain01a",
+        "position": "(0.0, -0.08, 0.0)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE5",
+        "position": "(58.8, 4.5, 40.5)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE5/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(58.8, 4.5, 40.5)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE4",
+        "position": "(27.3, 0.04, 74.24)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE4/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(27.3, 0.04, 74.24)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE3",
+        "position": "(11.19, -1.63, -29.59)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE3/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(11.19, -1.63, -29.59)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE2",
+        "position": "(-6.76, 0.548, -32.94)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE2/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(-6.76, 0.548, -32.94)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(34.36, 2.93, -38.46)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02b_PRE/EA03_Environment_RiverStraight_02b_PRE",
+        "position": "(34.36, 2.93, -38.46)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02a_PRE",
+        "position": "(21.58948, 0.76, -59.49)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_02a_PRE/EA03_Environment_RiverStraight_02a_PRE",
+        "position": "(21.58948, 0.76, -59.49)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE4",
+        "position": "(106.0277, 6.03843, -11.12718)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE4/EA03_Environment_RiverStraight_01g_PRE",
+        "position": "(106.0277, 6.03843, -11.12718)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE3",
+        "position": "(48.79337, 0.936406, 87.2709)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE3/EA03_Environment_RiverStraight_01g_PRE",
+        "position": "(48.79337, 0.936406, 87.2709)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE2",
+        "position": "(100.28, -3.39, 73.18)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE2/EA03_Environment_RiverStraight_01g_PRE",
+        "position": "(100.28, -3.39, 73.18)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE",
+        "position": "(-51.13, 1.18, -90.47)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01g_PRE/EA03_Environment_RiverStraight_01g_PRE",
+        "position": "(-51.13, 1.18, -90.47)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE8",
+        "position": "(84.14027, 6.07, -3.087093)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE8/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(84.14027, 6.07, -3.087093)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE7",
+        "position": "(27.49, 0.81, -87.36)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE7/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(27.49, 0.81, -87.36)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE6",
+        "position": "(39.53833, 4.8708, -98.38641)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE6/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(39.53833, 4.8708, -98.38641)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE5",
+        "position": "(39.51, 5.2, -90.77)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE5/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(39.51, 5.2, -90.77)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE4",
+        "position": "(47.78, 7.9, -50.9)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE4/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(47.78, 7.9, -50.9)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE3",
+        "position": "(-95.38, 1.470001, -100.37)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE3/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(-95.38, 1.470001, -100.37)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE2",
+        "position": "(-18.81, 1.47, -91.21)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE2/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(-18.81, 1.47, -91.21)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(43.69945, 3.24, -26.60561)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_RiverStraight_01f_R_PRE/EA03_Environment_RiverStraight_01f_R_PRE",
+        "position": "(43.69945, 3.24, -26.60561)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a8/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-20.43919, -1.115421, 11.42437)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a8/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-20.43919, -1.115421, 11.42437)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a7/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-26.74919, -1.155421, 11.42437)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a7/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-26.74919, -1.155421, 11.42437)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a6/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-20.43919, -1.115421, 3.66437)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a6/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-20.43919, -1.115421, 3.66437)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a5/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-26.63919, -1.09542, 3.66437)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a5/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-26.63919, -1.09542, 3.66437)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a4/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-35.77826, -1.117319, 3.650745)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a4/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-35.77826, -1.117319, 3.650745)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a3/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-42.23919, -1.115421, 3.66437)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a3/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-42.23919, -1.115421, 3.66437)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a2/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-44.15919, -1.025421, -3.44563)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a2/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(-44.15919, -1.025421, -3.44563)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(6.095813, -1.005421, 4.544922)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Environments/EA03_Environment_Field_Comp_01a/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(6.095813, -1.005421, 4.544922)",
+        "type": "MeshInstance3D"
+      }
+    ],
+    "source": "res://Demo/Slavica Free 2026 Version.scn",
+    "top_nodes": [
+      {
+        "name": "Grass_Shader_Fill",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "treeses",
+        "position": "(13.09267, 13.73427, -1.633812)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Terrain",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Rocks",
+        "position": "(3.654068, 8.12365, 0.365685)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Plants",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Grasses",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Ground",
+        "position": "(-1.002903, 3.388771, 4.288483)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Flats",
+        "position": "(-7.574821, 10.08973, -8.899757)",
+        "type": "Node3D"
+      },
+      {
+        "name": "rest",
+        "position": "(9.080704, 3.946257, -13.72891)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Props",
+        "position": "(7.946491, 7.576781, -21.23458)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Fences",
+        "position": "(-2.413361, 8.290852, -32.27715)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Buildings",
+        "position": "(22.14085, 14.1878, -26.60004)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Environments",
+        "position": "(15.45192, 3.84947, 3.757584)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Fence_Wall_01",
+        "position": "(-2.413361, 9.915338, -47.96723)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Clifs_MDG",
+        "position": "(4.213745, 10.08974, -8.947067)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Bushes",
+        "position": "(2.487885, 8.165235, 6.061417)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Directional Light",
+        "position": "(-28.61047, 8.315763, 20.62336)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Camera",
+        "position": "(-12.94, 43.1, 44.96)",
+        "type": "Node3D"
+      },
+      {
+        "name": "WorldEnvironment",
+        "position": null,
+        "type": "WorldEnvironment"
+      }
+    ],
+    "visual_geometry_bounds": {
+      "position": "(-123.4865, -25.75031, -149.4876)",
+      "size": "(263.4568, 64.93083, 271.5173)"
+    },
+    "source_sha256": "cf97aaeba9af4c0f3e3d135e108abf74e8cdbd49be55a64899bc49eaa79a1594",
+    "inspected_at": "2026-09-26",
+    "runtime": "Godot 4.7; scene structure only; not navigation or performance validation"
+  },
+  {
+    "authority": "scene_structure_only_not_walkability",
+    "counts": {
+      "Camera3D": 1,
+      "CollisionShape3D": 537,
+      "DirectionalLight3D": 1,
+      "MeshInstance3D": 21574,
+      "Node3D": 11273,
+      "StaticBody3D": 537,
+      "WorldEnvironment": 1
+    },
+    "landmarks": [
+      {
+        "path": "Terrain",
+        "position": "(-51.6, 0.04, 53.5)",
+        "type": "Node3D"
+      }
+    ],
+    "source": "res://Demo/Slavica Free.scn",
+    "top_nodes": [
+      {
+        "name": "Props",
+        "position": "(-46.0, 5.18, 48.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Container_Bale_01a_PRE",
+        "position": "(-30.44552, -0.038289, 50.6156)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Nature_Tree_01b_PRE",
+        "position": "(-23.69508, 0.0, 11.27177)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Trees",
+        "position": "(-46.74773, 8.6, 50.37553)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Post-process Volume",
+        "position": "(-41.24922, 2.279584, 38.49805)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Container_Crate_01a_PRE",
+        "position": "(-30.67029, -0.038288, 49.89594)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Terrain",
+        "position": "(-51.6, 0.04, 53.5)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Grass",
+        "position": "(-23.84676, -49.65269, 116.086)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Enviro",
+        "position": "(-38.43665, 4.929959, 47.86436)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Container_Basket_03a_PRE",
+        "position": "(-30.56104, 0.163644, 49.98849)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Container_Basket_04a_PRE",
+        "position": "(-28.74739, 0.165782, 48.95252)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Container_Bale_01a_PRE (1)",
+        "position": "(-30.43914, -0.020812, 48.98971)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Temp-SceneCreatedMarker",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Camera (1)",
+        "position": "(-1001.982, 64.58521, 1092.233)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Rocks",
+        "position": "(-22.14523, -48.63473, 116.4673)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Fences",
+        "position": "(-39.46704, 1.62158, 46.73151)",
+        "type": "Node3D"
+      },
+      {
+        "name": "System",
+        "position": "(1585.517, 855.6919, 1802.559)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Prop_Brushwood_03a_PRE",
+        "position": "(-31.49763, -0.038288, 50.44698)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Village_OutBuilding_Cubby_01d_PRE",
+        "position": "(-89.26561, -0.0, 78.74529)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Town_Building_Administrative _01b_Modular_PRE",
+        "position": "(-46.28979, -0.043545, 47.80695)",
+        "type": "Node3D"
+      },
+      {
+        "name": "EA03_Plant_Grass_02a_PRE",
+        "position": "(-46.64785, 0.012, 33.98399)",
+        "type": "Node3D"
+      },
+      {
+        "name": "WorldEnvironment",
+        "position": null,
+        "type": "WorldEnvironment"
+      }
+    ],
+    "visual_geometry_bounds": {
+      "position": "(-120.4068, -0.53344, -58.89048)",
+      "size": "(137.6136, 15.87694, 181.1973)"
+    },
+    "source_sha256": "35f4df5a4105e94d95b6e6ebc87a8bcb1a9d725bce70fee095ec18eebf90330e",
+    "inspected_at": "2026-09-26",
+    "runtime": "Godot 4.7; scene structure only; not navigation or performance validation"
+  },
+  {
+    "authority": "scene_structure_only_not_walkability",
+    "counts": {
+      "Camera3D": 1,
+      "CollisionShape3D": 659,
+      "DirectionalLight3D": 1,
+      "MeshInstance3D": 543,
+      "Node3D": 744,
+      "StaticBody3D": 659,
+      "WorldEnvironment": 1
+    },
+    "landmarks": [
+      {
+        "path": "Assets/x_Terrain",
+        "position": "(93.22345, 0.0, -105.6495)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Assets/x_Terrain/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(27.19345, 0.0, -105.6495)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Assets/x_Terrain/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(27.19345, 0.0, -105.6495)",
+        "type": "MeshInstance3D"
+      },
+      {
+        "path": "Assets/x_Terrain/EA03_Environment_Field_Comp_01a/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(41.44426, 0.0, -97.9351)",
+        "type": "Node3D"
+      },
+      {
+        "path": "Assets/x_Terrain/EA03_Environment_Field_Comp_01a/EA03_Terrain_Field_2x2_Seam_01a_PRE/EA03_Terrain_Field_2x2_Seam_01a_PRE",
+        "position": "(41.44426, 0.0, -97.9351)",
+        "type": "MeshInstance3D"
+      }
+    ],
+    "source": "res://Demo/AssetPreview.scn",
+    "top_nodes": [
+      {
+        "name": "Assets",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Directional Light",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "Main Camera",
+        "position": "(0.0, 0.0, 0.0)",
+        "type": "Node3D"
+      },
+      {
+        "name": "WorldEnvironment",
+        "position": null,
+        "type": "WorldEnvironment"
+      }
+    ],
+    "visual_geometry_bounds": {
+      "position": "(-189.9387, -5.19229, -160.8869)",
+      "size": "(380.7075, 22.00596, 321.7737)"
+    },
+    "source_sha256": "3b647fabf79e8fa9cb7a78fb03e1c560b43705abed59609ba9eac99f398cfe7f",
+    "inspected_at": "2026-09-26",
+    "runtime": "Godot 4.7; scene structure only; not navigation or performance validation"
+  }
+]

@@ -1,0 +1,648 @@
+extends CharacterBody3D
+
+const MODEL_PATH := "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
+const ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL1_Standard.glb"
+const SWORD_PATH := "res://Weapons/Sword_Bronze.gltf"
+const BOW_PATH := "res://Weapons/Bow_Golden.obj"
+const RANGER_PALETTE_SHADER := preload("res://ranger_palette.gdshader")
+const SKIN_NAMES := ["Forest", "Frost", "Ember"]
+const SKIN_COLORS := [Color.WHITE, Color(0.42, 0.70, 1.0), Color(1.0, 0.28, 0.16)]
+const ARROW_SCRIPT := preload("res://arrow_projectile.gd")
+const FOOT_SNOW_SCRIPT := preload("res://foot_snow_burst.gd")
+const BOW_POSE_SCRIPT := preload("res://bow_pose_modifier.gd")
+const BOW_VISUAL_SCRIPT := preload("res://bow_visual.gd")
+const HEAD_ASSEMBLY := preload("res://ranger_head_assembly.gd")
+const BOW_ANIMATION_PATH := "res://Characters/KayKitAnimations/Rig_Medium_CombatRanged.glb"
+const BOW_DRAW_TIME := 1.0
+const BOW_IDLE_BASIS := Vector3(-0.556121, -0.448697, 3.117197)
+const TRAVERSAL_SCRIPT := preload("res://traversal_controller.gd")
+const WALK_SPEED := 5.0
+const RUN_SPEED := 8.0
+const JUMP_SPEED := 6.8
+const GRAVITY := 20.0
+
+@onready var visual: Node3D = $Visual
+@onready var arm: SpringArm3D = $CameraArm
+@onready var camera: Camera3D = $CameraArm/Camera
+
+var skeleton: Skeleton3D
+var character_model: Node3D
+var animation_player: AnimationPlayer
+var current_animation := ""
+var ranger_palette_material: ShaderMaterial
+var skin_index := 0
+var sword_attachment: BoneAttachment3D
+var bow_attachment: BoneAttachment3D
+var back_attachment: BoneAttachment3D
+var sword_holder: Node3D
+var bow_holder: Node3D
+var sword_back_holder: Node3D
+var bow_back_holder: Node3D
+var weapon_mode := "unarmed"
+var owns_sword := false
+var owns_bow := false
+var pending_weapon := ""
+var switch_timer := 0.0
+var switch_swapped := false
+var attack_timer := 0.0
+var step_distance := 0.0
+var next_foot := "foot_l"
+var footstep_count := 0
+var aim_requested := false
+var aim_blend := 0.0
+var shoulder_side := 1.0
+var shoulder_blend := 1.0
+var first_person := false
+var perspective_blend := 0.0
+var head_mesh: MeshInstance3D
+var head_components: Array[MeshInstance3D] = []
+var bow_charge := 0.0
+var bow_state := "idle"
+var bow_clock := 0.0
+var release_charge := 0.0
+var bow_pose: SkeletonModifier3D
+var bow_visual: Node3D
+var bow_ik: TwoBoneIK3D
+var bow_draw_target: Node3D
+var bow_elbow_target: Node3D
+var bow_frame := Transform3D.IDENTITY
+var shots_fired := 0
+var traversal: Node
+var camera_height := 1.65
+
+
+func owns_weapon(mode: String) -> bool:
+	return (mode == "sword" and owns_sword) or (mode == "bow" and owns_bow)
+
+
+# The product wrapper supplies possession before tree entry. Later callers can
+# use the same boundary without changing the calibrated mounts or traversal.
+func configure_equipment(sword_owned: bool, bow_owned: bool, selected_mode: String = "unarmed") -> void:
+	owns_sword = sword_owned
+	owns_bow = bow_owned
+	weapon_mode = selected_mode if owns_weapon(selected_mode) else "unarmed"
+	pending_weapon = ""
+	switch_timer = 0.0
+	switch_swapped = false
+	attack_timer = 0.0
+	cancel_aim()
+	bow_state = "idle"
+	bow_charge = 0.0
+	bow_clock = 0.0
+	release_charge = 0.0
+	_set_weapon_visibility()
+	if is_node_ready():
+		current_animation = ""
+		_update_animation(Vector2(velocity.x, velocity.z).length_squared() > 0.01)
+
+
+func _ready() -> void:
+	arm.add_excluded_object(get_rid())
+	if ResourceLoader.exists(MODEL_PATH):
+		var model := (load(MODEL_PATH) as PackedScene).instantiate() as Node3D
+		visual.add_child(model)
+		character_model = model
+		head_mesh = model.find_child("Male_Ranger_Head_Hood", true, false) as MeshInstance3D
+		skeleton = model.get_node_or_null("Armature/Skeleton3D") as Skeleton3D
+		if head_mesh:
+			head_components.append(head_mesh)
+		head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton))
+		if ResourceLoader.exists(ANIMATION_PATH):
+			var animation_scene := (load(ANIMATION_PATH) as PackedScene).instantiate() as Node3D
+			var imported_player := animation_scene.get_node("AnimationPlayer") as AnimationPlayer
+			imported_player.owner = null
+			animation_scene.remove_child(imported_player)
+			model.add_child(imported_player)
+			animation_player = imported_player
+			animation_scene.queue_free()
+			_play_animation("Sword_Idle" if owns_weapon(weapon_mode) and weapon_mode == "sword" else "Idle")
+		_attach_weapons()
+		_apply_skin()
+		_setup_archery()
+	else:
+		var marker := MeshInstance3D.new()
+		marker.mesh = CapsuleMesh.new()
+		marker.position.y = 0.9
+		visual.add_child(marker)
+
+	traversal = Node.new()
+	traversal.set_script(TRAVERSAL_SCRIPT)
+	traversal.player = self
+	add_child(traversal)
+
+
+func _attach_weapons() -> void:
+	if skeleton == null:
+		return
+	sword_attachment = BoneAttachment3D.new()
+	sword_attachment.bone_name = "hand_r"
+	skeleton.add_child(sword_attachment)
+	sword_holder = Node3D.new()
+	sword_holder.visible = false
+	sword_attachment.add_child(sword_holder)
+	# The hand bone starts at the wrist; the palm is about 6.5 cm along its Y axis.
+	sword_holder.position.y = 0.065
+	sword_holder.basis = Basis.from_euler(Vector3(0.496039, -0.808365, -2.084909))
+	if ResourceLoader.exists(SWORD_PATH):
+		var sword := (load(SWORD_PATH) as PackedScene).instantiate() as Node3D
+		sword.position.y = 0.05  # The center of the handle is at source Y = -0.05.
+		sword_holder.add_child(sword)
+
+	bow_attachment = BoneAttachment3D.new()
+	bow_attachment.bone_name = "hand_l"
+	skeleton.add_child(bow_attachment)
+	bow_holder = Node3D.new()
+	bow_holder.visible = false
+	bow_attachment.add_child(bow_holder)
+	bow_holder.position.y = 0.065
+	# Source +X points from bow limbs to string. Turn the string toward the
+	# archer (local -Z) and the limbs toward the target (local +Z).
+	bow_holder.basis = Basis.from_euler(Vector3(-0.556121, -0.448697, 3.117197)) * Basis(Vector3.UP, 0.85)
+	if ResourceLoader.exists(BOW_PATH):
+		bow_visual = Node3D.new()
+		bow_visual.set_script(BOW_VISUAL_SCRIPT)
+		bow_holder.add_child(bow_visual)
+
+	back_attachment = BoneAttachment3D.new()
+	back_attachment.bone_name = "spine_02"
+	skeleton.add_child(back_attachment)
+	sword_back_holder = Node3D.new()
+	sword_back_holder.visible = false
+	back_attachment.add_child(sword_back_holder)
+	# The sword mesh extends from its grip along local +Y. Keep the grip above
+	# the shoulder and point the blade diagonally down across the back.
+	sword_back_holder.position = Vector3(0.12, 0.47, -0.25)
+	sword_back_holder.basis = Basis.from_euler(Vector3(0.0681, 0.2316, -0.5581)) * Basis(Vector3.RIGHT, PI)
+	if ResourceLoader.exists(SWORD_PATH):
+		var stowed_sword := (load(SWORD_PATH) as PackedScene).instantiate() as Node3D
+		stowed_sword.position.y = 0.05
+		sword_back_holder.add_child(stowed_sword)
+
+	bow_back_holder = Node3D.new()
+	bow_back_holder.visible = false
+	back_attachment.add_child(bow_back_holder)
+	bow_back_holder.position = Vector3(0.0356, 0.1348, -0.1307)
+	bow_back_holder.basis = Basis.from_euler(Vector3(-0.0318, 0.2324, 0.4920))
+	if ResourceLoader.exists(BOW_PATH):
+		var stowed_bow := MeshInstance3D.new()
+		stowed_bow.mesh = load(BOW_PATH) as Mesh
+		stowed_bow.scale = Vector3.ONE * 0.21
+		stowed_bow.position.x = -0.0063
+		bow_back_holder.add_child(stowed_bow)
+	_set_weapon_visibility()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var sensitivity := lerpf(0.003, 0.0017, aim_blend)
+		arm.rotation.y -= event.relative.x * sensitivity
+		arm.rotation.x = clampf(arm.rotation.x - event.relative.y * sensitivity, -1.25 if first_person else -0.85, 1.1 if first_person else 0.45)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_1: request_weapon("sword")
+			KEY_2: request_weapon("bow")
+			KEY_3: cycle_skin()
+			KEY_E: shoulder_side *= -1.0
+			KEY_V: toggle_perspective()
+			KEY_C: traversal.request_posture("crouch")
+			KEY_Z: traversal.request_posture("prone")
+			KEY_F: traversal.evade("roll")
+			KEY_ALT: traversal.evade("dodge")
+			KEY_Q: request_weapon("bow" if weapon_mode == "sword" else "sword")
+
+
+func toggle_perspective() -> void:
+	first_person = not first_person
+	if not first_person:
+		arm.rotation.x = clampf(arm.rotation.x, -0.85, 0.45)
+
+
+func cycle_skin() -> void:
+	skin_index = (skin_index + 1) % SKIN_NAMES.size()
+	_apply_skin()
+
+
+func _apply_skin() -> void:
+	if character_model == null:
+		return
+	for node in character_model.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		for surface in range(mesh_instance.mesh.get_surface_count()):
+			var source := mesh_instance.mesh.surface_get_material(surface) as StandardMaterial3D
+			if source == null or source.resource_name != "MI_Ranger":
+				continue
+			if skin_index == 0:
+				mesh_instance.set_surface_override_material(surface, null)
+				continue
+			if ranger_palette_material == null:
+				ranger_palette_material = ShaderMaterial.new()
+				ranger_palette_material.shader = RANGER_PALETTE_SHADER
+				ranger_palette_material.set_shader_parameter("base_texture", source.albedo_texture)
+				ranger_palette_material.set_shader_parameter("normal_texture", source.normal_texture)
+				ranger_palette_material.set_shader_parameter("orm_texture", source.roughness_texture)
+			ranger_palette_material.set_shader_parameter("dye_color", SKIN_COLORS[skin_index])
+			mesh_instance.set_surface_override_material(surface, ranger_palette_material)
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
+		cancel_aim()
+	if not event is InputEventMouseButton or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		return
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		set_aim(event.pressed)
+	elif event.button_index == MOUSE_BUTTON_LEFT:
+		if weapon_mode == "bow":
+			if event.pressed:
+				begin_bow_draw()
+			else:
+				release_bow()
+		elif event.pressed:
+			_attack()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		cancel_aim()
+
+
+func _setup_archery() -> void:
+	if skeleton == null or not ResourceLoader.exists(BOW_ANIMATION_PATH):
+		push_warning("Bow aiming requires KayKit Rig_Medium_CombatRanged.glb; see README.")
+		return
+	var source := (load(BOW_ANIMATION_PATH) as PackedScene).instantiate() as Node3D
+	source.name = "BowAnimationSource"
+	source.visible = false
+	add_child(source)
+	bow_pose = SkeletonModifier3D.new()
+	bow_pose.set_script(BOW_POSE_SCRIPT)
+	skeleton.add_child(bow_pose)
+	bow_pose.configure(source.find_child("Skeleton3D", true, false), source.get_node("AnimationPlayer"))
+	bow_draw_target = Node3D.new()
+	bow_draw_target.name = "BowDrawTarget"
+	visual.add_child(bow_draw_target)
+	bow_elbow_target = Node3D.new()
+	bow_elbow_target.name = "BowElbowTarget"
+	visual.add_child(bow_elbow_target)
+	bow_ik = TwoBoneIK3D.new()
+	skeleton.add_child(bow_ik)
+	bow_ik.set_setting_count(1)
+	bow_ik.set_root_bone_name(0, "upperarm_r")
+	bow_ik.set_middle_bone_name(0, "lowerarm_r")
+	bow_ik.set_end_bone_name(0, "hand_r")
+	bow_ik.set_extend_end_bone(0, true)
+	bow_ik.set_end_bone_direction(0, SkeletonModifier3D.BONE_DIRECTION_PLUS_Y)
+	bow_ik.set_end_bone_length(0, 0.065)
+	bow_ik.set_target_node(0, bow_ik.get_path_to(bow_draw_target))
+	bow_ik.set_pole_node(0, bow_ik.get_path_to(bow_elbow_target))
+	bow_ik.set_pole_direction(0, SkeletonModifier3D.SECONDARY_DIRECTION_PLUS_X)
+	bow_ik.influence = 0.0
+	bow_pose.modification_processed.connect(_prepare_bow_targets)
+	skeleton.skeleton_updated.connect(_update_bow_visual)
+
+
+func set_aim(enabled: bool) -> void:
+	if not enabled:
+		cancel_aim()
+	elif owns_weapon("bow") and weapon_mode == "bow" and switch_timer <= 0.0 and is_on_floor() and bow_pose != null and (traversal == null or (traversal.posture == "standing" and traversal.action == "")):
+		aim_requested = true
+		if bow_state == "idle":
+			bow_state = "ready"
+
+
+func cancel_aim() -> void:
+	aim_requested = false
+	if bow_state != "release":
+		bow_state = "idle"
+		bow_charge = 0.0
+
+
+func begin_bow_draw() -> void:
+	if owns_weapon("bow") and weapon_mode == "bow" and aim_requested and bow_state == "ready" and attack_timer <= 0.0:
+		bow_state = "draw"
+		bow_charge = 0.0
+		bow_clock = 0.0
+
+
+func release_bow() -> void:
+	if not owns_weapon("bow") or weapon_mode != "bow":
+		cancel_aim()
+		return
+	if bow_state not in ["draw", "hold"]:
+		return
+	if not aim_requested or bow_charge < 0.12:
+		bow_state = "ready" if aim_requested else "idle"
+		bow_charge = 0.0
+		return
+	release_charge = bow_charge
+	_fire_arrow()
+	bow_state = "release"
+	bow_clock = 0.0
+	attack_timer = 0.5
+	bow_charge = 0.0
+
+
+func _update_archery(delta: float) -> void:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		cancel_aim()
+	aim_blend = lerpf(aim_blend, 1.0 if aim_requested else 0.0, 1.0 - exp(-4.5 * delta))
+	perspective_blend = lerpf(perspective_blend, 1.0 if first_person else 0.0, 1.0 - exp(-10.0 * delta))
+	# Snap only the final millimetres so the first-person camera reaches the eye.
+	if absf(perspective_blend - (1.0 if first_person else 0.0)) < 0.001:
+		perspective_blend = 1.0 if first_person else 0.0
+	shoulder_blend = lerpf(shoulder_blend, shoulder_side, 1.0 - exp(-8.0 * delta))
+	camera.fov = lerpf(lerpf(70.0, 48.0, aim_blend), lerpf(78.0, 55.0, aim_blend), perspective_blend)
+	camera.near = lerpf(0.1, 0.045, perspective_blend)
+	arm.spring_length = lerpf(3.8, 2.65, aim_blend) * (1.0 - perspective_blend)
+	var desired_height: float = lerpf(1.65 if traversal.posture == "standing" else 1.4, traversal.eye_height(), perspective_blend) if traversal else 1.65
+	camera_height = lerpf(camera_height, desired_height, 1.0 - exp(-10.0 * delta))
+	var pivot := global_position + Vector3(0, camera_height - 0.2 * (1.0 - perspective_blend) + (traversal.camera_step_offset if traversal else 0.0), 0)
+	var local_offset := Vector3(lerpf(0.30, 0.52, aim_blend) * shoulder_blend * (1.0 - perspective_blend), 0, -0.06 * perspective_blend)
+	var offset := Basis(Vector3.UP, arm.rotation.y) * local_offset
+	if offset.length_squared() > 0.001:
+		var query := PhysicsRayQueryParameters3D.create(pivot, pivot + offset)
+		query.exclude = [get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if hit:
+			offset = (hit.position - pivot) * 0.75
+	arm.position = pivot - global_position + offset
+	_update_head_visibility()
+	if bow_state == "draw":
+		bow_charge = minf(1.0, bow_charge + delta / BOW_DRAW_TIME)
+		if bow_charge >= 1.0:
+			bow_state = "hold"
+			bow_clock = 0.0
+	elif bow_state == "hold":
+		bow_clock += delta
+	if bow_state == "release":
+		bow_clock += delta
+		if bow_clock >= 0.5:
+			bow_state = "ready" if aim_requested else "idle"
+	if bow_pose:
+		var pose_weight := aim_blend if weapon_mode == "bow" and switch_timer <= 0.0 else 0.0
+		bow_pose.pose_weight = pose_weight
+		bow_pose.lower_body_weight = pose_weight * clampf(1.0 - Vector2(velocity.x, velocity.z).length() / 1.5, 0.0, 1.0)
+		# Actor +Z is forward, so positive local X pitch points the body down.
+		bow_pose.pitch = -arm.rotation.x
+		if bow_state == "release":
+			bow_pose.clip = "Ranged_Bow_Release"
+			bow_pose.clip_time = minf(1.32, 0.06 + bow_clock * 2.5)
+		elif bow_state == "hold":
+			bow_pose.clip = "Ranged_Bow_Aiming_Idle"
+			bow_pose.clip_time = fmod(bow_clock, 1.833)
+		else:
+			bow_pose.clip = "Ranged_Bow_Draw"
+			bow_pose.clip_time = 0.7 + bow_charge * 0.63
+		bow_ik.influence = pose_weight if bow_state != "release" else 0.0
+
+
+func _update_head_visibility() -> void:
+	# Face, eyes, eyebrows and hood remain shadow casters in first person.
+	for component in head_components:
+		component.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY if perspective_blend > 0.75 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+
+func _prepare_bow_targets() -> void:
+	var left := skeleton.global_transform * skeleton.get_bone_global_pose(skeleton.find_bone("hand_l"))
+	var forward := -camera.global_basis.z.normalized()
+	var up := camera.global_basis.y.normalized()
+	var desired := Basis(-forward, up, (-forward).cross(up).normalized())
+	var idle := Basis.from_euler(BOW_IDLE_BASIS) * Basis(Vector3.UP, 0.85)
+	bow_holder.basis = Basis(idle.get_rotation_quaternion().slerp((left.basis.inverse() * desired).orthonormalized().get_rotation_quaternion(), aim_blend))
+	bow_frame = left * bow_holder.transform
+	var draw_amount := bow_charge
+	if bow_state == "release":
+		draw_amount = release_charge * exp(-bow_clock * 35.0)
+	bow_draw_target.global_position = bow_frame * Vector3(0.2105 + draw_amount * 0.36, 0, 0)
+	var elbow := skeleton.global_transform * skeleton.get_bone_global_pose(skeleton.find_bone("lowerarm_r"))
+	bow_elbow_target.global_position = elbow.origin + visual.global_basis.x * -0.2
+
+
+func _update_bow_visual() -> void:
+	if bow_visual == null:
+		return
+	var nock := bow_holder.to_local(bow_draw_target.global_position) if aim_blend > 0.001 else Vector3(0.2105, 0, 0)
+	bow_visual.set_draw(aim_requested and bow_state != "release", nock, Vector3(-1, 0, 0))
+
+
+func _physics_process(delta: float) -> void:
+	var forward := -camera.global_basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	var right := camera.global_basis.x
+	right.y = 0.0
+	right = right.normalized()
+	var move_axis := Vector2.ZERO
+	if Input.is_key_pressed(KEY_W): move_axis.y += 1.0
+	if Input.is_key_pressed(KEY_S): move_axis.y -= 1.0
+	if Input.is_key_pressed(KEY_D): move_axis.x += 1.0
+	if Input.is_key_pressed(KEY_A): move_axis.x -= 1.0
+	move_axis = move_axis.normalized()
+	var direction := (forward * move_axis.y + right * move_axis.x).normalized()
+	var speed: float = traversal.advance(delta, direction)
+	var acceleration := 18.0 if is_on_floor() else 6.0
+	velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
+	velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * delta)
+	if traversal.action != "":
+		var impulse: Vector3 = traversal.action_velocity()
+		velocity.x = impulse.x
+		velocity.z = impulse.z
+	var grounded_before: bool = is_on_floor() or traversal.step_grace > 0.0
+	var fall_speed := velocity.y
+	if grounded_before:
+		if Input.is_key_pressed(KEY_SPACE) and traversal.posture == "standing" and traversal.action == "":
+			cancel_aim()
+			velocity.y = JUMP_SPEED
+			traversal.step_grace = 0.0
+			traversal.takeoff_timer = 0.22
+			traversal.landing_timer = 0.0
+		else:
+			velocity.y = 0.0
+	else:
+		velocity.y -= GRAVITY * delta
+	var before := global_position
+	traversal.move_with_steps(delta)
+	if is_on_floor() and not grounded_before and fall_speed < -1.0 and traversal.air_time > 0.08:
+		traversal.landing_timer = 0.28 if fall_speed < -8.0 else 0.18
+	if is_on_floor():
+		traversal.air_time = 0.0
+	else:
+		traversal.air_time += delta
+	if not is_on_floor() and traversal.step_grace <= 0.0:
+		cancel_aim()
+	if traversal.action != "":
+		pass
+	elif aim_requested or first_person:
+		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(forward.x, forward.z), 14.0 * delta)
+	elif direction.length_squared() > 0.01:
+		# Quaternius' local +Z is the front of this character.
+		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(direction.x, direction.z), 12.0 * delta)
+	traversal.sync_prone_facing()
+	_update_switch(delta)
+	_update_archery(delta)
+	attack_timer = maxf(0.0, attack_timer - delta)
+	_update_animation(direction.length_squared() > 0.01)
+	_update_footsteps(before)
+	if global_position.y < -60.0:
+		respawn()
+
+
+func request_weapon(mode: String) -> void:
+	if not owns_weapon(mode):
+		_equipment_required()
+		return
+	if mode == weapon_mode or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and (traversal.action != "" or traversal.posture == "prone")):
+		return
+	cancel_aim()
+	pending_weapon = mode
+	switch_timer = 0.78
+	switch_swapped = false
+	_play_animation("Interact", 2.5)
+
+
+func _update_switch(delta: float) -> void:
+	if switch_timer <= 0.0:
+		return
+	switch_timer = maxf(0.0, switch_timer - delta)
+	if not switch_swapped and switch_timer <= 0.4:
+		weapon_mode = pending_weapon
+		_set_weapon_visibility()
+		switch_swapped = true
+	if switch_timer <= 0.0:
+		pending_weapon = ""
+
+
+func _set_weapon_visibility() -> void:
+	var stowed: bool = traversal != null and traversal.posture == "prone"
+	if sword_holder: sword_holder.visible = owns_sword and weapon_mode == "sword" and not stowed
+	if bow_holder: bow_holder.visible = owns_bow and weapon_mode == "bow" and not stowed
+	if sword_back_holder: sword_back_holder.visible = owns_sword and (weapon_mode != "sword" or stowed)
+	if bow_back_holder: bow_back_holder.visible = owns_bow and (weapon_mode != "bow" or stowed)
+
+
+func _update_animation(moving: bool) -> void:
+	if animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != ""):
+		return
+	if not is_on_floor() and traversal.step_grace <= 0.0:
+		_play_animation("Jump_Start", 2.0) if traversal.takeoff_timer > 0 else _play_animation("Jump", 2.0)
+	elif traversal.landing_timer > 0 and traversal.posture == "standing":
+		_play_animation("Jump_Land", 2.0)
+	elif traversal.posture == "crouch":
+		_play_animation("Crouch_Fwd" if moving else "Crouch_Idle")
+	elif traversal.posture == "prone":
+		_play_animation("Idle")
+	elif moving:
+		_play_animation("Sprint" if traversal.sprinting else "Walk")
+	else:
+		_play_animation("Sword_Idle" if weapon_mode == "sword" else "Idle")
+
+
+func _play_animation(name: String, speed: float = 1.0) -> void:
+	if animation_player == null or current_animation == name:
+		return
+	if animation_player.has_animation(name):
+		animation_player.play(name, 0.16, speed)
+		current_animation = name
+
+
+func _attack() -> void:
+	if not owns_weapon(weapon_mode):
+		_equipment_required()
+		return
+	if switch_timer > 0.0 or attack_timer > 0.0 or not is_on_floor() or (traversal and (traversal.action != "" or traversal.posture != "standing")):
+		return
+	current_animation = ""
+	if weapon_mode == "sword":
+		attack_timer = 1.0
+		_play_animation("Sword_Attack")
+
+
+func _equipment_required() -> void:
+	if traversal:
+		traversal.feedback = "先取得装备"
+		traversal.feedback_time = 1.8
+
+
+func _fire_arrow() -> void:
+	if not owns_weapon("bow") or weapon_mode != "bow" or bow_holder == null or not ResourceLoader.exists("res://Weapons/Arrow.obj"):
+		return
+	var center := get_viewport().get_visible_rect().size * 0.5
+	var origin := camera.project_ray_origin(center)
+	var ray_direction := camera.project_ray_normal(center)
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + ray_direction * 55.0)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var target: Vector3 = hit.position if hit else origin + ray_direction * 55.0
+	var start: Vector3 = bow_visual.held_arrow.global_position
+	var speed := lerpf(18.0, 38.0, bow_charge)
+	var direction := _ballistic_direction(start, target, speed)
+	var arrow := Node3D.new()
+	arrow.name = "Arrow"
+	arrow.set_script(ARROW_SCRIPT)
+	get_parent().add_child(arrow)
+	arrow.launch(start, direction, get_rid(), speed)
+	shots_fired += 1
+
+
+func _ballistic_direction(origin: Vector3, target: Vector3, speed: float) -> Vector3:
+	var delta := target - origin
+	var horizontal := Vector3(delta.x, 0, delta.z)
+	var distance := horizontal.length()
+	if distance < 0.1:
+		return delta.normalized()
+	var gravity: float = ARROW_SCRIPT.GRAVITY
+	var speed_squared := speed * speed
+	var discriminant := speed_squared * speed_squared - gravity * (gravity * distance * distance + 2.0 * delta.y * speed_squared)
+	if discriminant < 0.0:
+		return delta.normalized()
+	var angle := atan((speed_squared - sqrt(discriminant)) / (gravity * distance))
+	return horizontal.normalized() * cos(angle) + Vector3.UP * sin(angle)
+
+
+func _update_footsteps(before: Vector3) -> void:
+	if not is_on_floor() or velocity.length_squared() < 0.4 or traversal.posture == "prone" or traversal.action != "":
+		step_distance = 0.0
+		return
+	var moved := global_position - before
+	step_distance += Vector2(moved.x, moved.z).length()
+	var step_length := 0.90 if Input.is_key_pressed(KEY_SHIFT) else 0.72
+	if step_distance >= step_length:
+		step_distance -= step_length
+		_emit_foot_snow(next_foot)
+		next_foot = "foot_r" if next_foot == "foot_l" else "foot_l"
+
+
+func _emit_foot_snow(bone_name: String) -> void:
+	if skeleton == null:
+		return
+	var bone := skeleton.find_bone(bone_name)
+	if bone < 0:
+		return
+	var foot_position := (skeleton.global_transform * skeleton.get_bone_global_pose(bone)).origin
+	var query := PhysicsRayQueryParameters3D.create(
+		foot_position + Vector3.UP * 0.35, foot_position + Vector3.DOWN * 0.55
+	)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit:
+		return
+	var burst := Node3D.new()
+	burst.set_script(FOOT_SNOW_SCRIPT)
+	burst.set("seed_value", 1009 + footstep_count * 7919)
+	footstep_count += 1
+	get_parent().add_child(burst)
+	burst.global_position = hit.position + Vector3.UP * 0.045
+
+
+func respawn() -> void:
+	cancel_aim()
+	bow_state = "idle"
+	bow_charge = 0.0
+	attack_timer = 0.0
+	if traversal:
+		traversal.reset()
+		_set_weapon_visibility()
+	if has_meta("spawn_position"):
+		global_position = get_meta("spawn_position")
+	velocity = Vector3.ZERO
+	step_distance = 0.0
