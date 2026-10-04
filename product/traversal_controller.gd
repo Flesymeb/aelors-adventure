@@ -158,7 +158,7 @@ func advance(delta: float, direction: Vector3) -> float:
 	feedback_time = maxf(0, feedback_time - delta)
 	cooldown = maxf(0, cooldown - delta)
 	moving_direction = direction
-	sprinting = action == "" and posture == "standing" and not player.aim_requested and direction.length_squared() > 0.01 and Input.is_key_pressed(KEY_SHIFT)
+	sprinting = action == "" and posture == "standing" and not player.aim_requested and direction.length_squared() > 0.01 and player.control_held("sprint")
 	if action != "":
 		action_time += delta
 		if action_time >= action_duration or not player.is_on_floor():

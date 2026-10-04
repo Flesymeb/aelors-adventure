@@ -16,6 +16,32 @@ const BOW_ANIMATION_PATH := "res://Characters/KayKitAnimations/Rig_Medium_Combat
 const BOW_DRAW_TIME := 1.0
 const BOW_IDLE_BASIS := Vector3(-0.556121, -0.448697, 3.117197)
 const TRAVERSAL_SCRIPT := preload("res://traversal_controller.gd")
+signal controls_changed
+
+# One source for dispatch, held input, controls UI and gameplay prompts.
+const CONTROL_DEFAULTS := {
+	"roll": KEY_B, "dodge": KEY_ALT, "shoulder": KEY_TAB,
+	"jump": KEY_SPACE, "sprint": KEY_SHIFT, "forward": KEY_W,
+	"back": KEY_S, "left": KEY_A, "right": KEY_D,
+	"crouch": KEY_C, "prone": KEY_Z, "perspective": KEY_V,
+}
+const CONTROL_LABELS := {
+	"roll": "Roll", "dodge": "Dodge", "shoulder": "Switch shoulder",
+	"jump": "Jump", "sprint": "Sprint (hold)", "forward": "Move forward",
+	"back": "Move back", "left": "Move left", "right": "Move right",
+	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
+}
+# E/F retain interaction/lamp ownership, including while their systems are locked.
+const RESERVED_KEYS := [KEY_E, KEY_F, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
+	KEY_5, KEY_G, KEY_R, KEY_M, KEY_J, KEY_K, KEY_ESCAPE, KEY_F10,
+	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN]
+const CONTROLS_FILE := "user://locomotion_controls.cfg"
+var effective_bindings: Dictionary = CONTROL_DEFAULTS.duplicate()
+var controls_open := false
+var blocked_keys: Dictionary = {}
+var blocked_mouse: Dictionary = {}
+var controls_animation_was_playing := false
+
 const WALK_SPEED := 5.0
 const RUN_SPEED := 8.0
 const JUMP_SPEED := 6.8
@@ -97,6 +123,7 @@ func configure_equipment(sword_owned: bool, bow_owned: bool, selected_mode: Stri
 
 
 func _ready() -> void:
+	_setup_controls()
 	arm.add_excluded_object(get_rid())
 	if ResourceLoader.exists(MODEL_PATH):
 		var model := (load(MODEL_PATH) as PackedScene).instantiate() as Node3D
@@ -192,7 +219,96 @@ func _attach_weapons() -> void:
 	_set_weapon_visibility()
 
 
+func _setup_controls() -> void:
+	var config := ConfigFile.new()
+	if config.load(CONTROLS_FILE) == OK:
+		var loaded: Dictionary = {}
+		var valid := true
+		for action in CONTROL_DEFAULTS:
+			var value: Variant = config.get_value("keys", action, CONTROL_DEFAULTS[action])
+			if not value is int or value <= 0 or value in RESERVED_KEYS or value in loaded.values():
+				valid = false
+				break
+			loaded[action] = value
+		if valid:
+			effective_bindings = loaded
+	_apply_controls()
+
+
+func _apply_controls() -> void:
+	for action in effective_bindings:
+		var mapped := "r02_" + String(action)
+		if not InputMap.has_action(mapped):
+			InputMap.add_action(mapped)
+		InputMap.action_erase_events(mapped)
+		var key := InputEventKey.new()
+		key.keycode = effective_bindings[action]
+		InputMap.action_add_event(mapped, key)
+	controls_changed.emit()
+
+
+func key_prompt(action: String) -> String:
+	return OS.get_keycode_string(effective_bindings[action])
+
+
+func rebind_control(action: String, key: int) -> String:
+	if not effective_bindings.has(action) or key <= 0:
+		return "Choose a keyboard key."
+	if key in RESERVED_KEYS:
+		return "%s is reserved for another control." % OS.get_keycode_string(key)
+	for other in effective_bindings:
+		if other != action and effective_bindings[other] == key:
+			return "%s already belongs to %s. Choose an unused key." % [OS.get_keycode_string(key), CONTROL_LABELS[other]]
+	effective_bindings[action] = key
+	_apply_controls()
+	return _save_controls()
+
+
+func restore_controls() -> String:
+	effective_bindings = CONTROL_DEFAULTS.duplicate()
+	_apply_controls()
+	return _save_controls()
+
+
+func _save_controls() -> String:
+	var config := ConfigFile.new()
+	for action in effective_bindings:
+		config.set_value("keys", action, effective_bindings[action])
+	return "" if config.save(CONTROLS_FILE) == OK else "Applied for this session; settings could not be saved."
+
+
+func _block_held_controls() -> void:
+	for key in effective_bindings.values():
+		if Input.is_key_pressed(key):
+			blocked_keys[key] = true
+	for button in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		if Input.is_mouse_button_pressed(button):
+			blocked_mouse[button] = true
+
+
+func set_controls_open(open: bool) -> void:
+	_block_held_controls()
+	controls_open = open
+	cancel_aim()
+	if open:
+		controls_animation_was_playing = animation_player != null and animation_player.is_playing()
+		if controls_animation_was_playing:
+			animation_player.pause()
+	elif controls_animation_was_playing:
+		animation_player.play()
+
+
+func control_held(action: String) -> bool:
+	return not controls_open and not blocked_keys.has(effective_bindings[action]) and Input.is_action_pressed("r02_" + action)
+
+
+func _control_pressed(event: InputEvent, action: String) -> bool:
+	return not controls_open and not blocked_keys.has(effective_bindings[action]) and event.is_action_pressed("r02_" + action)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if controls_open:
+		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var sensitivity := lerpf(0.003, 0.0017, aim_blend)
 		arm.rotation.y -= event.relative.x * sensitivity
@@ -202,13 +318,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_1: request_weapon("sword")
 			KEY_2: request_weapon("bow")
 			KEY_3: cycle_skin()
-			KEY_TAB: shoulder_side *= -1.0
-			KEY_V: toggle_perspective()
-			KEY_C: traversal.request_posture("crouch")
-			KEY_Z: traversal.request_posture("prone")
-			KEY_F: traversal.evade("roll")
-			KEY_ALT: traversal.evade("dodge")
 			KEY_Q: request_weapon("bow" if weapon_mode == "sword" else "sword")
+		if _control_pressed(event, "shoulder"): shoulder_side *= -1.0
+		elif _control_pressed(event, "perspective"): toggle_perspective()
+		elif _control_pressed(event, "crouch"): traversal.request_posture("crouch")
+		elif _control_pressed(event, "prone"): traversal.request_posture("prone")
+		elif _control_pressed(event, "roll"): traversal.evade("roll")
+		elif _control_pressed(event, "dodge"): traversal.evade("dodge")
 
 
 func toggle_perspective() -> void:
@@ -245,6 +361,27 @@ func _apply_skin() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Releases clear suppression; menu/capture presses never become gameplay input.
+	if event is InputEventKey:
+		if not event.pressed:
+			blocked_keys.erase(event.keycode)
+		elif controls_open:
+			blocked_keys[event.keycode] = true
+	elif event is InputEventMouseButton:
+		if not event.pressed:
+			blocked_mouse.erase(event.button_index)
+		elif controls_open:
+			blocked_mouse[event.button_index] = true
+	if get_parent().has_method("handle_controls_input") and get_parent().handle_controls_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if controls_open:
+		# Let GUI buttons receive pointer events; gameplay handlers stay gated.
+		if not event is InputEventMouseButton:
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseButton and blocked_mouse.has(event.button_index):
+		return
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
 		cancel_aim()
 	if not event is InputEventMouseButton or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
@@ -426,6 +563,8 @@ func _update_bow_visual() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if controls_open:
+		return
 	var forward := -camera.global_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
@@ -433,10 +572,10 @@ func _physics_process(delta: float) -> void:
 	right.y = 0.0
 	right = right.normalized()
 	var move_axis := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W): move_axis.y += 1.0
-	if Input.is_key_pressed(KEY_S): move_axis.y -= 1.0
-	if Input.is_key_pressed(KEY_D): move_axis.x += 1.0
-	if Input.is_key_pressed(KEY_A): move_axis.x -= 1.0
+	if control_held("forward"): move_axis.y += 1.0
+	if control_held("back"): move_axis.y -= 1.0
+	if control_held("right"): move_axis.x += 1.0
+	if control_held("left"): move_axis.x -= 1.0
 	move_axis = move_axis.normalized()
 	var direction := (forward * move_axis.y + right * move_axis.x).normalized()
 	var speed: float = traversal.advance(delta, direction)
@@ -450,7 +589,7 @@ func _physics_process(delta: float) -> void:
 	var grounded_before: bool = is_on_floor() or traversal.step_grace > 0.0
 	var fall_speed := velocity.y
 	if grounded_before:
-		if Input.is_key_pressed(KEY_SPACE) and traversal.posture == "standing" and traversal.action == "":
+		if control_held("jump") and traversal.posture == "standing" and traversal.action == "":
 			cancel_aim()
 			velocity.y = JUMP_SPEED
 			traversal.step_grace = 0.0
@@ -605,7 +744,7 @@ func _update_footsteps(before: Vector3) -> void:
 		return
 	var moved := global_position - before
 	step_distance += Vector2(moved.x, moved.z).length()
-	var step_length := 0.90 if Input.is_key_pressed(KEY_SHIFT) else 0.72
+	var step_length := 0.90 if control_held("sprint") else 0.72
 	if step_distance >= step_length:
 		step_distance -= step_length
 		_emit_foot_snow(next_foot)

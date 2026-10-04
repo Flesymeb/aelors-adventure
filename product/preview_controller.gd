@@ -11,6 +11,14 @@ var player: CharacterBody3D
 var dusk := false
 var quality: Node
 var weapon_label: Label
+var help_label: Label
+var controls_panel: PanelContainer
+var controls_list: VBoxContainer
+var controls_feedback: Label
+var control_buttons: Array[Button] = []
+var controls_selection := 0
+var capturing_control := ""
+var previous_mouse_mode := Input.MOUSE_MODE_CAPTURED
 var ui_font := SystemFont.new()
 
 
@@ -31,6 +39,9 @@ func _ready() -> void:
 	quality.configure(village)
 	_add_snowfall()
 	_add_help()
+	_add_controls()
+	player.controls_changed.connect(_refresh_control_prompts)
+	_refresh_control_prompts()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -53,6 +64,8 @@ func _place_player() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if player.controls_open:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -86,15 +99,146 @@ func _add_help() -> void:
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.add_theme_constant_override("separation", 7)
 	layer.add_child(layout)
-	var help := Label.new()
-	help.text = "WASD move · Mouse look · Space jump · Shift run · Tab shoulder\nUnarmed · Weapons require ownership · V first/third person\nC crouch · Z prone · F roll · Alt dodge · Shift sprint\n3 skin · 4 dusk/day · G graphics · R respawn · Esc cursor"
-	_add_hud_card(layout, help, 15)
+	help_label = Label.new()
+	_add_hud_card(layout, help_label, 15)
 	weapon_label = Label.new()
 	_add_hud_card(layout, weapon_label, 13)
 	var archery_hud := Control.new()
 	archery_hud.set_script(ARCHERY_HUD)
 	archery_hud.player = player
 	layer.add_child(archery_hud)
+
+
+func _refresh_control_prompts() -> void:
+	help_label.text = "%s/%s/%s/%s move · Mouse look · %s jump · %s sprint · %s shoulder\nUnarmed · Weapons require ownership · E interact / F old lamp (reserved)\n%s crouch · %s prone · %s roll · %s dodge · %s perspective\nF10 controls · 3 skin · 4 dusk/day · G graphics · R respawn · Esc cursor" % [
+		player.key_prompt("forward"), player.key_prompt("left"), player.key_prompt("back"), player.key_prompt("right"),
+		player.key_prompt("jump"), player.key_prompt("sprint"), player.key_prompt("shoulder"),
+		player.key_prompt("crouch"), player.key_prompt("prone"), player.key_prompt("roll"), player.key_prompt("dodge"), player.key_prompt("perspective")]
+	for i in control_buttons.size():
+		var action: String = player.CONTROL_DEFAULTS.keys()[i]
+		control_buttons[i].text = "%s    [%s]" % [player.CONTROL_LABELS[action], player.key_prompt(action)]
+
+
+func _add_controls() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 10
+	add_child(layer)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(center)
+	controls_panel = PanelContainer.new()
+	controls_panel.name = "LocomotionControls"
+	controls_panel.custom_minimum_size = Vector2(530, 0)
+	center.add_child(controls_panel)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.045, 0.065, 0.97)
+	style.border_color = Color(0.65, 0.55, 0.32)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(7)
+	style.content_margin_left = 22
+	style.content_margin_right = 22
+	style.content_margin_top = 14
+	style.content_margin_bottom = 14
+	controls_panel.add_theme_stylebox_override("panel", style)
+	controls_list = VBoxContainer.new()
+	controls_list.add_theme_constant_override("separation", 3)
+	controls_list.add_theme_font_override("font", ui_font)
+	controls_list.add_theme_font_size_override("font_size", 17)
+	controls_panel.add_child(controls_list)
+	var title := Label.new()
+	title.text = "LOCOMOTION CONTROLS"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	controls_list.add_child(title)
+	for action in player.CONTROL_DEFAULTS:
+		var button := Button.new()
+		button.pressed.connect(_begin_capture.bind(String(action)))
+		button.focus_entered.connect(_select_control.bind(control_buttons.size()))
+		controls_list.add_child(button)
+		control_buttons.append(button)
+	controls_feedback = Label.new()
+	controls_feedback.custom_minimum_size.x = 490
+	controls_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	controls_list.add_child(controls_feedback)
+	var restore := Button.new()
+	restore.text = "Restore defaults [Backspace]"
+	restore.pressed.connect(_restore_controls)
+	controls_list.add_child(restore)
+	var close := Button.new()
+	close.text = "Return to exploration [Esc / F10]"
+	close.pressed.connect(_close_controls)
+	controls_list.add_child(close)
+	controls_panel.hide()
+
+
+func _select_control(index: int) -> void:
+	controls_selection = index
+
+
+func _begin_capture(action: String) -> void:
+	# A GUI button held while the panel closes can emit its callback later.
+	# It must not arm the next visit's capture or consume exploration input.
+	if not player.controls_open:
+		return
+	capturing_control = action
+	controls_feedback.text = "Press an unused key for %s. Esc cancels.\nE / F and menu keys stay reserved." % player.CONTROL_LABELS[action]
+
+
+func _restore_controls() -> void:
+	capturing_control = ""
+	var error: String = player.restore_controls()
+	controls_feedback.text = "Default controls restored." if error == "" else error
+	control_buttons[controls_selection].grab_focus()
+
+
+func _close_controls() -> void:
+	player.set_controls_open(false)
+	controls_panel.hide()
+	capturing_control = ""
+	Input.mouse_mode = previous_mouse_mode
+
+
+# Called at the start of the player's _input, before mouse attacks and before
+# either script's _unhandled_input. Captured keys cannot leak into the world.
+func handle_controls_input(event: InputEvent) -> bool:
+	if not player.controls_open:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
+			capturing_control = ""
+			previous_mouse_mode = Input.mouse_mode
+			player.set_controls_open(true)
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			controls_panel.show()
+			controls_feedback.text = "Up / Down select · Enter changes key · Backspace restores\nEsc / F10 returns. Release held controls before acting."
+			control_buttons[controls_selection].grab_focus()
+			return true
+		return false
+	if event is InputEventKey:
+		if not event.pressed or event.echo:
+			return true
+		if capturing_control != "":
+			if event.keycode == KEY_ESCAPE:
+				capturing_control = ""
+				controls_feedback.text = "Key change cancelled. Enter to try again."
+			else:
+				var error: String = player.rebind_control(capturing_control, event.keycode)
+				if error == "":
+					controls_feedback.text = "%s now uses %s. Esc returns to exploration." % [player.CONTROL_LABELS[capturing_control], player.key_prompt(capturing_control)]
+					capturing_control = ""
+				else:
+					controls_feedback.text = error + " Esc cancels."
+		elif event.keycode in [KEY_ESCAPE, KEY_F10]:
+			_close_controls()
+		elif event.keycode == KEY_BACKSPACE:
+			_restore_controls()
+		elif event.keycode in [KEY_UP, KEY_DOWN]:
+			controls_selection = posmod(controls_selection + (1 if event.keycode == KEY_DOWN else -1), control_buttons.size())
+			control_buttons[controls_selection].grab_focus()
+		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+			_begin_capture(player.CONTROL_DEFAULTS.keys()[controls_selection])
+		return true
+	# Mouse clicks may reach controls buttons; the player suppresses all world
+	# mouse input while the panel is open. Mouse motion never drives its camera.
+	return not event is InputEventMouseButton
 
 
 func _add_hud_card(parent: Control, label: Label, font_size: int) -> void:
