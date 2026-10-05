@@ -17,6 +17,8 @@ const BOW_DRAW_TIME := 1.0
 const BOW_IDLE_BASIS := Vector3(-0.556121, -0.448697, 3.117197)
 const TRAVERSAL_SCRIPT := preload("res://traversal_controller.gd")
 signal controls_changed
+var combat: Node
+const SWORD_ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
 
 # One source for dispatch, held input, controls UI and gameplay prompts.
 const CONTROL_DEFAULTS := {
@@ -144,6 +146,11 @@ func _ready() -> void:
 			animation_player = imported_player
 			animation_scene.queue_free()
 			_play_animation("Sword_Idle" if owns_weapon(weapon_mode) and weapon_mode == "sword" else "Idle")
+		if animation_player and ResourceLoader.exists(SWORD_ANIMATION_PATH):
+			var extra := (load(SWORD_ANIMATION_PATH) as PackedScene).instantiate()
+			var library: AnimationLibrary = extra.get_node("AnimationPlayer").get_animation_library("").duplicate(true)
+			animation_player.add_animation_library("sword", library)
+			extra.free()
 		_attach_weapons()
 		_apply_skin()
 		_setup_archery()
@@ -301,12 +308,14 @@ func set_controls_open(open: bool) -> void:
 	_block_held_controls()
 	controls_open = open
 	cancel_aim()
-	if open:
-		controls_animation_was_playing = animation_player != null and animation_player.is_playing()
-		if controls_animation_was_playing:
-			animation_player.pause()
-	elif controls_animation_was_playing:
-		animation_player.play()
+	# The world pause freezes the action clock, contact and parry window.
+	# Only discard buffered future input; opening a menu is not a combat reset.
+	if combat:
+		if open: combat.buffered = false
+		elif combat.blocking and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+			combat.set_block(false)
+	# AnimationPlayer inherits the player's pausable process mode. Let the
+	# world pause suspend it without play() resetting a custom attack speed.
 
 
 func control_held(action: String) -> bool:
@@ -387,9 +396,9 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if controls_open:
-		# Let GUI buttons receive pointer events; gameplay handlers stay gated.
-		if not event is InputEventMouseButton:
-			get_viewport().set_input_as_handled()
+		# The owner already consumes capture and navigation keys. Allow its
+		# focused GUI buttons to receive unconsumed keyboard and pointer input.
+		# Gameplay actions and unhandled input remain gated by controls_open.
 		return
 	if event is InputEventMouseButton and blocked_mouse.has(event.button_index):
 		return
@@ -398,7 +407,10 @@ func _input(event: InputEvent) -> void:
 	if not event is InputEventMouseButton or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
-		set_aim(event.pressed)
+		if weapon_mode == "sword" and combat:
+			combat.set_block(event.pressed)
+		else:
+			set_aim(event.pressed)
 	elif event.button_index == MOUSE_BUTTON_LEFT:
 		if weapon_mode == "bow":
 			if event.pressed:
@@ -412,6 +424,7 @@ func _input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
 		cancel_aim()
+		if combat: combat.interrupt("focus")
 
 
 func _setup_archery() -> void:
@@ -576,6 +589,9 @@ func _update_bow_visual() -> void:
 func _physics_process(delta: float) -> void:
 	if controls_open:
 		return
+	if combat:
+		combat.advance_player(delta)
+		if combat.player_locked(): return
 	var forward := -camera.global_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
@@ -590,6 +606,7 @@ func _physics_process(delta: float) -> void:
 	move_axis = move_axis.normalized()
 	var direction := (forward * move_axis.y + right * move_axis.x).normalized()
 	var speed: float = traversal.advance(delta, direction)
+	if combat and combat.motion_restricted(): speed *= 0.3
 	var acceleration := 18.0 if is_on_floor() else 6.0
 	velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
 	velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * delta)
@@ -620,7 +637,7 @@ func _physics_process(delta: float) -> void:
 		traversal.air_time += delta
 	if not is_on_floor() and traversal.step_grace <= 0.0:
 		cancel_aim()
-	if traversal.action != "":
+	if traversal.action != "" or (combat and combat.motion_restricted()):
 		pass
 	elif aim_requested or first_person:
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(forward.x, forward.z), 14.0 * delta)
@@ -634,15 +651,18 @@ func _physics_process(delta: float) -> void:
 	_update_animation(direction.length_squared() > 0.01)
 	_update_footsteps(before)
 	if global_position.y < -60.0:
-		respawn()
+		if combat: combat.lethal_fall()
+		else: respawn()
 
 
 func request_weapon(mode: String) -> void:
+	if combat and combat.player_locked(): return
 	if not owns_weapon(mode):
 		_equipment_required()
 		return
-	if mode == weapon_mode or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and (traversal.action != "" or traversal.posture == "prone")):
+	if mode == weapon_mode or switch_timer > 0.0 or (traversal and (traversal.action != "" or traversal.posture == "prone")):
 		return
+	if combat: combat.interrupt("switch")
 	cancel_aim()
 	pending_weapon = mode
 	switch_timer = 0.78
@@ -656,6 +676,7 @@ func _update_switch(delta: float) -> void:
 	switch_timer = maxf(0.0, switch_timer - delta)
 	if not switch_swapped and switch_timer <= 0.4:
 		weapon_mode = pending_weapon
+		if combat: combat.state.sword_selected = weapon_mode == "sword"
 		_set_weapon_visibility()
 		switch_swapped = true
 	if switch_timer <= 0.0:
@@ -671,7 +692,7 @@ func _set_weapon_visibility() -> void:
 
 
 func _update_animation(moving: bool) -> void:
-	if animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != ""):
+	if animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != "") or (combat and combat.pose_owned()):
 		return
 	if not is_on_floor() and traversal.step_grace <= 0.0:
 		_play_animation("Jump_Start", 2.0) if traversal.takeoff_timer > 0 else _play_animation("Jump", 2.0)
@@ -699,12 +720,8 @@ func _attack() -> void:
 	if not owns_weapon(weapon_mode):
 		_equipment_required()
 		return
-	if switch_timer > 0.0 or attack_timer > 0.0 or not is_on_floor() or (traversal and (traversal.action != "" or traversal.posture != "standing")):
-		return
-	current_animation = ""
-	if weapon_mode == "sword":
-		attack_timer = 1.0
-		_play_animation("Sword_Attack")
+	if weapon_mode == "sword" and combat:
+		combat.request_attack()
 
 
 func _equipment_required() -> void:
@@ -796,3 +813,6 @@ func respawn() -> void:
 		global_position = get_meta("spawn_position")
 	velocity = Vector3.ZERO
 	step_distance = 0.0
+
+func _mcp_state() -> Dictionary:
+	return {"equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}

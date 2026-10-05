@@ -90,6 +90,7 @@ func _loop_locomotion() -> void:
 		library.add_animation(clip, animation)
 
 func request_posture(next: String) -> bool:
+	if player.combat and player.combat.player_locked(): return false
 	if action != "" or not player.is_on_floor() or player.switch_timer > 0.0 or player.attack_timer > 0.0:
 		return false
 	var desired := "standing" if posture == next else next
@@ -127,12 +128,15 @@ func _shape_clear(shape: Shape3D, local: Transform3D) -> bool:
 	return player.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 func evade(kind: String) -> bool:
-	if kind not in ["roll", "dodge"] or posture != "standing" or action != "" or cooldown > 0.0 or not player.is_on_floor() or player.switch_timer > 0.0 or player.attack_timer > 0.0:
+	if kind not in ["roll", "dodge"] or posture != "standing" or action != "" or cooldown > 0.0 or not player.is_on_floor() or player.switch_timer > 0.0 :
 		return false
 	if kind == "dodge" and motion_pose == null:
 		return false
 	if kind == "roll" and (player.animation_player == null or not player.animation_player.has_animation("Roll")):
 		return false
+	if player.combat:
+		if player.combat.player_locked(): return false
+		player.combat.interrupt("dodge")
 	player.cancel_aim()
 	action = kind
 	action_duration = 0.72 if kind == "roll" else 0.4
@@ -163,7 +167,10 @@ func advance(delta: float, direction: Vector3) -> float:
 		action_time += delta
 		if action_time >= action_duration or not player.is_on_floor():
 			action = ""
-			cooldown = 0.45
+			# Both evade types share a one-second start-to-start interval.
+			# Preserve the remaining interval after normal motion or an early
+			# airborne cancellation rather than allowing alternating spam.
+			cooldown = maxf(0.0, 1.0 - action_time)
 			if collision.shape == crouch_shape:
 				posture = "standing" if _shape_clear(standing_shape, _shape_transform("standing")) else "crouch"
 				collision.shape = standing_shape if posture == "standing" else crouch_shape

@@ -145,7 +145,7 @@ func open_dialogue(restored := false) -> void:
 	tween.tween_property(root, "modulate:a", 1.0, 0.15)
 
 func _show_node(full := false) -> void:
-	var node: Dictionary = state.NODES.data[state.logical_node]
+	var node: Dictionary = state.current_nodes()[state.logical_node]
 	speaker.text = "—  %s  —" % node.speaker
 	body.text = node.text
 	reveal_count = float(body.text.length()) if full or state.instant_text else 0.0
@@ -203,7 +203,7 @@ func advance() -> void:
 		_complete_line()
 		return
 	if not choice_buttons.is_empty(): return
-	var node: Dictionary = state.NODES.data[state.logical_node]
+	var node: Dictionary = state.current_nodes()[state.logical_node]
 	if node.get("next", "close") == "close":
 		leave()
 	else:
@@ -215,13 +215,16 @@ func _focus_choice(index: int) -> void:
 	if not reveal_complete or nested_menu: return
 	focused_choice = index
 	for i in choice_buttons.size():
-		choice_buttons[i].text = ("◆  " if i == index else "◇  ") + state.NODES.data[state.logical_node].choices[i].text
+		choice_buttons[i].text = ("◆  " if i == index else "◇  ") + state.current_nodes()[state.logical_node].choices[i].text
 	# Mouse and keyboard focus share the same visible reading position.
 	reading_scroll.ensure_control_visible(choice_buttons[index])
 
 func _choose(index: int) -> void:
 	if not reveal_complete or not _intent_allowed(): return
 	if state.choose(index):
+		if state.logical_node == "close":
+			leave()
+			return
 		_play("confirmation_001")
 		_show_node()
 		progress_changed.emit()
@@ -261,7 +264,8 @@ func leave() -> void:
 	root.hide()
 	# Keep logical progress after abandonment; finishing D03 starts a repeat at
 	# the preparation reminder. No reward is granted by opening or leaving.
-	state.conversation_active = state.logical_node != "D03" or not reveal_complete
+	var node: Dictionary = state.current_nodes().get(state.logical_node, {})
+	state.conversation_active = node.get("next", "") != "close" or not reveal_complete
 	closed.emit()
 
 func _mcp_state() -> Dictionary:

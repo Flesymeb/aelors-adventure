@@ -31,6 +31,9 @@ var restored_position: Dictionary = {}
 var text_scale_button: Button
 var speed_button: Button
 var instant_button: Button
+var feedback_options: Dictionary = {}
+var training: Node3D
+var failure_panel: PanelContainer
 
 
 func _ready() -> void:
@@ -69,6 +72,12 @@ func _ready() -> void:
 	_add_controls()
 	player.controls_changed.connect(_refresh_control_prompts)
 	_refresh_control_prompts()
+	training = preload("res://sword_training.gd").new()
+	training.name = "SwordTraining"
+	training.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(training)
+	training.configure(self)
+	dialogue_state.sword_granted.connect(training.grant_sword)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -127,8 +136,9 @@ func _process(_delta: float) -> void:
 	if objective_label:
 		objective_label.text = dialogue_state.objective()
 		objective_label.get_parent().visible = not dialogue.opened
-		var available: bool = pause_owners.is_empty() and isha.can_interact(player)
-		prompt_label.text = "[E] 与伊莎交谈" if available else ""
+		var hers_prompt: String = training.interaction_prompt() if training and pause_owners.is_empty() else ""
+		var available: bool = pause_owners.is_empty() and (isha.can_interact(player) or hers_prompt != "")
+		prompt_label.text = hers_prompt if hers_prompt != "" else ("[E] 与伊莎交谈" if available else "")
 		prompt_label.get_parent().visible = available
 	if weapon_label and player:
 		var view_name := "FIRST PERSON" if player.first_person else ("LEFT SHOULDER" if player.shoulder_side < 0 else "RIGHT SHOULDER")
@@ -177,7 +187,15 @@ func _dialogue_closed() -> void:
 
 
 func _save_opening(slot: int) -> void:
-	dialogue_state.save_progress(player.global_position, player.arm.rotation.y, slot)
+	if training and not training.can_save():
+		dialogue_state.save_feedback = "战斗中不能保存 · 请先退回安全处"
+		if controls_feedback: controls_feedback.text = dialogue_state.save_feedback
+		return
+	if training:
+		dialogue_state.sword_selected = player.weapon_mode == "sword" or (player.switch_timer > 0 and player.pending_weapon == "sword")
+	var error: Error = dialogue_state.save_progress(player.global_position, player.arm.rotation.y, slot)
+	if training and slot == 0 and error == OK:
+		training.commit_retry = false
 	if controls_feedback:
 		controls_feedback.text = dialogue_state.save_feedback + (" · 槽位 %d" % slot if slot > 0 else "")
 	if dialogue.opened:
@@ -189,6 +207,10 @@ func _load_opening(slot: int) -> void:
 	if restored.is_empty():
 		controls_feedback.text = "槽位 %d 暂无存档" % slot
 		return
+	if failure_panel: failure_panel.hide()
+	_set_pause_owner("failure", false)
+	training.restore_history()
+	_refresh_reading_controls()
 	var saved: Vector3 = restored.position
 	# Restore onto real ground after the UI releases the world, never trust saved Y.
 	if Vector2(saved.x, saved.z).distance_to(SPAWN_XZ) > 35:
@@ -223,13 +245,25 @@ func _add_reading_controls() -> void:
 		load_button.text = "加载槽位 %d" % slot
 		load_button.pressed.connect(_load_opening.bind(slot))
 		row.add_child(load_button)
+	for option in ["reduced_motion", "muted_sound"]:
+		var toggle := CheckButton.new()
+		toggle.text = "减少反馈动态" if option == "reduced_motion" else "静音战斗反馈"
+		toggle.button_pressed = dialogue_state.get(option)
+		toggle.toggled.connect(_set_feedback_option.bind(option))
+		controls_list.add_child(toggle)
+		feedback_options[option] = toggle
 	_refresh_reading_controls()
 
+func _set_feedback_option(value: bool, option: String) -> void:
+	dialogue_state.set(option, value)
+	_save_opening(0)
 
 func _refresh_reading_controls() -> void:
 	text_scale_button.text = "文字缩放 [F6] · %d%%" % int(dialogue_state.text_scale * 100)
 	speed_button.text = "显示速度 [F7] · %d 字/秒" % int(dialogue_state.reveal_speed)
 	instant_button.text = "即时显示 [F8] · " + ("开启" if dialogue_state.instant_text else "关闭")
+	for option in feedback_options:
+		feedback_options[option].set_pressed_no_signal(dialogue_state.get(option))
 	dialogue._layout()
 
 
@@ -398,18 +432,26 @@ func handle_controls_input(event: InputEvent) -> bool:
 		return dialogue.handle_input(event)
 	if not controls_panel.visible:
 		if event is InputEventKey and event.pressed and not event.echo:
-			if event.keycode == KEY_F10:
+			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and training and training.interact():
+				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and isha.can_interact(player):
+				if dialogue_state.dialogue_kind != "isha":
+					dialogue_state.conversation_active = false
+				dialogue_state.dialogue_kind = "isha"
 				_set_pause_owner("dialogue", true)
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 				dialogue.open_dialogue()
 				return true
 		return false
 	if event is InputEventKey:
-		if not event.pressed or event.echo:
-			return true
+		if event.echo: return true
+		if not event.pressed:
+			# Focused GUI buttons commit on release. World controls remain
+			# gated by controls_open; only active key capture consumes it.
+			return capturing_control != ""
 		if capturing_control != "":
 			if event.keycode == KEY_ESCAPE:
 				capturing_control = ""
@@ -497,3 +539,58 @@ func _add_snowfall() -> void:
 	quad.material = material
 	snow.mesh = quad
 	player.add_child(snow)
+
+func open_hers_dialogue() -> void:
+	dialogue_state.dialogue_kind = "hers"
+	dialogue_state.conversation_active = false
+	_set_pause_owner("dialogue", true)
+	dialogue.open_dialogue()
+
+func show_failure() -> void:
+	if pause_owners.has("failure"): return
+	_set_pause_owner("failure", true)
+	if not failure_panel:
+		var layer := CanvasLayer.new()
+		layer.layer = 40
+		layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(layer)
+		failure_panel = PanelContainer.new()
+		failure_panel.theme = preload("res://dialogue_theme.tres")
+		failure_panel.position = get_viewport().get_visible_rect().size * Vector2(0.3, 0.3)
+		failure_panel.custom_minimum_size = Vector2(480, 240)
+		layer.add_child(failure_panel)
+		var column := VBoxContainer.new()
+		column.add_theme_constant_override("separation", 15)
+		failure_panel.add_child(column)
+		var label := Label.new()
+		label.text = "冒险结束 · 命数 0\n可加载早期存档，或开始新的冒险。"
+		column.add_child(label)
+		for slot in [1, 2]:
+			var button := Button.new()
+			button.text = "加载槽位 %d" % slot
+			var config := ConfigFile.new()
+			button.disabled = config.load("user://isha_slot_%d.cfg" % slot) != OK or int(config.get_value("training", "lives", 3)) <= 0
+			if button.disabled: button.text += " · 无可用存档"
+			button.pressed.connect(_load_opening.bind(slot))
+			column.add_child(button)
+		var fresh := Button.new()
+		fresh.text = "新游戏"
+		fresh.pressed.connect(_new_adventure)
+		column.add_child(fresh)
+		var title := Button.new()
+		title.text = "返回标题"
+		title.pressed.connect(_show_failure_title)
+		column.add_child(title)
+	failure_panel.show()
+
+func _show_failure_title() -> void:
+	failure_panel.get_child(0).get_child(0).text = "艾洛的冒险\n本轮冒险已结束 · 请加载存档或开始新游戏。"
+
+func _new_adventure() -> void:
+	dialogue_state.reset_adventure()
+	training.commit()
+	failure_panel.hide()
+	_set_pause_owner("failure", false)
+	training.restore_history()
+	restored_position = {}
+	training.place_on_ground(player, SPAWN_XZ)
