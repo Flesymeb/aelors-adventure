@@ -1,7 +1,7 @@
 Isha source model: medieval_poor_woman by tech.service.allwe
 https://sketchfab.com/3d-models/medieval-poor-woman-5f4a482049834f0aac97f2af97efc9c2
 Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
-Changes: normalized scale, opaque materials, source-rest sleeve binding and stationary skeletal breathing. Original GLB retained byte-for-byte.
+Changes: normalized scale, opaque materials, and Isha_Idle skeletal breathing. In isha_actor.glb, dress weights are transferred from the native body in source-rest space; dress vertices/normals are mapped through the original weighted inverse binds. Original joint order, inverseBindMatrices, textures, materials and other geometry are retained. Original woman_comparison.glb remains byte-for-byte.
 
 EB Garamond: Copyright 2017 The EB Garamond Project Authors. OFL-1.1. Full notice: garamond/LICENSE.txt
 Zhuque Fangsong: Copyright 2023 Zhejiang JadeFoci Technology Co. LTD. OFL-1.1. Full notice: zhuque/LICENSE.txt

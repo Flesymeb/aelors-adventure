@@ -6,8 +6,8 @@ var grounding_normal := Vector3.UP
 var model_height := 0.0
 var interaction_distance := 2.8
 var skeleton: Skeleton3D
-var idle_clock := 0.0
 var idle_bases: Dictionary = {}
+var idle_player: AnimationPlayer
 
 func _ready() -> void:
 	add_to_group("isha")
@@ -38,8 +38,8 @@ func _normalize_model() -> void:
 		skeleton = node
 		break
 	if skeleton:
-		_bind_source_clothes()
 		_pose_idle()
+		_build_idle_clip()
 	# The source uses blended skin for opaque cloth/body; avoid see-through faces.
 	for mesh in model.find_children("*", "MeshInstance3D", true, false):
 		for surface in mesh.mesh.get_surface_count():
@@ -48,63 +48,6 @@ func _normalize_model() -> void:
 				var copy := material.duplicate() as StandardMaterial3D
 				copy.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 				mesh.set_surface_override_material(surface, copy)
-
-func _bind_source_clothes() -> void:
-	# This source's dress is rigid beside the skinned body. Bind its measured
-	# sleeve region to the existing arm joints so cloth follows the lowered pose.
-	var dress := $Model.find_child("Object_13", true, false) as MeshInstance3D
-	if not dress:
-		return
-	var left := -1
-	var right := -1
-	var spine := -1
-	for i in skeleton.get_bone_count():
-		var bone_name := skeleton.get_bone_name(i)
-		if "LeftArm_" in bone_name: left = i
-		if "RightArm_" in bone_name: right = i
-		if "Spine2_" in bone_name: spine = i
-	if left < 0 or right < 0 or spine < 0:
-		push_error("Isha source dress binding joints are missing")
-		return
-	var skin := Skin.new()
-	for i in skeleton.get_bone_count():
-		skin.add_bind(i, skeleton.get_bone_global_rest(i).affine_inverse())
-	var transform_to_rig := skeleton.global_transform.affine_inverse() * dress.global_transform
-	var bound_mesh := ArrayMesh.new()
-	for surface in dress.mesh.get_surface_count():
-		var arrays := dress.mesh.surface_get_arrays(surface)
-		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-		var tangents: PackedFloat32Array = arrays[Mesh.ARRAY_TANGENT]
-		var bones := PackedInt32Array()
-		var weights := PackedFloat32Array()
-		bones.resize(vertices.size() * 4)
-		weights.resize(vertices.size() * 4)
-		for v in vertices.size():
-			vertices[v] = transform_to_rig * vertices[v]
-			if v < normals.size(): normals[v] = (transform_to_rig.basis.inverse().transposed() * normals[v]).normalized()
-			if tangents.size() >= v * 4 + 4:
-				var tangent := (transform_to_rig.basis * Vector3(tangents[v * 4], tangents[v * 4 + 1], tangents[v * 4 + 2])).normalized()
-				tangents[v * 4] = tangent.x
-				tangents[v * 4 + 1] = tangent.y
-				tangents[v * 4 + 2] = tangent.z
-			var sleeve := clampf((absf(vertices[v].x) - 9.0) / 9.0, 0.0, 1.0) if vertices[v].y > 111.0 else 0.0
-			bones[v * 4] = left if vertices[v].x > 0 else right
-			bones[v * 4 + 1] = spine
-			weights[v * 4] = sleeve
-			weights[v * 4 + 1] = 1.0 - sleeve
-		arrays[Mesh.ARRAY_VERTEX] = vertices
-		arrays[Mesh.ARRAY_NORMAL] = normals
-		arrays[Mesh.ARRAY_TANGENT] = tangents
-		arrays[Mesh.ARRAY_BONES] = bones
-		arrays[Mesh.ARRAY_WEIGHTS] = weights
-		bound_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		bound_mesh.surface_set_material(surface, dress.mesh.surface_get_material(surface))
-	dress.reparent(skeleton)
-	dress.transform = Transform3D.IDENTITY
-	dress.mesh = bound_mesh
-	dress.skin = skin
-	dress.skeleton = NodePath("..")
 
 func _pose_idle() -> void:
 	# Work in measured skeleton-global axes, then convert through each actual
@@ -121,13 +64,25 @@ func _pose_idle() -> void:
 		if "Spine1_" in bone_name or "Head_" in bone_name:
 			idle_bases[i] = skeleton.get_bone_pose_rotation(i)
 
-func _process(delta: float) -> void:
-	if not skeleton:
-		return
-	idle_clock += delta
+func _build_idle_clip() -> void:
+	# Animate the complete source skin; never reconstruct live cloth geometry.
+	idle_player = AnimationPlayer.new()
+	idle_player.name = "IdleAnimation"
+	add_child(idle_player)
+	var clip := Animation.new()
+	clip.length = 3.5
+	clip.loop_mode = Animation.LOOP_LINEAR
 	for i in idle_bases:
-		var amplitude := 0.012 if "Spine1_" in skeleton.get_bone_name(i) else 0.018
-		skeleton.set_bone_pose_rotation(i, idle_bases[i] * Quaternion(Vector3.RIGHT, sin(idle_clock * 1.8) * amplitude))
+		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+		clip.track_set_path(track, NodePath(str(get_path_to(skeleton)) + ":" + skeleton.get_bone_name(i)))
+		var amplitude := 0.009 if "Spine1_" in skeleton.get_bone_name(i) else 0.012
+		for frame in 9:
+			var time := float(frame) / 8.0 * clip.length
+			clip.rotation_track_insert_key(track, time, idle_bases[i] * Quaternion(Vector3.RIGHT, sin(float(frame) / 8.0 * TAU) * amplitude))
+	var library := AnimationLibrary.new()
+	library.add_animation("Isha_Idle", clip)
+	idle_player.add_animation_library("", library)
+	idle_player.play("Isha_Idle")
 
 func _ground() -> void:
 	await get_tree().physics_frame
@@ -152,4 +107,4 @@ func can_interact(player: CharacterBody3D) -> bool:
 	return interaction_available
 
 func _mcp_state() -> Dictionary:
-	return {"grounded": grounded, "interaction_available": interaction_available, "distance_limit": interaction_distance, "source_height": model_height, "actor_height": 1.72, "ground_normal": grounding_normal, "model_path": "res://assets/dialogue/woman_comparison.glb", "skeleton_bones": skeleton.get_bone_count() if skeleton else 0, "idle_clock": idle_clock, "idle_kind": "source-rest-aware skeletal breathing; stationary NPC"}
+	return {"grounded": grounded, "interaction_available": interaction_available, "distance_limit": interaction_distance, "source_height": model_height, "actor_height": 1.72, "ground_normal": grounding_normal, "model_path": "res://assets/dialogue/isha_actor.glb", "skeleton_bones": skeleton.get_bone_count() if skeleton else 0, "idle_clip": idle_player.current_animation if idle_player else "", "idle_position": idle_player.current_animation_position if idle_player else 0.0, "idle_kind": "native-body skin transfer; skeletal breathing"}

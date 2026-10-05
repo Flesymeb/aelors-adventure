@@ -5,15 +5,23 @@
     "source": "https://sketchfab.com/3d-models/medieval-poor-woman-5f4a482049834f0aac97f2af97efc9c2",
     "author": "tech.service.allwe",
     "license": "CC-BY-4.0",
-    "resource": "res://assets/dialogue/woman_comparison.glb",
+    "resource": "res://assets/dialogue/isha_actor.glb",
     "receipt": "assets/dialogue/woman_comparison.glb.receipt.json",
     "adapter": "res://isha_npc.gd",
     "adaptations": [
+      "Offline dress weights transferred from nearest native source-rest body vertices; vertex/normal inverse weighted bind mapping preserves source rest shape",
+      "Original joint ordering and inverse-bind matrices retained; original GLB preserved unchanged",
       "normalize measured bounds to 1.72m",
       "opaque material rendering",
-      "bind rigid source sleeves through measured skeleton rest",
-      "skeletal idle breathing; stationary NPC"
-    ]
+      "Isha_Idle looping skeletal breathing on source spine/head; stationary NPC"
+    ],
+    "original_resource": "res://assets/dialogue/woman_comparison.glb",
+    "idle": {
+      "clip": "Isha_Idle",
+      "driver": "res://isha_npc.gd",
+      "length_seconds": 3.5
+    },
+    "qualification": "candidate_pending_independent_motion_review"
   },
   "fonts": [
     {
@@ -32,7 +40,7 @@
     "license": "CC0-1.0",
     "reading_surface": "assets/dialogue/borders/PNG/Default/Panel/panel-013.png",
     "choice_frame": "assets/dialogue/borders/PNG/Default/Panel/panel-003.png",
-    "notes": "Border pack is bound; textured parchment and portrait art remain unqualified."
+    "notes": "Retained CC0 nine-slice borders and bundled serif fonts. Focus follows choices at large text scales. Illustrated parchment and portrait art remain unqualified."
   },
   "audio": {
     "source": "https://kenney.nl/assets/interface-sounds",
@@ -50,6 +58,11 @@
       "retained complete green-hooded brown-haired Ranger",
       "grey dress and bonnet source Isha; mature proportions"
     ],
-    "reason": "No qualified matching half-body illustration found; remote portrait pack failed free-download acquisition; authorized generation provider not configured."
+    "reason": "Current bounded asset searches returned unrelated UI/characters, head-only generic art or pixel women; identity-matched half-body pair remains unqualified. Registered generation doctor reports submission_readiness=not_configured, paid_call_available=false and no host staging root. No substitute portraits bound.",
+    "acquisition_failure": {
+      "source": "https://oicaroh.itch.io/medieval-fantasy-character-portraits",
+      "operation": "agent.download --format zip --extract",
+      "result": "provider_unavailable: Quaternius itch.io file resolution failed; no art staged"
+    }
   }
 }

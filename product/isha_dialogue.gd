@@ -44,6 +44,8 @@ func _build() -> void:
 	panel.add_theme_stylebox_override("panel", paper)
 	root.add_child(panel)
 	reading_scroll = ScrollContainer.new()
+	reading_scroll.name = "ReadingScroll"
+	reading_scroll.follow_focus = true
 	reading_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(reading_scroll)
 	panel_content = VBoxContainer.new()
@@ -75,7 +77,7 @@ func _build() -> void:
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.text = "E 补全 / 继续 · ↑↓ 选择 · Enter 确认 · Esc 暂时离开 · F10 设置 · F5 存档"
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	panel_content.add_child(footer)
+	panel.add_child(footer)
 	# Portrait slots bind only distributable, qualified art. Missing art is an
 	# explicit delivery gap, never replaced with the PRD reference screenshot.
 	for path in ["res://assets/dialogue/aelor_portrait.png", "res://assets/dialogue/isha_portrait.png"]:
@@ -112,7 +114,6 @@ func _layout() -> void:
 	panel.position = Vector2(size.x * 0.16, size.y - height - 18)
 	panel.size = Vector2(size.x * 0.68, height)
 	reading_scroll.position = Vector2(24, 20)
-	reading_scroll.size = panel.size - Vector2(48, 40)
 	panel_content.add_theme_font_size_override("font_size", font_size)
 	speaker.add_theme_font_size_override("font_size", font_size + 3)
 	body.add_theme_font_size_override("normal_font_size", font_size)
@@ -122,6 +123,13 @@ func _layout() -> void:
 		button.custom_minimum_size.y = font_size + 22
 	advance_button.add_theme_font_size_override("font_size", font_size)
 	footer.add_theme_font_size_override("font_size", int(16 * state.text_scale))
+	# Keep advance/return hints outside the scrolling story and choices.
+	var footer_height := float(int(16 * state.text_scale) * 2 + 12)
+	footer.position = Vector2(24, panel.size.y - footer_height - 20)
+	footer.size = Vector2(panel.size.x - 48, footer_height)
+	reading_scroll.size = panel.size - Vector2(48, 52 + footer_height)
+	if focused_choice >= 0 and focused_choice < choice_buttons.size():
+		reading_scroll.ensure_control_visible.call_deferred(choice_buttons[focused_choice])
 	for i in portraits.size():
 		portraits[i].position = Vector2(0 if i == 0 else size.x * 0.84, size.y * 0.25)
 		portraits[i].size = Vector2(size.x * 0.16, size.y * 0.73)
@@ -208,6 +216,8 @@ func _focus_choice(index: int) -> void:
 	focused_choice = index
 	for i in choice_buttons.size():
 		choice_buttons[i].text = ("◆  " if i == index else "◇  ") + state.NODES.data[state.logical_node].choices[i].text
+	# Mouse and keyboard focus share the same visible reading position.
+	reading_scroll.ensure_control_visible(choice_buttons[index])
 
 func _choose(index: int) -> void:
 	if not reveal_complete or not _intent_allowed(): return
@@ -255,4 +265,11 @@ func leave() -> void:
 	closed.emit()
 
 func _mcp_state() -> Dictionary:
-	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.text, "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "panel_rect": panel.get_global_rect(), "reading_minimum": panel_content.get_combined_minimum_size()}
+	var choice_layout: Array = []
+	for button in choice_buttons:
+		choice_layout.append({"text": button.text, "disabled": button.disabled, "focused": button.has_focus(), "rect": _rect_observation(button.get_global_rect())})
+	var minimum := panel_content.get_combined_minimum_size()
+	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.text, "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "panel_rect": _rect_observation(panel.get_global_rect()), "reading_minimum": [minimum.x, minimum.y], "scroll_rect": _rect_observation(reading_scroll.get_global_rect()), "scroll_vertical": reading_scroll.scroll_vertical, "choices": choice_layout}
+
+func _rect_observation(rect: Rect2) -> Dictionary:
+	return {"position": [rect.position.x, rect.position.y], "size": [rect.size.x, rect.size.y]}

@@ -252,7 +252,14 @@ func _toggle_instant_text() -> void:
 
 
 func _mcp_state() -> Dictionary:
-	return {"pause_owners": pause_owners.keys(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
+	# Read existing product authorities. These facts do not create a route,
+	# award equipment, or assert connected-slice completion.
+	var story_actors: Array[String] = []
+	for actor in get_tree().get_nodes_in_group("isha"):
+		story_actors.append(str(actor.get_path()))
+	var position := player.global_position
+	var velocity := player.velocity
+	return {"pause_owners": pause_owners.keys(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
 
 
 func _add_help() -> void:
