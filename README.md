@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 9 |
+| Open | 11 |
 | Closed | 3 |
-| All | 12 |
+| All | 14 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 6 |
+| Active | 8 |
 | Verified closed | 2 |
 | Policy invalidated | 1 |
 | Waived | 0 |
-| All in this run | 9 |
+| All in this run | 11 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -48,10 +48,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Independently verified resolved at loop 3. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | OPEN | The authored-village grass texture dependency remains broken. |
-| `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | BLOCKED | The connected-slice closure recipe remains unavailable beyond Isha/Q01. |
-| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | The nested settings/save surface retains unfinished demo presentation. |
-| `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's revised clothing still has conspicuous shoulder-to-sleeve bands during idle. |
-| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dual portraits remain absent, and 200% last-choice scrolling hides the speaker name. |
+| `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | BLOCKED | Connected-slice acceptance remains unverified despite working monster damage and checkpoint recovery. |
+| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | The settings/save surface retains unfinished demo presentation. |
+| `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve bands remain visible in current native views. |
+| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dialogue portraits remain absent; the prior issue cannot close. |
+| `finding-failure-keyboard-navigation` | [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | OPEN | Game Over exposes enabled recovery buttons without a usable observed keyboard route. |
+| `finding-failure-screen-readability` | [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | OPEN | Game Over instructions and choices have poor contrast. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -59,7 +61,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 9 | 3 | 12 |
+| GitHub HoH namespace | 11 | 3 | 14 |
 | Outside this run's table | 3 | 0 | 3 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -78,7 +80,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-06-58691b2c8b7f` | `development_snapshot:attempt-b73d9d4b65b509ed3d101857` | NEEDS VISUAL QA |
+| `loop-06-58691b2c8b7f` | `development_snapshot:attempt-b73d9d4b65b509ed3d101857` | BLOCKED |
 
 ### Project Planner
 
@@ -105,7 +107,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-06-58691b2c8b7f` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (4 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `isha-dialogue-finished-presentation` | MAJOR | USER BLOCKING | HIGH | Required dialogue portraits remain absent; the prior issue cannot close. |
+| `isha-clothing-deformation` | MAJOR | DEGRADED | HIGH | Isha's shoulder-to-sleeve bands remain visible in current native views. |
+| `milestone-01-demo-overlay-presentation` | MINOR | DEGRADED | MEDIUM | The settings/save surface retains unfinished demo presentation. |
+| `finding-failure-keyboard-navigation` | MAJOR | DEGRADED | HIGH | Game Over exposes enabled recovery buttons without a usable observed keyboard route. |
+| `finding-failure-screen-readability` | MINOR | DEGRADED | MEDIUM | Game Over instructions and choices have poor contrast. |
+| `finding-connected-slice-unavailable` | MAJOR | USER BLOCKING | HIGH | Connected-slice acceptance remains unverified despite working monster damage and checkpoint recovery. |
 
 ---
 
@@ -370,5 +387,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-06-58691b2c8b7f`
 - Latest warm start: `loop-06-ab819162d75d`
 - Last published: `loop-06-58691b2c8b7f`
-- Best verified: `loop-05-ab819162d75d`
+- Best verified: `loop-06-58691b2c8b7f`
 - Generated by the HoH host from immutable run evidence.
