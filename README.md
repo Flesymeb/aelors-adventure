@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 17 |
-| Closed | 5 |
-| All | 22 |
+| Open | Awaiting sync |
+| Closed | Awaiting sync |
+| All | Awaiting sync |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,104 +33,48 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 6 |
+| Active | 0 |
 | Verified closed | 0 |
 | Policy invalidated | 0 |
 | Waived | 0 |
-| All in this run | 6 |
+| All in this run | 0 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
 | Issue ID | GitHub | Current status | Resolution / latest defect |
 | --- | --- | --- | --- |
-| `rpg.combat.audio_quality_unverified` | [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | OPEN | Captured combat audio establishes output causality, but perceptual quality remains unverified. |
-| `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | OPEN | The enabled Game Over Return to title action stops at an unavailable-title message. |
-| `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | OPEN | Required dialogue portraits are unbound in the reachable narrative interface. |
-| `rpg.pause.inherited_control_inventory` | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | OPEN | The pause/settings panel retains a dense English demo-style control inventory. |
-| `rpg.recovery.ammunition_not_restored` | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | OPEN | Checkpoint recovery restores health but leaves spent ammunition unchanged. |
-| `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | OPEN | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
-
-### HoH-managed GitHub issues across runs
-
-Snapshot from the last successful issue sync. These counts include earlier runs; unrelated repository issues are outside the HoH namespace.
-
-| Scope | Open | Closed | All |
-| --- | --- | --- | --- |
-| GitHub HoH namespace | 17 | 5 | 22 |
-| Outside this run's table | 11 | 5 | 16 |
-
-Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
-
-| GitHub | Issue ID | GitHub state | Source run |
-| --- | --- | --- | --- |
-| [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | `issue:milestone01-camera-environment` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | `issue:milestone01-missing-loop` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | `issue:r02-actor-animation-falloff` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | `tester.mcp_coverage_incomplete` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | `adjacent-opening-cinematic` | OPEN | `aelors-village-sol-local-20261004` |
-| [#6](https://github.com/Flesymeb/aelors-adventure/issues/6) | `camera-lamp-obstruction` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | `milestone-01-connected-slice-unavailable` | OPEN | `aelors-village-sol-local-20261004` |
-| [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | `r02-input-bindings` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | `village-grass-import-dependency` | OPEN | `aelors-village-sol-local-20261004` |
-| [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | `milestone-01-demo-overlay-presentation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | `isha-clothing-deformation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | `isha-dialogue-finished-presentation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | `finding-failure-keyboard-navigation` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | `finding-failure-screen-readability` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | `finding-adjacent-return-to-title` | OPEN | `aelors-village-sol-local-20261004` |
-| [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | `finding-failure-focus-hover-ambiguity` | OPEN | `aelors-village-sol-local-20261004` |
 
 ---
 
-## Loop 09
+## Loop 10
 
 > A host-derived record of one Planner → Developer → QA Tester cycle.
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-01-6a73d8a4b2b2` | `development_snapshot:attempt-509bfb860486b52bf47be061` | FAIL |
+| `loop-01-6a73d8a4b2b2` | `seed_import` | PLANNED |
 
 ### Project Planner
 
 | Field | Value |
 | --- | --- |
 | Status | PLANNED |
-| Focus | phase / rpg_template_foundation |
-| Objective | Replace the current training enemy and duplicated contact settlement with a dependency-complete, adapted Snaiel combat unit, reachable through existing acquisition and teaching, including counterplay, sword/arrow damage, feedback, one collectible reward and safe death/save recovery. |
-| Strategy | `snaiel_live_training_combat_replacement` |
+| Focus | phase / game_title_entry |
+| Objective | Deliver a finished, state-bound title screen and ordinary boot-to-game, load, settings, return-to-title and exit journeys for 艾洛的冒险, using the existing playable world and authoritative save interfaces. |
+| Strategy | `title_entry_with_template_backed_navigation_and_existing_save_authority` |
 | Tasks | 1 |
 
 ### Developer
 
 | Field | Value |
 | --- | --- |
-| Status | PASS |
-| Summary | Implementation details are retained in the private HoH Runtime audit. |
-| Completed tasks | 0 |
-| Changed paths | 32 |
-| Blocker | See the QA outcome below. |
-| Attempt | `attempt-509bfb860486b52bf47be061` |
+| Status | NOT STARTED |
 
 ### QA Tester
 
 | Field | Value |
 | --- | --- |
-| Status | FAIL |
-| Candidate | `loop-01-6a73d8a4b2b2` |
-| Product completion | IN PROGRESS |
-| Review scope | `phase` |
-| Findings | 6 (3 blocking focus items) |
-
-### Evidence / QA findings
-
-| ID | Severity | Impact | Release risk | Summary |
-| --- | --- | --- | --- | --- |
-| `rpg.village.performance_below_target` | MAJOR | DEGRADED | HIGH | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
-| `rpg.recovery.ammunition_not_restored` | MAJOR | DEGRADED | HIGH | Checkpoint recovery restores health but leaves spent ammunition unchanged. |
-| `rpg.dialogue.portraits_unbound` | MINOR | DEGRADED | MEDIUM | Required dialogue portraits are unbound in the reachable narrative interface. |
-| `rpg.pause.inherited_control_inventory` | MINOR | DEGRADED | MEDIUM | The pause/settings panel retains a dense English demo-style control inventory. |
-| `rpg.combat.audio_quality_unverified` | MAJOR | INTERNAL | HIGH | Captured combat audio establishes output causality, but perceptual quality remains unverified. |
-| `rpg.continuity.return_to_title_stub` | MINOR | DEGRADED | MEDIUM | The enabled Game Over Return to title action stops at an unavailable-title message. |
+| Status | UNTESTED |
 
 ---
 
@@ -140,6 +84,6 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Accepted candidate: `none`
 - Latest attempted: `loop-01-6a73d8a4b2b2`
 - Latest warm start: `none`
-- Last published: `loop-01-6a73d8a4b2b2`
-- Best verified: `loop-01-6a73d8a4b2b2`
+- Last published: `none`
+- Best verified: `none`
 - Generated by the HoH host from immutable run evidence.
