@@ -1,12 +1,15 @@
 extends Control
 
 var player: CharacterBody3D
-var font := SystemFont.new()
+var ammo_panel := StyleBoxFlat.new()
+var font: Font = preload("res://dialogue_theme.tres").default_font
 
 
 func _ready() -> void:
-	font.font_names = PackedStringArray(["Inter", "Ubuntu", "Noto Sans"])
-	font.font_weight = 500
+	ammo_panel.bg_color = Color(0.10, 0.12, 0.10, 0.92)
+	ammo_panel.border_color = Color(0.65, 0.51, 0.28)
+	ammo_panel.set_border_width_all(1)
+	ammo_panel.set_corner_radius_all(4)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -16,8 +19,12 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	if player == null or player.weapon_mode != "bow" or player.aim_blend < 0.01:
+	if player == null or player.weapon_mode != "bow" :
 		return
+	var ammo := "箭 %d / 12" % (player.archery.state.arrows if player.archery else 0)
+	draw_style_box(ammo_panel, Rect2(Vector2(size.x * 0.5 - 60, size.y - 64), Vector2(120, 40)))
+	draw_string(font, Vector2(size.x * 0.5 - 42, size.y - 36), ammo, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.96, 0.86, 0.65))
+	if player.aim_blend < 0.01: return
 	var center := size * 0.5
 	var alpha: float = player.aim_blend
 	var charge: float = player.bow_charge
@@ -40,7 +47,7 @@ func _draw() -> void:
 	if charge > 0.001:
 		var color := Color(0.36, 0.82, 1.0, alpha).lerp(Color(1.0, 0.72, 0.25, alpha), charge)
 		draw_arc(arc_center, 104.0, start, start + sweep * charge, maxi(2, int(32 * charge)), color, 2.5, true)
-		var text := "READY" if charge >= 0.99 else "%d%%" % int(charge * 100)
+		var text := "满弦" if charge >= 0.99 else ""
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
 		var at := center + Vector2(49.0, 4.0)
 		# A subtle pill provides contrast without thick text outlines.

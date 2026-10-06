@@ -1,5 +1,9 @@
 extends Node3D
 
+signal first_contact(hit: Dictionary)
+signal missed
+var settled := false
+
 const ARROW_MESH := preload("res://Weapons/Arrow.obj")
 const SPEED := 22.0
 const GRAVITY := 3.0
@@ -19,20 +23,23 @@ func _ready() -> void:
 	add_child(mesh)
 
 
-func launch(origin: Vector3, direction: Vector3, shooter: RID, launch_speed: float = SPEED) -> void:
+func launch(origin: Vector3, direction: Vector3, shooter: RID, launch_speed: float = SPEED, safety_origin := Vector3.INF) -> void:
 	global_position = origin
 	velocity = direction * launch_speed
 	shooter_rid = shooter
 	_face_velocity()
 	# An arrow can already overlap a nearby wall before its tail starts moving.
-	var hit := _trace(origin, origin + direction * ARROW_LENGTH)
+	var hit := _trace(safety_origin if safety_origin.is_finite() else origin, origin + direction * ARROW_LENGTH)
 	if hit:
-		_stick(hit.position, direction)
+		_settle(hit, direction)
 
 
 func _physics_process(delta: float) -> void:
 	age += delta
 	if age >= MAX_AGE:
+		if not settled:
+			settled = true
+			missed.emit()
 		queue_free()
 		return
 	if stuck:
@@ -41,7 +48,7 @@ func _physics_process(delta: float) -> void:
 	var direction := velocity.normalized()
 	var hit := _trace(global_position + direction * ARROW_LENGTH, next + direction * ARROW_LENGTH)
 	if hit:
-		_stick(hit.position, direction)
+		_settle(hit, direction)
 	else:
 		global_position = next
 		velocity += Vector3.DOWN * GRAVITY * delta
@@ -51,8 +58,16 @@ func _physics_process(delta: float) -> void:
 func _trace(start: Vector3, end: Vector3) -> Dictionary:
 	var query := PhysicsRayQueryParameters3D.create(start, end)
 	query.exclude = [shooter_rid]
+	query.collision_mask = 3
+	query.hit_from_inside = true
 	return get_world_3d().direct_space_state.intersect_ray(query)
 
+
+func _settle(hit: Dictionary, direction: Vector3) -> void:
+	if settled: return
+	settled = true
+	_stick(hit.position, direction)
+	first_contact.emit(hit)
 
 func _stick(point: Vector3, direction: Vector3) -> void:
 	global_position = point - direction * ARROW_LENGTH

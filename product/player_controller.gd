@@ -17,6 +17,7 @@ const BOW_DRAW_TIME := 1.0
 const BOW_IDLE_BASIS := Vector3(-0.556121, -0.448697, 3.117197)
 const TRAVERSAL_SCRIPT := preload("res://traversal_controller.gd")
 signal controls_changed
+var archery: Node
 var combat: Node
 const SWORD_ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
 
@@ -307,7 +308,7 @@ func track_modal_input(event: InputEvent) -> void:
 func set_controls_open(open: bool) -> void:
 	_block_held_controls()
 	controls_open = open
-	cancel_aim()
+	reset_archery()
 	# The world pause freezes the action clock, contact and parry window.
 	# Only discard buffered future input; opening a menu is not a combat reset.
 	if combat:
@@ -465,7 +466,7 @@ func _setup_archery() -> void:
 func set_aim(enabled: bool) -> void:
 	if not enabled:
 		cancel_aim()
-	elif owns_weapon("bow") and weapon_mode == "bow" and switch_timer <= 0.0 and is_on_floor() and bow_pose != null and (traversal == null or (traversal.posture == "standing" and traversal.action == "")):
+	elif owns_weapon("bow") and weapon_mode == "bow" and switch_timer <= 0.0 and is_on_floor() and bow_pose != null and (combat == null or not combat.player_locked()) and (traversal == null or (traversal.posture == "standing" and traversal.action == "")):
 		aim_requested = true
 		if bow_state == "idle":
 			bow_state = "ready"
@@ -479,7 +480,7 @@ func cancel_aim() -> void:
 
 
 func begin_bow_draw() -> void:
-	if owns_weapon("bow") and weapon_mode == "bow" and aim_requested and bow_state == "ready" and attack_timer <= 0.0:
+	if owns_weapon("bow") and weapon_mode == "bow" and aim_requested and bow_state == "ready" and attack_timer <= 0.0 and (archery == null or archery.can_draw()):
 		bow_state = "draw"
 		bow_charge = 0.0
 		bow_clock = 0.0
@@ -496,7 +497,9 @@ func release_bow() -> void:
 		bow_charge = 0.0
 		return
 	release_charge = bow_charge
-	_fire_arrow()
+	if not _fire_arrow():
+		reset_archery()
+		return
 	bow_state = "release"
 	bow_clock = 0.0
 	attack_timer = 0.5
@@ -676,7 +679,9 @@ func _update_switch(delta: float) -> void:
 	switch_timer = maxf(0.0, switch_timer - delta)
 	if not switch_swapped and switch_timer <= 0.4:
 		weapon_mode = pending_weapon
-		if combat: combat.state.sword_selected = weapon_mode == "sword"
+		if combat:
+			combat.state.sword_selected = weapon_mode == "sword"
+			combat.state.selected_equipment = weapon_mode
 		_set_weapon_visibility()
 		switch_swapped = true
 	if switch_timer <= 0.0:
@@ -730,14 +735,16 @@ func _equipment_required() -> void:
 		traversal.feedback_time = 1.8
 
 
-func _fire_arrow() -> void:
-	if not owns_weapon("bow") or weapon_mode != "bow" or bow_holder == null or not ResourceLoader.exists("res://Weapons/Arrow.obj"):
-		return
+func _fire_arrow() -> bool:
+	if not owns_weapon("bow") or weapon_mode != "bow" or bow_holder == null or bow_visual == null or not ResourceLoader.exists("res://Weapons/Arrow.obj"):
+		return false
+	if archery and not archery.can_draw(): return false
 	var center := get_viewport().get_visible_rect().size * 0.5
 	var origin := camera.project_ray_origin(center)
 	var ray_direction := camera.project_ray_normal(center)
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + ray_direction * 55.0)
 	query.exclude = [get_rid()]
+	query.collision_mask = 3
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	var target: Vector3 = hit.position if hit else origin + ray_direction * 55.0
 	var start: Vector3 = bow_visual.held_arrow.global_position
@@ -747,9 +754,23 @@ func _fire_arrow() -> void:
 	arrow.name = "Arrow"
 	arrow.set_script(ARROW_SCRIPT)
 	get_parent().add_child(arrow)
-	arrow.launch(start, direction, get_rid(), speed)
+	if archery and not archery.register_shot(arrow, bow_charge, start):
+		arrow.queue_free()
+		return false
+	arrow.launch(start, direction, get_rid(), speed, global_position + Vector3.UP * 1.2)
 	shots_fired += 1
+	return true
 
+
+func reset_archery() -> void:
+	cancel_aim()
+	bow_state = "idle"
+	bow_charge = 0
+	bow_clock = 0
+	release_charge = 0
+	if bow_ik: bow_ik.influence = 0
+	if bow_pose: bow_pose.pose_weight = 0
+	if bow_visual: bow_visual.set_draw(false, Vector3(0.2105, 0, 0), Vector3(-1, 0, 0))
 
 func _ballistic_direction(origin: Vector3, target: Vector3, speed: float) -> Vector3:
 	var delta := target - origin
@@ -815,4 +836,4 @@ func respawn() -> void:
 	step_distance = 0.0
 
 func _mcp_state() -> Dictionary:
-	return {"equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+	return {"bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}

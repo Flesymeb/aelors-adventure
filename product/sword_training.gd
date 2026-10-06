@@ -110,7 +110,7 @@ func restore_history() -> void:
 	notice_time = 0
 	hers.idle()
 	player.traversal.reset()
-	player.configure_equipment(state.sword_owned, false, "sword" if state.sword_selected else "unarmed")
+	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
 	monster.reset_encounter()
 	if remnant: remnant.queue_free(); remnant = null
 	if state.encounter_defeated and not state.remnant_collected: show_remnant()
@@ -128,6 +128,8 @@ func can_save() -> bool:
 	return phase != "death" and not monster.engaged and sim_phase == "idle"
 
 func commit() -> bool:
+	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
+	state.sword_selected = state.selected_equipment == "sword"
 	# Autosaves update history at the fixed CP01 anchor, never at the monster.
 	var error: Error = state.save_progress(Vector3(CP01.x, 0, CP01.y), player.arm.rotation.y)
 	commit_retry = error != OK
@@ -170,7 +172,8 @@ func grant_sword() -> void:
 	state.sword_owned = true
 	state.hers_node = "H02"
 	state.sword_selected = true
-	player.configure_equipment(true, false)
+	state.selected_equipment = "sword"
+	player.configure_equipment(true, state.bow_owned)
 	player.request_weapon("sword")
 	hers.demonstrate()
 	commit()
@@ -215,6 +218,8 @@ func recovery_duration() -> float:
 	return 0.5 if combo == 2 else 0.35
 
 func interrupt(_reason: String) -> void:
+	player.reset_archery()
+	if world.bow_training and _reason in ["death", "load", "recovery"]: world.bow_training.clear_transients()
 	buffered = false
 	blocking = false
 	parry_window = 0
@@ -420,7 +425,7 @@ func recover_at_checkpoint() -> void:
 	player.traversal.reset()
 	# Recovery restores possession, selection and mounts together, including
 	# interrupted switches or a sword stowed by the previous posture.
-	player.configure_equipment(state.sword_owned, false, "sword" if state.sword_selected else "unarmed")
+	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
 	if not place_on_ground(player, CP01):
 		tell("检查点落地失败，请加载安全存档")
 		return

@@ -171,8 +171,11 @@ func _show_node(full := false) -> void:
 		choices_box.add_child(button)
 		choice_buttons.append(button)
 	advance_button.visible = definitions.is_empty() or not reveal_complete
+	if portraits.size() == 2:
+		var counterpart_path: String = "res://assets/dialogue/ronen_portrait.png" if state.dialogue_kind == "ronen" else ("res://assets/dialogue/hers_portrait.png" if state.dialogue_kind == "hers" else "res://assets/dialogue/isha_portrait.png")
+		portraits[1].texture = load(counterpart_path) if ResourceLoader.exists(counterpart_path) else null
 	for i in portraits.size():
-		portraits[i].modulate = Color.WHITE if (i == 1) == (node.speaker == "伊莎") else Color(0.6, 0.6, 0.6)
+		portraits[i].modulate = Color.WHITE if (i == 1) == (node.speaker != "艾洛") else Color(0.6, 0.6, 0.6)
 	_layout()
 
 func _process(delta: float) -> void:

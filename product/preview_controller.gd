@@ -32,6 +32,7 @@ var text_scale_button: Button
 var speed_button: Button
 var instant_button: Button
 var feedback_options: Dictionary = {}
+var bow_training: Node3D
 var training: Node3D
 var failure_panel: PanelContainer
 var failure_root: Control
@@ -88,6 +89,11 @@ func _ready() -> void:
 	add_child(training)
 	training.configure(self)
 	dialogue_state.sword_granted.connect(training.grant_sword)
+	bow_training = preload("res://bow_training.gd").new()
+	bow_training.name = "BowTraining"
+	add_child(bow_training)
+	bow_training.configure(self)
+	dialogue_state.bow_granted.connect(bow_training.grant_bow)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -149,6 +155,8 @@ func _process(_delta: float) -> void:
 		objective_label.text = dialogue_state.objective()
 		objective_label.get_parent().visible = not dialogue.opened
 		var hers_prompt: String = training.interaction_prompt() if training and pause_owners.is_empty() else ""
+		var bow_prompt: String = bow_training.interaction_prompt() if bow_training and pause_owners.is_empty() else ""
+		if bow_prompt != "": hers_prompt = bow_prompt
 		var available: bool = pause_owners.is_empty() and (isha.can_interact(player) or hers_prompt != "")
 		prompt_label.text = hers_prompt if hers_prompt != "" else ("[E] 与伊莎交谈" if available else "")
 		prompt_label.get_parent().visible = available
@@ -203,12 +211,13 @@ func _dialogue_closed() -> void:
 
 
 func _save_opening(slot: int) -> void:
-	if training and not training.can_save():
+	if training and (not training.can_save() or (bow_training and not bow_training.can_save())):
 		dialogue_state.save_feedback = "战斗中不能保存 · 请先退回安全处"
 		if controls_feedback: controls_feedback.text = dialogue_state.save_feedback
 		return
 	if training:
-		dialogue_state.sword_selected = player.weapon_mode == "sword" or (player.switch_timer > 0 and player.pending_weapon == "sword")
+		dialogue_state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
+		dialogue_state.sword_selected = dialogue_state.selected_equipment == "sword"
 	var error: Error = dialogue_state.save_progress(player.global_position, player.arm.rotation.y, slot)
 	if training and slot == 0 and error == OK:
 		training.commit_retry = false
@@ -472,6 +481,8 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bow_training and bow_training.interact():
+				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and training and training.interact():
 				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and isha.can_interact(player):
@@ -577,6 +588,12 @@ func _add_snowfall() -> void:
 	snow.mesh = quad
 	player.add_child(snow)
 
+func open_ronen_dialogue() -> void:
+	dialogue_state.dialogue_kind = "ronen"
+	dialogue_state.conversation_active = false
+	_set_pause_owner("dialogue", true)
+	dialogue.open_dialogue()
+
 func open_hers_dialogue() -> void:
 	dialogue_state.dialogue_kind = "hers"
 	dialogue_state.conversation_active = false
@@ -664,10 +681,17 @@ func _build_failure() -> void:
 		for variant in ["normal", "hover", "focus", "pressed", "disabled"]:
 			var frame := button.get_theme_stylebox(variant).duplicate() as StyleBoxTexture
 			frame.modulate_color = Color(0.80, 0.69, 0.48)
-			if variant in ["hover", "focus"]: frame.modulate_color = Color(1, 0.85, 0.47)
+			if variant == "hover": frame.modulate_color = Color(0.94, 0.80, 0.55)
+			if variant == "focus": frame.modulate_color = Color(1, 0.95, 0.75)
 			if variant == "pressed": frame.modulate_color = Color(0.65, 0.49, 0.25)
 			if variant == "disabled": frame.modulate_color = Color(0.69, 0.66, 0.59)
 			button.add_theme_stylebox_override(variant, frame)
+		var keyboard_ring := StyleBoxFlat.new()
+		keyboard_ring.bg_color = Color(0, 0, 0, 0)
+		keyboard_ring.border_color = Color(0.22, 0.13, 0.04)
+		keyboard_ring.set_border_width_all(3)
+		keyboard_ring.set_expand_margin_all(3)
+		button.add_theme_stylebox_override("focus", keyboard_ring)
 		button.add_theme_color_override("font_disabled_color", Color(0.32, 0.29, 0.24))
 		column.add_child(button)
 		failure_buttons.append(button)

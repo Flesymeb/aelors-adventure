@@ -61,6 +61,11 @@ func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit") -> vo
 			color = Color(0.85, 0.72, 0.40)
 			stream = preload("res://assets/training/straw_impact.ogg")
 			volume = -20.0
+		"obstruction":
+			color = Color(0.70, 0.79, 0.84)
+			stream = preload("res://assets/training/impact.ogg")
+			volume = -21.0
+			pitch = 0.68
 		"block", "parry":
 			color = Color(0.67, 0.87, 1.0) if kind == "block" else Color(1, 0.94, 0.65)
 			stream = preload("res://assets/training/impact.ogg")
