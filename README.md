@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | Awaiting sync |
-| Closed | Awaiting sync |
-| All | Awaiting sync |
+| Open | 17 |
+| Closed | 5 |
+| All | 22 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -44,6 +44,42 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | Issue ID | GitHub | Current status | Resolution / latest defect |
 | --- | --- | --- | --- |
 
+### HoH-managed GitHub issues across runs
+
+Snapshot from the last successful issue sync. These counts include earlier runs; unrelated repository issues are outside the HoH namespace.
+
+| Scope | Open | Closed | All |
+| --- | --- | --- | --- |
+| GitHub HoH namespace | 17 | 5 | 22 |
+| Outside this run's table | 17 | 5 | 22 |
+
+Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
+
+| GitHub | Issue ID | GitHub state | Source run |
+| --- | --- | --- | --- |
+| [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | `issue:milestone01-camera-environment` | OPEN | `aelors-adventure-astra-high-20261002` |
+| [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | `issue:milestone01-missing-loop` | OPEN | `aelors-adventure-astra-high-20261002` |
+| [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | `issue:r02-actor-animation-falloff` | OPEN | `aelors-adventure-astra-high-20261002` |
+| [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | `tester.mcp_coverage_incomplete` | CLOSED | `aelors-village-sol-local-20261004` |
+| [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | `adjacent-opening-cinematic` | OPEN | `aelors-village-sol-local-20261004` |
+| [#6](https://github.com/Flesymeb/aelors-adventure/issues/6) | `camera-lamp-obstruction` | CLOSED | `aelors-village-sol-local-20261004` |
+| [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | `milestone-01-connected-slice-unavailable` | OPEN | `aelors-village-sol-local-20261004` |
+| [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | `r02-input-bindings` | CLOSED | `aelors-village-sol-local-20261004` |
+| [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | `village-grass-import-dependency` | OPEN | `aelors-village-sol-local-20261004` |
+| [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | `milestone-01-demo-overlay-presentation` | OPEN | `aelors-village-sol-local-20261004` |
+| [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | `isha-clothing-deformation` | OPEN | `aelors-village-sol-local-20261004` |
+| [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | `isha-dialogue-finished-presentation` | OPEN | `aelors-village-sol-local-20261004` |
+| [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | `finding-failure-keyboard-navigation` | CLOSED | `aelors-village-sol-local-20261004` |
+| [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | `finding-failure-screen-readability` | CLOSED | `aelors-village-sol-local-20261004` |
+| [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | `finding-adjacent-return-to-title` | OPEN | `aelors-village-sol-local-20261004` |
+| [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | `finding-failure-focus-hover-ambiguity` | OPEN | `aelors-village-sol-local-20261004` |
+| [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | `rpg.combat.audio_quality_unverified` | OPEN | `aelors-template-sol-local-20261006` |
+| [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | `rpg.continuity.return_to_title_stub` | OPEN | `aelors-template-sol-local-20261006` |
+| [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | `rpg.dialogue.portraits_unbound` | OPEN | `aelors-template-sol-local-20261006` |
+| [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | `rpg.pause.inherited_control_inventory` | OPEN | `aelors-template-sol-local-20261006` |
+| [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | `rpg.recovery.ammunition_not_restored` | OPEN | `aelors-template-sol-local-20261006` |
+| [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | `rpg.village.performance_below_target` | OPEN | `aelors-template-sol-local-20261006` |
+
 ---
 
 ## Loop 10
@@ -52,7 +88,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-01-6a73d8a4b2b2` | `seed_import` | PLANNED |
+| `loop-01-bc472e88fd14` | `development_snapshot:attempt-8dd74e022f602277e93af594` | NEEDS VISUAL QA |
 
 ### Project Planner
 
@@ -68,7 +104,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 
 | Field | Value |
 | --- | --- |
-| Status | NOT STARTED |
+| Status | NEEDS VISUAL QA |
+| Summary | Implementation details are retained in the private HoH Runtime audit. |
+| Completed tasks | 1 |
+| Changed paths | 64 |
+| Blocker | See the QA outcome below. |
+| Attempt | `attempt-8dd74e022f602277e93af594` |
 
 ### QA Tester
 
@@ -80,10 +121,10 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 
 ## Current pointers
 
-- Latest candidate: `loop-01-6a73d8a4b2b2`
+- Latest candidate: `loop-01-bc472e88fd14`
 - Accepted candidate: `none`
-- Latest attempted: `loop-01-6a73d8a4b2b2`
+- Latest attempted: `loop-01-bc472e88fd14`
 - Latest warm start: `none`
-- Last published: `none`
+- Last published: `loop-01-bc472e88fd14`
 - Best verified: `none`
 - Generated by the HoH host from immutable run evidence.

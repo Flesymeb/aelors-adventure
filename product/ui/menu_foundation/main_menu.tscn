@@ -1,0 +1,25 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://ui/menu_foundation/maaack/addons/maaacks_menus_template/base/nodes/menus/main_menu/main_menu.tscn" id="1_base"]
+[ext_resource type="Script" path="res://ui/menu_foundation/main_menu.gd" id="2_product"]
+[ext_resource type="PackedScene" path="res://ui/title_settings.tscn" id="3_settings"]
+[ext_resource type="PackedScene" path="res://ui/load_menu.tscn" id="4_load"]
+[ext_resource type="Theme" path="res://ui/title_theme.tres" id="5_theme"]
+
+[node name="MainMenu" instance=ExtResource("1_base")]
+script = ExtResource("2_product")
+theme = ExtResource("5_theme")
+options_packed_scene = ExtResource("3_settings")
+credits_packed_scene = ExtResource("4_load")
+signal_game_start = true
+signal_game_exit = true
+
+[node name="UISoundController" parent="." index="0"]
+persistent = false
+
+[node name="BackgroundMusicPlayer" parent="." index="1"]
+autoplay = false
+bus = &"Master"
+
+[node name="VersionMargin" parent="." index="4"]
+visible = false

@@ -7,6 +7,9 @@ const ENVIRONMENT_QUALITY := preload("res://environment_quality.gd")
 const GROUND := preload("res://forest_ground.gd")
 const SPAWN_XZ := GROUND.SPAWN
 
+signal entry_ready
+signal entry_failed(message: String)
+var entry_router: Node
 var village: Node3D
 var player: CharacterBody3D
 var dusk := false
@@ -70,10 +73,11 @@ func _ready() -> void:
 	quality.set_script(ENVIRONMENT_QUALITY)
 	add_child(quality)
 	quality.configure(village)
-	dialogue_state = preload("res://dialogue_state.gd").new()
-	dialogue_state.name = "OpeningState"
-	add_child(dialogue_state)
-	restored_position = dialogue_state.load_progress()
+	if dialogue_state == null:
+		dialogue_state = preload("res://dialogue_state.gd").new()
+		dialogue_state.name = "OpeningState"
+		add_child(dialogue_state)
+		restored_position = dialogue_state.load_progress()
 	dialogue = preload("res://IshaDialogue.tscn").instantiate()
 	dialogue.state = dialogue_state
 	add_child(dialogue)
@@ -98,7 +102,7 @@ func _ready() -> void:
 	add_child(bow_training)
 	bow_training.configure(self)
 	dialogue_state.bow_granted.connect(bow_training.grant_bow)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
 
 func _add_village_buildings() -> void:
@@ -137,6 +141,9 @@ func _place_player() -> void:
 			placed = GROUND.place(self, player, xz)
 		if placed: break
 	if not placed:
+		if entry_router:
+			entry_failed.emit("出生点无法安全落地。请重试或返回标题。")
+			return
 		push_error("Forest spawn has no safe collision support")
 		_recovery_error("出生点尚未准备好 · 请重新启动或读取安全存档。")
 		return
@@ -146,9 +153,10 @@ func _place_player() -> void:
 	if dialogue_state.persistence_error != "":
 		_recovery_error(dialogue_state.persistence_error)
 		return
-	if dialogue_state.conversation_active:
+	if dialogue_state.conversation_active and dialogue_state.lives > 0:
 		_set_pause_owner("dialogue", true)
 		dialogue.open_dialogue(true)
+	entry_ready.emit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -450,6 +458,10 @@ func _add_controls() -> void:
 	close.pressed.connect(_close_controls)
 	controls_list.add_child(close)
 	_add_reading_controls()
+	var title_return := Button.new()
+	title_return.text = "返回标题"
+	title_return.pressed.connect(_return_to_title)
+	controls_list.add_child(title_return)
 	controls_panel.hide()
 
 
@@ -551,8 +563,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 		elif event.keycode == KEY_F8:
 			_toggle_instant_text()
 		elif event.keycode in [KEY_UP, KEY_DOWN]:
-			controls_selection = posmod(controls_selection + (1 if event.keycode == KEY_DOWN else -1), control_buttons.size())
-			control_buttons[controls_selection].grab_focus()
+			return false # Native focus traverses bindings, save controls and title return.
 		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 			if control_buttons.has(get_viewport().gui_get_focus_owner()):
 				_begin_capture(player.CONTROL_DEFAULTS.keys()[controls_selection])
@@ -796,8 +807,18 @@ func _recovery_error(message: String) -> void:
 
 
 func _show_failure_title() -> void:
-	# A standalone title journey remains outside this recovery increment.
-	failure_body.text = "标题界面尚未开放。请加载存档或开始新游戏。"
+	_return_to_title()
+
+func _return_to_title() -> void:
+	if entry_router == null: return
+	# Keep the committed safe boundary; never award/reset facts on title return.
+	if training.commit_retry:
+		_recovery_error("进度尚未保存。请重试保存后返回标题。")
+		failure_busy = false
+		return
+	_set_pause_owner("title_return", true)
+	entry_router.return_to_title()
+
 
 
 func _finish_recovery() -> void:

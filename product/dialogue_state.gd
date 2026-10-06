@@ -44,7 +44,8 @@ var persistence_error := ""
 const TRAINING_KEYS := ["bow_owned", "arrows", "bow_training_complete", "bow_demonstrated", "selected_equipment", "ronen_node", "sword_owned", "practice_hit", "practice_defense", "practice_parry", "encounter_defeated", "remnant_collected", "remnant_position", "health", "lives", "recovery_pending", "hers_node", "reduced_motion", "muted_sound", "sword_selected", "dialogue_kind"]
 
 func _ready() -> void:
-	load_progress()
+	# Title previews never restore history. Entry owns loading.
+	load_preferences()
 
 func begin() -> void:
 	if not conversation_active:
@@ -274,3 +275,22 @@ func load_preferences() -> void:
 	reveal_speed = clampf(float(config.get_value("settings", "reveal_speed", reveal_speed)), 15, 60)
 	for key in ["instant_text", "reduced_motion", "muted_sound"]:
 		set(key, bool(config.get_value("settings", key, get(key))))
+
+
+func slot_preview(slot: int) -> Dictionary:
+	# Read-only: no restore_config, signals, preference loads or writes.
+	var reason := slot_unavailable_reason(slot, slot == 0)
+	var facts := {"slot": slot, "reason": reason}
+	if reason != "": return facts
+	var config := ConfigFile.new()
+	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
+	if config.load(path) != OK:
+		facts.reason = "存档无法读取"
+		return facts
+	facts.chapter = "第一章 · 河谷聚落"
+	facts.time = Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time(path)).replace("T", " ")
+	facts.experience = int(config.get_value("opening", "experience", 0))
+	facts.lives = int(config.get_value("training", "lives", 3))
+	facts.arrows = int(config.get_value("training", "arrows", 0))
+	facts.progress = "弓练习已完成" if config.get_value("training", "bow_training_complete", false) else ("已取得巡路弓" if config.get_value("training", "bow_owned", false) else ("已取得巡路剑" if config.get_value("training", "sword_owned", false) else ("已接受救援请求" if config.get_value("opening", "accepted", false) else "伊莎的求援")))
+	return facts
