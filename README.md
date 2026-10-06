@@ -48,14 +48,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Independently verified resolved at loop 3. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | OPEN | The authored-village grass texture dependency remains broken. |
-| `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | OPEN | Full connected-slice acceptance remains unverified; fresh sword acquisition and recovery now work. |
-| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | The settings/save surface retains unfinished demo presentation. |
-| `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve bands remain visible. |
-| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | BLOCKED | Required dialogue portraits remain absent. |
+| `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | OPEN | Sword and bow progression are independently demonstrated; full connected-slice and chapter acceptance remain unverified. |
+| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | Settings and save controls retain unfinished demo presentation. |
+| `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve clothing bands remain visible. |
+| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dialogue portraits remain absent in independently captured conversation states. |
 | `finding-failure-keyboard-navigation` | [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | CLOSED | Independently verified resolved at loop 7. |
 | `finding-failure-screen-readability` | [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | CLOSED | Independently verified resolved at loop 7. |
 | `finding-adjacent-return-to-title` | [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | OPEN | Return to Title remains a message-only placeholder outside this increment. |
-| `finding-failure-focus-hover-ambiguity` | [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | OPEN | Hovered and keyboard-focused recovery buttons look identical. |
+| `finding-failure-focus-hover-ambiguity` | [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | OPEN | Recovery hover/focus distinction remains insufficiently evidenced; the existing issue cannot be closed. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -82,7 +82,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-08-cdda87c96e1a` | `development_snapshot:attempt-90ea453fbc153d95748ce383` | DEVELOPER REPORT READY |
+| `loop-08-cdda87c96e1a` | `development_snapshot:attempt-90ea453fbc153d95748ce383` | BLOCKED |
 
 ### Project Planner
 
@@ -109,7 +109,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-08-cdda87c96e1a` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (4 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `finding-connected-slice-unavailable` | MAJOR | USER BLOCKING | HIGH | Sword and bow progression are independently demonstrated; full connected-slice and chapter acceptance remain unverified. |
+| `finding-isha-dialogue-finished-presentation` | MAJOR | USER BLOCKING | HIGH | Required dialogue portraits remain absent in independently captured conversation states. |
+| `finding-isha-clothing-deformation` | MAJOR | DEGRADED | HIGH | Isha's shoulder-to-sleeve clothing bands remain visible. |
+| `finding-demo-overlay-presentation` | MINOR | DEGRADED | MEDIUM | Settings and save controls retain unfinished demo presentation. |
+| `finding-recovery-focus-unverified` | MINOR | INTERNAL | MEDIUM | Recovery hover/focus distinction remains insufficiently evidenced; the existing issue cannot be closed. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -477,5 +492,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-08-cdda87c96e1a`
 - Latest warm start: `loop-08-b224d335aee8`
 - Last published: `loop-08-cdda87c96e1a`
-- Best verified: `loop-07-b224d335aee8`
+- Best verified: `loop-08-cdda87c96e1a`
 - Generated by the HoH host from immutable run evidence.
