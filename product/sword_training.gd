@@ -97,6 +97,11 @@ func place_on_ground(body: Node3D, xz: Vector2) -> bool:
 
 func restore_history() -> void:
 	interrupt("load")
+	death_time = 0
+	recovery_settled = false
+	last_outcome = ""
+	last_hp_loss = 0
+	commit_retry = false
 	sim_phase = "idle"
 	sim_clock = 0
 	parry_cooldown = 0

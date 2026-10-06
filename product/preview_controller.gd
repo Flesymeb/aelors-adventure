@@ -34,6 +34,16 @@ var instant_button: Button
 var feedback_options: Dictionary = {}
 var training: Node3D
 var failure_panel: PanelContainer
+var failure_root: Control
+var failure_scroll: ScrollContainer
+var failure_title: Label
+var failure_body: Label
+var failure_hint: Label
+var failure_buttons: Array[Button] = []
+var failure_selection := 0
+var failure_armed := false
+var failure_pending: Button
+var failure_busy := false
 
 
 func _ready() -> void:
@@ -129,6 +139,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	if pause_owners.has("failure") and not controls_panel.visible and not _confirmation_held() and failure_pending == null:
+		failure_armed = true
 	# Retain product pause intent after restart or an external debug step.
 	# Leave external freezes alone when there is no product pause owner.
 	if not pause_owners.is_empty() and not get_tree().paused:
@@ -176,6 +188,10 @@ func _open_controls() -> void:
 	previous_mouse_mode = Input.mouse_mode
 	_set_pause_owner("controls", true)
 	dialogue.nested_menu = dialogue.opened
+	if failure_root:
+		failure_root.hide()
+		failure_pending = null
+		failure_armed = false
 	controls_panel.show()
 	controls_feedback.text = "方向键选移动绑定 · Enter 修改 · Backspace 默认\nF6 字号 · F7 速度 · F8 即时文字 · F5 保存 · Esc 返回"
 	control_buttons[controls_selection].grab_focus()
@@ -203,25 +219,34 @@ func _save_opening(slot: int) -> void:
 
 
 func _load_opening(slot: int) -> void:
+	var reason: String = dialogue_state.slot_unavailable_reason(slot)
+	if reason != "":
+		_recovery_error(reason)
+		return
+	var previous: Dictionary = dialogue_state.adventure_snapshot()
 	var restored: Dictionary = dialogue_state.load_progress(slot)
 	if restored.is_empty():
-		controls_feedback.text = "槽位 %d 暂无存档" % slot
+		_recovery_error("读取存档失败，请重试。")
 		return
-	if failure_panel: failure_panel.hide()
-	_set_pause_owner("failure", false)
+	var old_position := player.global_position
+	if not training.place_on_ground(player, Vector2(restored.position.x, restored.position.z)):
+		dialogue_state.restore_adventure(previous)
+		_recovery_error("存档位置无法安全落地 · 请重试或选择新游戏。")
+		return
+	# Promote the selected history only after confirming real ground.
+	if dialogue_state.save_progress(player.global_position, restored.yaw) != OK:
+		dialogue_state.restore_adventure(previous)
+		player.global_position = old_position
+		_recovery_error("保存恢复进度失败 · 冒险仍暂停，请重试。")
+		return
+	player.arm.rotation.y = restored.yaw
 	training.restore_history()
-	_refresh_reading_controls()
-	var saved: Vector3 = restored.position
-	# Restore onto real ground after the UI releases the world, never trust saved Y.
-	if Vector2(saved.x, saved.z).distance_to(SPAWN_XZ) > 35:
-		controls_feedback.text = "存档位置不在开场安全区域"
-		return
 	restored_position = restored
-	_close_controls()
-	dialogue.root.hide()
-	dialogue.opened = false
-	_set_pause_owner("dialogue", false)
-	_place_player.call_deferred()
+	_refresh_reading_controls()
+	_finish_recovery()
+	if dialogue_state.conversation_active:
+		_set_pause_owner("dialogue", true)
+		dialogue.open_dialogue(true)
 
 
 func _add_reading_controls() -> void:
@@ -256,7 +281,7 @@ func _add_reading_controls() -> void:
 
 func _set_feedback_option(value: bool, option: String) -> void:
 	dialogue_state.set(option, value)
-	_save_opening(0)
+	_save_preferences()
 
 func _refresh_reading_controls() -> void:
 	text_scale_button.text = "文字缩放 [F6] · %d%%" % int(dialogue_state.text_scale * 100)
@@ -265,24 +290,25 @@ func _refresh_reading_controls() -> void:
 	for option in feedback_options:
 		feedback_options[option].set_pressed_no_signal(dialogue_state.get(option))
 	dialogue._layout()
+	if failure_panel: _layout_failure()
 
 
 func _cycle_text_scale() -> void:
 	dialogue_state.text_scale = 1.0 if dialogue_state.text_scale >= 2.0 else dialogue_state.text_scale + 0.5
 	_refresh_reading_controls()
-	_save_opening(0)
+	_save_preferences()
 
 
 func _cycle_reveal_speed() -> void:
 	dialogue_state.reveal_speed = 15.0 if dialogue_state.reveal_speed >= 60.0 else dialogue_state.reveal_speed + 15.0
 	_refresh_reading_controls()
-	_save_opening(0)
+	_save_preferences()
 
 
 func _toggle_instant_text() -> void:
 	dialogue_state.instant_text = not dialogue_state.instant_text
 	_refresh_reading_controls()
-	_save_opening(0)
+	_save_preferences()
 
 
 func _mcp_state() -> Dictionary:
@@ -293,7 +319,7 @@ func _mcp_state() -> Dictionary:
 		story_actors.append(str(actor.get_path()))
 	var position := player.global_position
 	var velocity := player.velocity
-	return {"pause_owners": pause_owners.keys(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
+	return {"failure": _failure_observation(), "pause_owners": pause_owners.keys(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
 
 
 func _add_help() -> void:
@@ -360,6 +386,7 @@ func _add_controls() -> void:
 	controls_list.add_theme_font_override("font", ui_font)
 	controls_list.add_theme_font_size_override("font_size", 17)
 	var scroll := ScrollContainer.new()
+	scroll.follow_focus = true
 	scroll.custom_minimum_size = Vector2(580, 580)
 	controls_panel.add_child(scroll)
 	scroll.add_child(controls_list)
@@ -411,6 +438,8 @@ func _restore_controls() -> void:
 
 
 func _close_controls() -> void:
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus: focus.release_focus()
 	controls_panel.hide()
 	_set_pause_owner("controls", false)
 	dialogue.nested_menu = false
@@ -419,12 +448,20 @@ func _close_controls() -> void:
 		# Rearm only when all advance keys are up; a held key cannot submit.
 		dialogue.advance_armed = not (Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER))
 	capturing_control = ""
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if dialogue.opened else previous_mouse_mode
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if not pause_owners.is_empty() else previous_mouse_mode
+	if pause_owners.has("failure"):
+		failure_root.show()
+		failure_pending = null
+		failure_armed = false
+		_refresh_failure_slots()
+		_focus_failure(failure_selection)
 
 
 # Called at the start of the player's _input, before mouse attacks and before
 # either script's _unhandled_input. Captured keys cannot leak into the world.
 func handle_controls_input(event: InputEvent) -> bool:
+	if pause_owners.has("failure") and not controls_panel.visible:
+		return _handle_failure_input(event)
 	if dialogue.opened and not controls_panel.visible:
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F5:
 			_save_opening(0)
@@ -546,51 +583,240 @@ func open_hers_dialogue() -> void:
 	_set_pause_owner("dialogue", true)
 	dialogue.open_dialogue()
 
+func _save_preferences() -> void:
+	var error: Error = dialogue_state.save_preferences()
+	controls_feedback.text = "设置已保存" if error == OK else "设置仅本次生效 · 保存失败，请重试"
+
+
 func show_failure() -> void:
 	if pause_owners.has("failure"): return
 	_set_pause_owner("failure", true)
-	if not failure_panel:
-		var layer := CanvasLayer.new()
-		layer.layer = 40
-		layer.process_mode = Node.PROCESS_MODE_ALWAYS
-		add_child(layer)
-		failure_panel = PanelContainer.new()
-		failure_panel.theme = preload("res://dialogue_theme.tres")
-		failure_panel.position = get_viewport().get_visible_rect().size * Vector2(0.3, 0.3)
-		failure_panel.custom_minimum_size = Vector2(480, 240)
-		layer.add_child(failure_panel)
-		var column := VBoxContainer.new()
-		column.add_theme_constant_override("separation", 15)
-		failure_panel.add_child(column)
-		var label := Label.new()
-		label.text = "冒险结束 · 命数 0\n可加载早期存档，或开始新的冒险。"
-		column.add_child(label)
-		for slot in [1, 2]:
-			var button := Button.new()
-			button.text = "加载槽位 %d" % slot
-			var config := ConfigFile.new()
-			button.disabled = config.load("user://isha_slot_%d.cfg" % slot) != OK or int(config.get_value("training", "lives", 3)) <= 0
-			if button.disabled: button.text += " · 无可用存档"
-			button.pressed.connect(_load_opening.bind(slot))
-			column.add_child(button)
-		var fresh := Button.new()
-		fresh.text = "新游戏"
-		fresh.pressed.connect(_new_adventure)
-		column.add_child(fresh)
-		var title := Button.new()
-		title.text = "返回标题"
-		title.pressed.connect(_show_failure_title)
-		column.add_child(title)
-	failure_panel.show()
+	if not failure_panel: _build_failure()
+	failure_busy = false
+	failure_pending = null
+	failure_armed = false
+	failure_title.text = "冒险结束"
+	failure_body.text = "命数已耗尽。加载早期存档，或开始新的冒险。"
+	_refresh_failure_slots()
+	_layout_failure()
+	failure_root.show()
+	failure_selection = 0
+	_focus_failure.call_deferred(failure_selection)
+
+
+func _build_failure() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "FailureLayer"
+	layer.layer = 40
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	failure_root = Control.new()
+	failure_root.name = "GameOver"
+	failure_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(failure_root)
+	var shade := ColorRect.new()
+	shade.color = Color(0.025, 0.035, 0.03, 0.78)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	failure_root.add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	failure_root.add_child(center)
+	failure_panel = PanelContainer.new()
+	failure_panel.name = "RecoveryPanel"
+	# Local styles keep the shared dialogue palette and bindings unchanged.
+	failure_panel.theme = preload("res://dialogue_theme.tres")
+	var paper := StyleBoxFlat.new()
+	paper.bg_color = Color(0.90, 0.82, 0.65, 1)
+	paper.border_color = Color(0.68, 0.51, 0.26)
+	paper.set_border_width_all(3)
+	paper.set_corner_radius_all(4)
+	paper.set_content_margin_all(24)
+	failure_panel.add_theme_stylebox_override("panel", paper)
+	center.add_child(failure_panel)
+	failure_scroll = ScrollContainer.new()
+	failure_scroll.follow_focus = true
+	failure_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	failure_panel.add_child(failure_scroll)
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 12)
+	failure_scroll.add_child(column)
+	failure_title = Label.new()
+	failure_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(failure_title)
+	var rule := HSeparator.new()
+	column.add_child(rule)
+	failure_body = Label.new()
+	failure_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	failure_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(failure_body)
+	for index in 4:
+		var button := Button.new()
+		button.name = ["LoadSlot1", "LoadSlot2", "NewGame", "ReturnToTitle"][index]
+		button.text = ["加载槽位 1", "加载槽位 2", "新游戏", "返回标题"][index]
+		button.focus_mode = Control.FOCUS_ALL
+		button.pressed.connect(_activate_failure.bind(index))
+		button.focus_entered.connect(_remember_failure_focus.bind(index))
+		# Reuse the dialogue component's already-bound CC0 frame and slicing.
+		# Duplicate its styles so failure-specific feedback cannot alter dialogue.
+		dialogue._style_choice(button)
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		for variant in ["normal", "hover", "focus", "pressed", "disabled"]:
+			var frame := button.get_theme_stylebox(variant).duplicate() as StyleBoxTexture
+			frame.modulate_color = Color(0.80, 0.69, 0.48)
+			if variant in ["hover", "focus"]: frame.modulate_color = Color(1, 0.85, 0.47)
+			if variant == "pressed": frame.modulate_color = Color(0.65, 0.49, 0.25)
+			if variant == "disabled": frame.modulate_color = Color(0.69, 0.66, 0.59)
+			button.add_theme_stylebox_override(variant, frame)
+		button.add_theme_color_override("font_disabled_color", Color(0.32, 0.29, 0.24))
+		column.add_child(button)
+		failure_buttons.append(button)
+	failure_hint = Label.new()
+	failure_hint.text = "↑↓ / Tab 选择 · Enter 确认 · F10 设置"
+	failure_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	failure_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(failure_hint)
+	get_viewport().size_changed.connect(_layout_failure)
+
+
+func _layout_failure() -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var scale: float = dialogue_state.text_scale
+	failure_scroll.custom_minimum_size = Vector2(minf(900, viewport_size.x - 96), minf(560 * scale, viewport_size.y - 96))
+	failure_title.add_theme_font_size_override("font_size", int(32 * scale))
+	failure_body.add_theme_font_size_override("font_size", int(20 * scale))
+	failure_hint.add_theme_font_size_override("font_size", int(16 * scale))
+	for button in failure_buttons:
+		button.add_theme_font_size_override("font_size", int(22 * scale))
+
+
+func _refresh_failure_slots() -> void:
+	for index in 2:
+		var reason: String = dialogue_state.slot_unavailable_reason(index + 1)
+		failure_buttons[index].disabled = reason != ""
+		failure_buttons[index].text = "加载槽位 %d" % (index + 1) + (" · " + reason if reason != "" else "")
+	var enabled: Array[Button] = []
+	for button in failure_buttons:
+		button.focus_mode = Control.FOCUS_NONE if button.disabled else Control.FOCUS_ALL
+		if not button.disabled: enabled.append(button)
+	for index in enabled.size():
+		var button := enabled[index]
+		var previous := button.get_path_to(enabled[posmod(index - 1, enabled.size())])
+		var next := button.get_path_to(enabled[(index + 1) % enabled.size()])
+		button.focus_neighbor_top = previous
+		button.focus_previous = previous
+		button.focus_neighbor_bottom = next
+		button.focus_next = next
+
+
+func _remember_failure_focus(index: int) -> void:
+	failure_selection = index
+
+
+func _focus_failure(index: int, direction := 1) -> void:
+	if not failure_root.visible or controls_panel.visible: return
+	for offset in failure_buttons.size():
+		var candidate := posmod(index + offset * direction, failure_buttons.size())
+		if not failure_buttons[candidate].disabled:
+			failure_selection = candidate
+			failure_buttons[candidate].grab_focus()
+			return
+
+
+func _confirmation_held() -> bool:
+	return Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_E)
+
+
+func _handle_failure_input(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		if event.echo: return true
+		if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+			if event.pressed:
+				if failure_armed and not failure_busy:
+					failure_pending = failure_buttons[failure_selection]
+				failure_armed = false
+			else:
+				var pending := failure_pending
+				failure_pending = null
+				if pending and pending == get_viewport().gui_get_focus_owner():
+					_activate_failure(failure_buttons.find(pending))
+			return true
+		if event.pressed:
+			if event.keycode == KEY_F10:
+				_open_controls()
+			elif event.keycode in [KEY_UP, KEY_DOWN, KEY_TAB]:
+				failure_pending = null
+				var direction := -1 if event.keycode == KEY_UP or (event.keycode == KEY_TAB and event.shift_pressed) else 1
+				_focus_failure(failure_selection + direction, direction)
+		return true
+	# Consume world-facing mouse movement; native visible buttons receive clicks.
+	return not event is InputEventMouseButton
+
+
+func _activate_failure(index: int) -> void:
+	if failure_busy or controls_panel.visible or not failure_root.visible or not pause_owners.has("failure"): return
+	if index < 0 or index >= failure_buttons.size() or failure_buttons[index].disabled: return
+	failure_busy = true
+	failure_pending = null
+	failure_armed = false
+	failure_body.text = "正在恢复冒险…"
+	match index:
+		0, 1: _load_opening(index + 1)
+		2: _new_adventure()
+		3: _show_failure_title()
+	failure_busy = false
+
+
+func _recovery_error(message: String) -> void:
+	if failure_body: failure_body.text = message
+	controls_feedback.text = message
+
 
 func _show_failure_title() -> void:
-	failure_panel.get_child(0).get_child(0).text = "艾洛的冒险\n本轮冒险已结束 · 请加载存档或开始新游戏。"
+	# A standalone title journey remains outside this recovery increment.
+	failure_body.text = "标题界面尚未开放。请加载存档或开始新游戏。"
+
+
+func _finish_recovery() -> void:
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus: focus.release_focus()
+	failure_pending = null
+	failure_armed = false
+	if controls_panel.visible: _close_controls()
+	if failure_root: failure_root.hide()
+	dialogue.root.hide()
+	dialogue.opened = false
+	dialogue.nested_menu = false
+	_set_pause_owner("dialogue", false)
+	_set_pause_owner("failure", false)
+	player.velocity = Vector3.ZERO
+	player._update_animation(false)
+	training.tell("冒险已恢复 · 检查点已保存")
+
 
 func _new_adventure() -> void:
+	var previous: Dictionary = dialogue_state.adventure_snapshot()
+	var old_position := player.global_position
+	if not training.place_on_ground(player, SPAWN_XZ):
+		_recovery_error("检查点无法安全落地 · 冒险仍暂停，请重试。")
+		return
 	dialogue_state.reset_adventure()
-	training.commit()
-	failure_panel.hide()
-	_set_pause_owner("failure", false)
+	if dialogue_state.save_progress(player.global_position, 0.0) != OK:
+		dialogue_state.restore_adventure(previous)
+		player.global_position = old_position
+		_recovery_error("新游戏保存失败 · 原冒险仍已结束，请重试。")
+		return
+	training.commit_retry = false
 	training.restore_history()
 	restored_position = {}
-	training.place_on_ground(player, SPAWN_XZ)
+	player.arm.rotation = Vector3.ZERO
+	_finish_recovery()
+	training.tell("新冒险已开始 · 检查点已保存")
+
+
+func _failure_observation() -> Dictionary:
+	var actions := []
+	for button in failure_buttons:
+		actions.append({"label": button.text, "disabled": button.disabled, "focused": button.has_focus()})
+	var focus := get_viewport().gui_get_focus_owner()
+	return {"visible": failure_root != null and failure_root.visible, "selection": failure_selection, "armed": failure_armed, "busy": failure_busy, "focus_owner": str(focus.get_path()) if focus else "", "text_scale": dialogue_state.text_scale, "actions": actions, "message": failure_body.text if failure_body else ""}

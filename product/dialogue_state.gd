@@ -90,6 +90,7 @@ func load_progress(slot := 0) -> Dictionary:
 	var config := ConfigFile.new()
 	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
 	if config.load(path) != OK:
+		load_preferences()
 		return {}
 	logical_node = str(config.get_value("opening", "node", "D01"))
 	if not NODES.data.has(logical_node) and not HERS_NODES.data.has(logical_node):
@@ -110,6 +111,7 @@ func load_progress(slot := 0) -> Dictionary:
 	text_scale = clampf(float(config.get_value("reading", "scale", 1.0)), 1.0, 2.0)
 	reveal_speed = clampf(float(config.get_value("reading", "speed", 30.0)), 15.0, 60.0)
 	instant_text = bool(config.get_value("reading", "instant", false))
+	load_preferences()
 	return {"position": config.get_value("opening", "position", Vector3.ZERO), "yaw": config.get_value("opening", "yaw", 0.0)}
 
 func objective() -> String:
@@ -149,6 +151,77 @@ func reset_adventure() -> void:
 	recovery_pending = false
 	hers_node = "H01"
 	sword_selected = false
+	save_feedback = ""
+	reward_feedback = ""
+	persistence_error = ""
 
 func current_nodes() -> Dictionary:
 	return HERS_NODES.data if dialogue_kind == "hers" else NODES.data
+
+
+func adventure_snapshot() -> Dictionary:
+	var snapshot := training_snapshot()
+	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text"]:
+		snapshot[key] = get(key)
+	return snapshot.duplicate(true)
+
+
+func restore_adventure(snapshot: Dictionary) -> void:
+	for key in snapshot: set(key, snapshot[key])
+
+
+func slot_unavailable_reason(slot: int) -> String:
+	var config := ConfigFile.new()
+	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
+	if not FileAccess.file_exists(path): return "暂无存档"
+	if config.load(path) != OK: return "存档无法读取"
+	var saved_position: Variant = config.get_value("opening", "position", null)
+	var saved_lives: Variant = config.get_value("training", "lives", 3)
+	var yaw: Variant = config.get_value("opening", "yaw", 0.0)
+	if not saved_position is Vector3 or not saved_position.is_finite(): return "存档位置无效"
+	if Vector2(saved_position.x, saved_position.z).distance_to(Vector2(20, 20)) > 35: return "位置不在安全区域"
+	if not (saved_lives is int or saved_lives is float): return "存档命数无效"
+	if not (yaw is int or yaw is float) or not is_finite(float(yaw)): return "存档方向无效"
+	if int(saved_lives) <= 0: return "命数已耗尽"
+	if int(saved_lives) > 3: return "存档命数无效"
+	var saved_health: Variant = config.get_value("training", "health", 100.0)
+	if not (saved_health is int or saved_health is float) or not is_finite(float(saved_health)) or float(saved_health) < 0 or float(saved_health) > 100: return "存档生命无效"
+	var node: Variant = config.get_value("opening", "node", "D01")
+	if not node is String or (not NODES.data.has(node) and not HERS_NODES.data.has(node)): return "存档对话无效"
+	var choices: Variant = config.get_value("opening", "choices", [])
+	if not choices is Array: return "存档选择无效"
+	for choice in choices:
+		if not choice is String: return "存档选择无效"
+	for key in ["accepted", "reward", "conversation"]:
+		if not config.get_value("opening", key, false) is bool: return "存档进度无效"
+	var xp: Variant = config.get_value("opening", "experience", 0)
+	if not xp is int or xp < 0: return "存档经验无效"
+	for key in ["sword_owned", "practice_hit", "practice_defense", "practice_parry", "encounter_defeated", "remnant_collected", "recovery_pending", "sword_selected", "reduced_motion", "muted_sound"]:
+		if not config.get_value("training", key, false) is bool: return "存档训练无效"
+	var remnant: Variant = config.get_value("training", "remnant_position", Vector3.ZERO)
+	if not remnant is Vector3 or not remnant.is_finite(): return "存档残响无效"
+	if config.get_value("training", "dialogue_kind", "isha") not in ["isha", "hers"]: return "存档对话无效"
+	if config.get_value("training", "hers_node", "H01") not in ["H01", "H02"]: return "存档训练无效"
+	for key in ["scale", "speed"]:
+		var reading: Variant = config.get_value("reading", key, 1.0 if key == "scale" else 30.0)
+		if not (reading is int or reading is float) or not is_finite(float(reading)): return "存档设置无效"
+	if not config.get_value("reading", "instant", false) is bool: return "存档设置无效"
+	return ""
+
+
+func save_preferences() -> Error:
+	var config := ConfigFile.new()
+	for key in ["text_scale", "reveal_speed", "instant_text", "reduced_motion", "muted_sound"]:
+		config.set_value("settings", key, get(key))
+	var error := config.save("user://adventure_preferences.cfg.tmp")
+	if error == OK: error = DirAccess.rename_absolute("user://adventure_preferences.cfg.tmp", "user://adventure_preferences.cfg")
+	return error
+
+
+func load_preferences() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://adventure_preferences.cfg") != OK: return
+	text_scale = clampf(float(config.get_value("settings", "text_scale", text_scale)), 1, 2)
+	reveal_speed = clampf(float(config.get_value("settings", "reveal_speed", reveal_speed)), 15, 60)
+	for key in ["instant_text", "reduced_motion", "muted_sound"]:
+		set(key, bool(config.get_value("settings", key, get(key))))
