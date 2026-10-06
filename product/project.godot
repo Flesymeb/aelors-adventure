@@ -2,7 +2,7 @@ config_version=5
 
 [application]
 
-config/name="Free Fantasy Medieval Houses and Props Pack"
+config/name="艾洛的冒险"
 run/main_scene="res://Preview.tscn"
 config/icon="res://icon.svg"
 
@@ -13,5 +13,18 @@ window/size/viewport_height=720
 
 [rendering]
 
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+occlusion_culling/use_occlusion_culling=true
+
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.mobile="mobile"
+
+[shader_globals]
+
+wind_strength={
+"type": "float",
+"value": 0.03
+}
+wind_speed={
+"type": "float",
+"value": 0.78
+}

@@ -1,9 +1,10 @@
 extends Node3D
 ## Product authority: first projectile contact, inventory and confirmed lesson.
 const CAPACITY := 12
-const RONEN_XZ := Vector2(26, 16)
-const TARGET_XZ := Vector2(24.5, 7)
-const CRATE_XZ := Vector2(26, 12)
+const GROUND := preload("res://forest_ground.gd")
+const RONEN_XZ := GROUND.RONEN
+const TARGET_XZ := GROUND.BOW_TARGET
+const CRATE_XZ := GROUND.COVER
 var world: Node3D
 var player: CharacterBody3D
 var state: Node
@@ -56,8 +57,10 @@ func configure(owner_world: Node3D) -> void:
 	ground_module.call_deferred()
 
 func ground_module() -> void:
-	await get_tree().physics_frame
-	grounded = world.training.place_on_ground(ronen, RONEN_XZ) and world.training.place_on_ground(target, TARGET_XZ) and world.training.place_on_ground(obstruction, CRATE_XZ)
+	for attempt in 120:
+		await get_tree().physics_frame
+		grounded = world.training.place_on_ground(ronen, RONEN_XZ) and world.training.place_on_ground(target, TARGET_XZ) and world.training.place_on_ground(obstruction, CRATE_XZ)
+		if grounded: break
 	ronen.grounded = grounded
 	if not grounded: push_error("Bow lesson requires safe authored village ground")
 
@@ -121,11 +124,20 @@ func register_shot(arrow: Node3D, charge: float, origin: Vector3) -> bool:
 	state.arrows -= 1
 	next_shot_id += 1
 	var id := next_shot_id
-	active_shots[id] = {"arrow": arrow, "charge": charge, "origin": origin, "ammunition_after": state.arrows}
+	active_shots[id] = {"arrow": arrow, "charge": charge, "origin": origin, "ammunition_after": state.arrows, "source": make_arrow_source(arrow, charge)}
 	arrow.first_contact.connect(_contact.bind(id))
 	arrow.missed.connect(_miss.bind(id))
 	world.training.feedback.sound(preload("res://assets/dialogue/sounds/Audio/pluck_002.ogg"), -18, 0.8)
 	return true
+
+func make_arrow_source(arrow: Node3D, charge: float) -> SnaielDamageSource:
+	var source = SnaielDamageSource.new()
+	source.entity = player
+	source.damage_attributes.health = lerpf(8.0, 24.0, charge)
+	source.instance = next_shot_id
+	source.can_damage = true
+	arrow.add_child(source)
+	return source
 
 func _contact(hit: Dictionary, id: int) -> void:
 	if not active_shots.has(id): return
@@ -140,10 +152,11 @@ func _contact(hit: Dictionary, id: int) -> void:
 			state.bow_training_complete = true
 		world.training.feedback.impact(hit.position, "蓄力靶命中", 0, "straw")
 		world.training.tell("蓄力靶命中 · 可重复练习；旧灯训练尚未完成", 4)
-	elif body != null and body.has_method("receive_hit"):
-		loss = body.receive_hit(lerpf(8.0, 24.0, shot.charge))
+	elif body != null and body.has_method("receive_contact"):
+		var resolved: Dictionary = body.receive_contact(shot.source, hit.position)
+		loss = resolved.get("hp_loss", 0.0)
 		result = "enemy" if loss > 0 else "blocked"
-		world.training.feedback.impact(hit.position, "箭命中" if loss > 0 else "未造成伤害", loss, "hit" if loss > 0 else "obstruction")
+		if loss <= 0: world.training.feedback.impact(hit.position, "未造成伤害", 0, "obstruction")
 	else:
 		world.training.feedback.impact(hit.position, "箭被挡住", 0, "obstruction")
 		world.training.tell("箭被近处物体挡住 · 换一个清晰射击位置")

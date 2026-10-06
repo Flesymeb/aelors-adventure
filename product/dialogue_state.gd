@@ -1,5 +1,6 @@
 extends Node
 ## Only confirmed choices commit rewards. Focus and reveal position are UI state.
+const GROUND := preload("res://forest_ground.gd")
 const SAVE_PATH := "user://isha_opening.cfg"
 const NODES := preload("res://data/isha_dialogue.json")
 const RONEN_NODES := preload("res://data/ronen_dialogue.json")
@@ -83,7 +84,8 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	config.set_value("opening", "experience", experience)
 	config.set_value("opening", "position", position)
 	config.set_value("opening", "yaw", yaw)
-	config.set_value("training", "version", 2)
+	config.set_value("training", "version", 3)
+	config.set_value("opening", "map_id", GROUND.MAP_ID)
 	for key in TRAINING_KEYS:
 		config.set_value("training", key, get(key))
 	config.set_value("reading", "scale", text_scale)
@@ -103,6 +105,15 @@ func load_progress(slot := 0) -> Dictionary:
 	if config.load(path) != OK:
 		load_preferences()
 		return {}
+	var invalid := slot_unavailable_reason(slot, true)
+	if invalid != "":
+		persistence_error = invalid
+		load_preferences()
+		return {}
+	return restore_config(config)
+
+
+func restore_config(config: ConfigFile) -> Dictionary:
 	logical_node = str(config.get_value("opening", "node", "D01"))
 	if not NODES.data.has(logical_node) and not HERS_NODES.data.has(logical_node) and not RONEN_NODES.data.has(logical_node):
 		logical_node = "D01"
@@ -125,16 +136,22 @@ func load_progress(slot := 0) -> Dictionary:
 	reveal_speed = clampf(float(config.get_value("reading", "speed", 30.0)), 15.0, 60.0)
 	instant_text = bool(config.get_value("reading", "instant", false))
 	load_preferences()
-	return {"position": config.get_value("opening", "position", Vector3.ZERO), "yaw": config.get_value("opening", "yaw", 0.0)}
+	var map_id := str(config.get_value("opening", "map_id", "village-v2"))
+	var saved: Vector3 = config.get_value("opening", "position", Vector3.ZERO)
+	var xz := GROUND.restored_xz(saved, map_id)
+	if map_id != GROUND.MAP_ID and encounter_defeated and not remnant_collected:
+		remnant_position = Vector3(GROUND.ENCOUNTER.x, 0, GROUND.ENCOUNTER.y)
+	persistence_error = ""
+	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": GROUND.MAP_ID}
 
 func objective() -> String:
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
-	if not sword_owned: return "出发前的训练 · 找木桥旁的赫斯"
+	if not sword_owned: return "出发前的训练 · 找村口的赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
 	if not practice_defense: return "防御练习 · 靠近赫斯，挡住或躲开模拟攻击"
 	if not encounter_defeated: return "初场实战 · 沿路前往训练怪；危险区外可退回"
-	if not remnant_collected: return "初战获胜 · 靠近金色残响按 E 领取经验"
-	if not bow_owned: return "巡路弓 · 找训练院右侧的罗恩"
+	if not remnant_collected: return "初战获胜 · 靠近金色残响自动拾取经验"
+	if not bow_owned: return "巡路弓 · 找草地边的罗恩"
 	if not bow_training_complete: return "弓练习 · 瞄准罗恩前方草靶，蓄力后松开；罗恩处免费补箭"
 	return "弓练习已完成 · 返回伊莎处；旧灯训练尚未完成"
 
@@ -182,7 +199,7 @@ func current_nodes() -> Dictionary:
 
 func adventure_snapshot() -> Dictionary:
 	var snapshot := training_snapshot()
-	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text"]:
+	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error"]:
 		snapshot[key] = get(key)
 	return snapshot.duplicate(true)
 
@@ -191,19 +208,24 @@ func restore_adventure(snapshot: Dictionary) -> void:
 	for key in snapshot: set(key, snapshot[key])
 
 
-func slot_unavailable_reason(slot: int) -> String:
+func slot_unavailable_reason(slot: int, allow_depleted := false) -> String:
 	var config := ConfigFile.new()
 	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
 	if not FileAccess.file_exists(path): return "暂无存档"
 	if config.load(path) != OK: return "存档无法读取"
+	return config_unavailable_reason(config, allow_depleted)
+
+
+func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> String:
 	var saved_position: Variant = config.get_value("opening", "position", null)
 	var saved_lives: Variant = config.get_value("training", "lives", 3)
 	var yaw: Variant = config.get_value("opening", "yaw", 0.0)
 	if not saved_position is Vector3 or not saved_position.is_finite(): return "存档位置无效"
-	if Vector2(saved_position.x, saved_position.z).distance_to(Vector2(20, 20)) > 35: return "位置不在安全区域"
+	var map_id: Variant = config.get_value("opening", "map_id", "village-v2")
+	if not map_id is String: return "存档地图无效"
 	if not (saved_lives is int or saved_lives is float): return "存档命数无效"
 	if not (yaw is int or yaw is float) or not is_finite(float(yaw)): return "存档方向无效"
-	if int(saved_lives) <= 0: return "命数已耗尽"
+	if int(saved_lives) < 0 or (int(saved_lives) == 0 and not allow_depleted): return "命数已耗尽"
 	if int(saved_lives) > 3: return "存档命数无效"
 	var saved_health: Variant = config.get_value("training", "health", 100.0)
 	if not (saved_health is int or saved_health is float) or not is_finite(float(saved_health)) or float(saved_health) < 0 or float(saved_health) > 100: return "存档生命无效"

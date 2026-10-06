@@ -85,18 +85,15 @@ func _build_idle_clip() -> void:
 	idle_player.play("Isha_Idle")
 
 func _ground() -> void:
-	await get_tree().physics_frame
-	var from := Vector3(global_position.x, 100, global_position.z)
-	var to := Vector3(global_position.x, -100, global_position.z)
-	var query := PhysicsRayQueryParameters3D.create(from, to, 1, [get_rid()])
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty() and hit.normal.y > 0.75:
-		global_position = hit.position + Vector3(0, 0.015, 0)
-		grounding_normal = hit.normal
-		grounded = true
-	else:
-		push_error("Isha has no safe authored ground at the selected approach")
-		visible = false
+	var world := get_parent()
+	for attempt in 120:
+		await get_tree().physics_frame
+		if preload("res://forest_ground.gd").place(world, self, preload("res://forest_ground.gd").ISHA):
+			grounded = true
+			grounding_normal = world.village.get_node("Terrain3D").data.get_normal(global_position)
+			break
+	if not grounded: push_error("Isha has no safe forest ground at the selected approach")
+
 
 func can_interact(player: CharacterBody3D) -> bool:
 	interaction_available = false

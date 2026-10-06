@@ -1,10 +1,11 @@
 extends Node3D
 
-const SOURCE_SCENE := preload("res://Demo/Slavica Free 2026 Version.scn")
+const SOURCE_SCENE := preload("res://world.tscn")
 const PLAYER_SCENE := preload("res://Player.tscn")
 const ARCHERY_HUD := preload("res://archery_hud.gd")
 const ENVIRONMENT_QUALITY := preload("res://environment_quality.gd")
-const SPAWN_XZ := Vector2(20.0, 20.0)
+const GROUND := preload("res://forest_ground.gd")
+const SPAWN_XZ := GROUND.SPAWN
 
 var village: Node3D
 var player: CharacterBody3D
@@ -50,16 +51,20 @@ var failure_busy := false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	village = SOURCE_SCENE.instantiate()
+	village.name = "Forest"
 	village.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(village)
 	var source_camera := village.get_node_or_null("Camera/Camera") as Camera3D
 	if source_camera:
 		source_camera.current = false
 	player = PLAYER_SCENE.instantiate()
-	player.process_mode = Node.PROCESS_MODE_PAUSABLE
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	var initial_height: float = village.get_node("Terrain3D").data.get_height(Vector3(SPAWN_XZ.x, 0, SPAWN_XZ.y))
+	player.position = Vector3(SPAWN_XZ.x, initial_height + 0.1, SPAWN_XZ.y)
 	player.configure_equipment(false, false)
 	add_child(player)
 	player.get_node("CameraArm/Camera").current = true
+	_add_village_buildings()
 	_place_player.call_deferred()
 	quality = Node.new()
 	quality.set_script(ENVIRONMENT_QUALITY)
@@ -76,9 +81,8 @@ func _ready() -> void:
 	dialogue.menu_requested.connect(_open_controls)
 	dialogue.progress_changed.connect(_save_opening.bind(0))
 	isha = preload("res://Isha.tscn").instantiate()
-	isha.position = Vector3(20.5, 0, 17.0)
+	isha.position = Vector3(GROUND.ISHA.x, 0, GROUND.ISHA.y)
 	add_child(isha)
-	_add_snowfall()
 	_add_help()
 	_add_controls()
 	player.controls_changed.connect(_refresh_control_prompts)
@@ -97,31 +101,54 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
+func _add_village_buildings() -> void:
+	# Retain authored medieval building meshes, materials and collision only.
+	# The old Demo world, nature, floor and regeneration scripts never enter the tree.
+	var placements := [
+		["res://Prefabs/Town/Building/EA03_Town_House_Comp_01a_PRE.prefab.scn", Vector2(104, 94), 0.0],
+		["res://Prefabs/Town/Building/EA03_Town_House_Comp_01a_PRE.prefab.scn", Vector2(131, 98), PI],
+		["res://Prefabs/Town/Building/EA03_Town_House_Comp_01a_PRE.prefab.scn", Vector2(99, 111), PI * 0.5]
+	]
+	var structures := Node3D.new()
+	structures.name = "VillageBuildings"
+	village.add_child(structures)
+	for placement in placements:
+		var house: Node3D = load(placement[0]).instantiate()
+		structures.add_child(house)
+		house.rotation.y = placement[2]
+		var xz: Vector2 = placement[1]
+		var base := INF
+		for dx in [-4, 0, 4]:
+			for dz in [-4, 0, 4]:
+				base = minf(base, village.get_node("Terrain3D").data.get_height(Vector3(xz.x + dx, 0, xz.y + dz)))
+		house.position = Vector3(xz.x, base - 0.12, xz.y)
+
+
 func _place_player() -> void:
-	await get_tree().physics_frame
-	var xz := SPAWN_XZ
-	if restored_position.has("position"):
-		var saved: Vector3 = restored_position.position
-		if Vector2(saved.x, saved.z).distance_to(SPAWN_XZ) < 35:
-			xz = Vector2(saved.x, saved.z)
-	var query := PhysicsRayQueryParameters3D.create(
-		Vector3(xz.x, 100.0, xz.y), Vector3(xz.x, -100.0, xz.y),
-		1, [player.get_rid(), isha.get_rid()]
-	)
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if hit:
-		player.global_position = hit.position + Vector3(0, 0.08, 0)
-	else:
-		player.global_position = Vector3(xz.x, 0, xz.y)
+	var xz := GROUND.restored_xz(restored_position.get("position", Vector3.ZERO), restored_position.get("map_id", ""))
+	# Terrain collision initialization may lag scene _ready. Keep physics disabled
+	# until the actual collision surface and standing volume are available.
+	var placed := false
+	for attempt in 120:
+		await get_tree().physics_frame
+		placed = GROUND.place(self, player, xz)
+		if not placed and xz != SPAWN_XZ:
+			xz = SPAWN_XZ
+			placed = GROUND.place(self, player, xz)
+		if placed: break
+	if not placed:
+		push_error("Forest spawn has no safe collision support")
+		_recovery_error("出生点尚未准备好 · 请重新启动或读取安全存档。")
+		return
+	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	player.set_meta("spawn_position", player.global_position)
 	if restored_position.has("yaw"): player.arm.rotation.y = restored_position.yaw
+	if dialogue_state.persistence_error != "":
+		_recovery_error(dialogue_state.persistence_error)
+		return
 	if dialogue_state.conversation_active:
 		_set_pause_owner("dialogue", true)
 		dialogue.open_dialogue(true)
-	var snow := player.get_node_or_null("LocalSnowfall") as CPUParticles3D
-	if snow:
-		snow.emitting = true
-		snow.restart()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -238,7 +265,7 @@ func _load_opening(slot: int) -> void:
 		_recovery_error("读取存档失败，请重试。")
 		return
 	var old_position := player.global_position
-	if not training.place_on_ground(player, Vector2(restored.position.x, restored.position.z)):
+	if not training.place_on_ground(player, GROUND.restored_xz(restored.position, restored.get("map_id", ""))) and not training.place_on_ground(player, SPAWN_XZ):
 		dialogue_state.restore_adventure(previous)
 		_recovery_error("存档位置无法安全落地 · 请重试或选择新游戏。")
 		return
@@ -559,34 +586,6 @@ func _add_hud_card(parent: Control, label: Label, font_size: int) -> void:
 	panel.add_child(label)
 
 
-func _add_snowfall() -> void:
-	var snow := CPUParticles3D.new()
-	snow.name = "LocalSnowfall"
-	snow.position.y = 5.7
-	snow.emitting = false
-	snow.amount = 260
-	snow.lifetime = 6.0
-	snow.preprocess = 6.0
-	snow.local_coords = false
-	snow.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	snow.emission_box_extents = Vector3(9.0, 1.3, 9.0)
-	snow.direction = Vector3(0.08, -1.0, 0.03)
-	snow.spread = 12.0
-	snow.initial_velocity_min = 0.65
-	snow.initial_velocity_max = 1.55
-	snow.gravity = Vector3(0.07, -0.18, 0.0)
-	snow.scale_amount_min = 0.55
-	snow.scale_amount_max = 1.25
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	material.albedo_color = Color(0.76, 0.85, 0.96, 0.78)
-	var quad := QuadMesh.new()
-	quad.size = Vector2(0.055, 0.055)
-	quad.material = material
-	snow.mesh = quad
-	player.add_child(snow)
 
 func open_ronen_dialogue() -> void:
 	dialogue_state.dialogue_kind = "ronen"
@@ -814,6 +813,8 @@ func _finish_recovery() -> void:
 	_set_pause_owner("dialogue", false)
 	_set_pause_owner("failure", false)
 	player.velocity = Vector3.ZERO
+	player.process_mode = Node.PROCESS_MODE_PAUSABLE
+	player.set_meta("spawn_position", player.global_position)
 	player._update_animation(false)
 	training.tell("冒险已恢复 · 检查点已保存")
 

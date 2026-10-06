@@ -8,7 +8,6 @@ const RANGER_PALETTE_SHADER := preload("res://ranger_palette.gdshader")
 const SKIN_NAMES := ["Forest", "Frost", "Ember"]
 const SKIN_COLORS := [Color.WHITE, Color(0.42, 0.70, 1.0), Color(1.0, 0.28, 0.16)]
 const ARROW_SCRIPT := preload("res://arrow_projectile.gd")
-const FOOT_SNOW_SCRIPT := preload("res://foot_snow_burst.gd")
 const BOW_POSE_SCRIPT := preload("res://bow_pose_modifier.gd")
 const BOW_VISUAL_SCRIPT := preload("res://bow_visual.gd")
 const HEAD_ASSEMBLY := preload("res://ranger_head_assembly.gd")
@@ -653,7 +652,7 @@ func _physics_process(delta: float) -> void:
 	attack_timer = maxf(0.0, attack_timer - delta)
 	_update_animation(direction.length_squared() > 0.01)
 	_update_footsteps(before)
-	if global_position.y < -60.0:
+	if global_position.y < 7.0 or not preload("res://forest_ground.gd").in_bounds(Vector2(global_position.x, global_position.z)):
 		if combat: combat.lethal_fall()
 		else: respawn()
 
@@ -796,30 +795,8 @@ func _update_footsteps(before: Vector3) -> void:
 	var step_length := 0.90 if control_held("sprint") else 0.72
 	if step_distance >= step_length:
 		step_distance -= step_length
-		_emit_foot_snow(next_foot)
+		# Snow particles belong to the retired winter village.
 		next_foot = "foot_r" if next_foot == "foot_l" else "foot_l"
-
-
-func _emit_foot_snow(bone_name: String) -> void:
-	if skeleton == null:
-		return
-	var bone := skeleton.find_bone(bone_name)
-	if bone < 0:
-		return
-	var foot_position := (skeleton.global_transform * skeleton.get_bone_global_pose(bone)).origin
-	var query := PhysicsRayQueryParameters3D.create(
-		foot_position + Vector3.UP * 0.35, foot_position + Vector3.DOWN * 0.55
-	)
-	query.exclude = [get_rid()]
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit:
-		return
-	var burst := Node3D.new()
-	burst.set_script(FOOT_SNOW_SCRIPT)
-	burst.set("seed_value", 1009 + footstep_count * 7919)
-	footstep_count += 1
-	get_parent().add_child(burst)
-	burst.global_position = hit.position + Vector3.UP * 0.045
 
 
 func respawn() -> void:

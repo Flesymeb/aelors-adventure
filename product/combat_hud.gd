@@ -107,8 +107,9 @@ func _process(delta: float) -> void:
 	var pixel = camera.unproject_position(point) if in_view else Vector2(-1000, -1000)
 	enemy.visible = opponent.engaged and opponent.health > 0 and in_view and Rect2(Vector2.ZERO, viewport).has_point(pixel) and opponent.line_clear(training.player.global_position)
 	enemy.position = pixel - Vector2(110, 50)
+	enemy_hp.max_value = opponent.health_component.max_health
 	enemy_hp.value = opponent.health
-	enemy_name.text = "◇ 抬手预告" if opponent.phase == "telegraph" else "训练怪 · %d/24" % int(opponent.health)
+	enemy_name.text = "◇ 抬手预告" if opponent.phase == "telegraph" else "训练怪 · %d/%d" % [int(opponent.health), int(opponent.health_component.max_health)]
 	enemy_name.add_theme_font_size_override("font_size", int(17 * state.text_scale))
 	if training.notice_time > 0: status.add_theme_color_override("font_color", Color(1, 0.91, 0.64))
 

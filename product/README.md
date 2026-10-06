@@ -1,3 +1,35 @@
+# 艾洛的冒险 · Snaiel 训练战斗底座
+
+当前增量把 Snaiel [Godot4ThirdPersonCombatPrototype](https://github.com/Snaiel/Godot4ThirdPersonCombatPrototype) `cbfecf427f9a703ebf7e940fd067ed31a729d637` 的 health、damage resources/source、melee、hitbox、hit interaction 与其 Beehave blackboard/selector/sequence/leaf 机制适配到 `combat/snaiel/`。完整 MIT 通知及模块改造边界见 `combat/snaiel/LICENSES.txt`；不导入 Blender 场景、demo Globals、额外控制器或未逐项确认的模板音频。
+
+普通路线保持：徒手开局 → 伊莎接受请求 → 赫斯授剑 → 实际击中草靶 → 格挡或闪避模拟攻击 → 河边训练怪。抬手锁定攻击方向，真实碰撞且无遮挡才结算。剑的三段连击与怪物出拳由 AnimationPlayer 方法事件开闭 Snaiel damage window；hitbox 对同一 damage source 的同一 instance 只结算一次。敌人 HP 仅由 HealthComponent 修改；玩家 HP/命数、教学事实及奖励保存仍归现有 DialogueState/训练策略，PlayerController 保留物理、镜头和全部挂点。旧怪物 HP/攻击时钟与剑训练 struck/contact 结算已移除。
+
+训练怪胜利只产生一次金色残响，靠近自动拾取 +10 XP；未领取、已领取和死亡恢复都保存，不在加载时回放反馈。取得弓后，可回赫斯按 E 开始无额外奖励的复练，让合法取得的弓箭能对同一个训练怪练习；初战完成事实不重置，复练本身不随保存重生。1/2 仍为剑/弓；右键格挡、接触前短窗振刀，Alt 闪避。暂停停止战斗与反馈时钟；静音战斗反馈和减少反馈动态保持可读的数字与危险提示。
+
+开发 smoke 覆盖了组件/clip 绑定、实际剑/箭命中与遮挡、单次接触去重、减伤/振刀、致死钳制、自动拾取及死亡/未拾取奖励重启恢复。场景设置探测与普通输入分开记录，不替代独立 Tester 的完整 foundation review。Forest 性能缺口和既有编辑器草纹理警告仍存在；模板采用不关闭环境、PRD R01–R24 或全产品验收。
+
+---
+
+# 艾洛的冒险 · Forest 环境增量
+
+运行当前工程的 `Preview.tscn`（Godot 4.7，桌面 Forward+）。普通第三人称游戏实例化 `world.tscn` 的 Terrain3D、原有植被分布、河水、天空、环境音与两座木桥，同时保留 Ranger 完整头部、动作、剑弓挂点和 Isha/Hers/Ronen、训练、奖励及存档系统。旧 Demo 世界、地面、自然物与雪效应不进入普通游戏；三个保留的村庄房屋使用原 prefab 的材质与建筑碰撞。
+
+`WASD` 移动、`Shift` 冲刺、`Space` 跳跃、鼠标转镜头、`E` 交互、`1/2` 取剑/弓、左键挥剑，持弓时右键瞄准、左键按住蓄力并松开射箭。`F10` 设置/存档，`G` 切换默认/低画质。武器需要剧情取得。低画质缩短小植被与阴影视距，并使用 70% 内部 3D 分辨率；输出窗口保持 1280×720。
+
+村口 CP01 / 伊莎 → 赫斯与草靶 → 草地训练怪 / 罗恩 → 河边第一木桥 → 对岸林间路 → 第二木桥 → 返回村口。锚点统一由 `forest_ground.gd` 管理，出生等待实际地形碰撞就绪，放置同时检查坡度与站立空间。Terrain3D 保留原区域数据，桥使用作者已有碰撞并适配产品的地面层；没有替代地板。
+
+存档加入地图标识 `forest-885de576-v1`，保留剧情、武器、箭数、经验、奖励领取、命数和训练事实。旧村庄存档搬到新 CP01，未领取残响搬到训练场；当前地图的坐标重新验证地面，不可用坐标退回 CP01。读取不重写源槽位；手动加载只有落地与原子保存成功后才提交。无效数据或写失败保留恢复界面与原历史，不通过删除存档解决问题。
+
+来源为 [GW Tuts / Lakshman 的 Forest-Godot4](https://github.com/Lakshman-YT/Forest-Godot4)，版本 `885de5769b2d0cf7ea0808752e44d680abecfd5b`。本轮沿用 Host 已暂存的完整来源，没有重新下载。来源记录与参考图保留在 `forest_source/`；实际依赖位于 `terrain_Data/`、`terrain mat/`、`env models/`、`addons/terrain_3d/` 和 `addons/sky_3d/`。移除来源的示例人物、演示相机、调试标签、统计脚本和 movie-writer 配置，保留当前产品输入与暂停所有权。
+
+请保留 `forest_source/!Credits-README!.txt` 及插件许可：Terrain3D / Sky3D 为 MIT，各模型、纹理与星图的许可分别适用。上游没有整包统一 LICENSE；草、树、植物等独立分发/商用许可仍需逐项确认，不能将整包称为 MIT。原村庄包仍受下述本机素材授权限制。
+
+开发探测已看到 Intel(R) Graphics (RPL-S) / Vulkan / Forward+ 正常渲染，以及实际出生、NPC 与训练模块的地面支持。普通输入检查已覆盖伊莎接受、赫斯授剑、暂停恢复、移动、草靶实际命中和重启后的装备/训练进度恢复。性能快照仍低于 30 FPS；完整桥路线、弓箭/战斗/奖励回归、遗留存档文件与写失败、60 秒默认/低画质采样及独立 Tester 验收尚不由这些探测证明。当前增量不关闭 PRD R01–R24、原五个里程碑或后续章节。最终当次观察与未验证项见 Developer 交付报告，Host 负责证据哈希与仓库角色提交。
+
+---
+
+以下为继承的示例来源说明及历史验证，仅供来源/绑定参考，不代表当前候选验收。
+
 # 免费村庄第三人称探索示例
 
 本机已导入 EmacEArt 村庄、Quaternius Ranger、动画和两种武器。运行 Godot 4.7：

@@ -1,11 +1,13 @@
 extends Node3D
-## Owns input legality, contact settlement and the sword module's persistent history.
+## Product policy: acquisition, defense, checkpoint/reward history and presentation.
+## Snaiel melee/hitboxes own attack windows, instances and contact settlement.
 const DAMAGES = [12.0, 15.0, 20.0]
 const CLIPS = ["sword/Sword_Regular_A", "sword/Sword_Regular_B", "sword/Sword_Regular_C"]
-const CP01 = Vector2(20, 20)
-const PRACTICE_XZ = Vector2(23, 13)
-const HERS_XZ = Vector2(20.5, 13)
-const ENCOUNTER_XZ = Vector2(23, 4)
+const GROUND = preload("res://forest_ground.gd")
+const CP01 = GROUND.SPAWN
+const PRACTICE_XZ = GROUND.PRACTICE
+const HERS_XZ = GROUND.HERS
+const ENCOUNTER_XZ = GROUND.ENCOUNTER
 var world: Node3D
 var player: CharacterBody3D
 var state: Node
@@ -18,7 +20,13 @@ var phase = "idle"
 var clock = 0.0
 var combo = 0
 var buffered = false
-var struck: Dictionary = {}
+var player_hitbox: SnaielHitbox
+var target_hitbox: SnaielHitbox
+var environment_hitbox: SnaielHitbox
+var sword_source: SnaielDamageSource
+var sword_melee: SnaielMelee
+var sword_events: SnaielMeleeAnimations
+var pickup_delay = 0.0
 var blocking = false
 var parry_window = 0.0
 var parry_cooldown = 0.0
@@ -67,6 +75,7 @@ func configure(owner_world: Node3D) -> void:
 	collision.shape = shape
 	collision.position.y = 0.6
 	target.add_child(collision)
+	bind_player_combat()
 	monster = preload("res://TrainingMonster.tscn").instantiate()
 	monster.name = "TrainingMonster"
 	monster.training = self
@@ -79,21 +88,99 @@ func configure(owner_world: Node3D) -> void:
 	world.add_child(feedback)
 	ground_module.call_deferred()
 
+func bind_player_combat() -> void:
+	sword_source = SnaielDamageSource.new()
+	sword_source.name = "SwordDamageSource"
+	sword_source.entity = player
+	sword_events = SnaielMeleeAnimations.new()
+	sword_events.name = "SwordEvents"
+	add_child(sword_events)
+	var strategies: Array[SnaielMeleeAttack] = []
+	for index in DAMAGES.size():
+		var strategy = SnaielMeleeAttack.new()
+		strategy.attack_name = CLIPS[index]
+		strategy.damage_attributes.health = DAMAGES[index]
+		strategy.recovery = 0.5 if index == 2 else 0.35
+		strategies.append(strategy)
+	sword_events.configure(strategies)
+	sword_melee = SnaielMelee.new()
+	sword_melee.name = "SwordMelee"
+	sword_melee.melee_animations = sword_events
+	sword_melee.weapons = {&"sword": NodePath("SwordDamageSource")}
+	sword_melee.add_child(sword_source)
+	add_child(sword_melee)
+	sword_melee.configure()
+	sword_events.stage_changed.connect(sword_stage)
+	sword_events.attacking_finished.connect(sword_finished)
+	player_hitbox = SnaielHitbox.new()
+	player_hitbox.name = "PlayerHitbox"
+	player_hitbox.entity = player
+	player_hitbox.policy = resolve_player_contact
+	add_child(player_hitbox)
+	target_hitbox = SnaielHitbox.new()
+	target_hitbox.name = "PracticeHitbox"
+	target_hitbox.entity = target
+	target_hitbox.policy = resolve_practice_contact
+	add_child(target_hitbox)
+	environment_hitbox = SnaielHitbox.new()
+	environment_hitbox.name = "EnvironmentHitbox"
+	environment_hitbox.entity = self
+	environment_hitbox.policy = func(_source, point):
+		feedback.impact(point, "剑被挡住", 0, "obstruction")
+		return {"accepted": true, "outcome": "obstruction", "hp_loss": 0.0}
+	add_child(environment_hitbox)
+	sword_melee.obstruction_hitbox = environment_hitbox
+
+func sword_stage(stage: String) -> void:
+	clock = 0
+	if stage == "anticipation": phase = "anticipation"
+	elif stage == "contact":
+		phase = "contact"
+		feedback.swing()
+	elif stage == "recovery":
+		phase = "recovery"
+		player.current_animation = ""
+		if combo < 2: player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
+
+func sword_finished() -> void:
+	if buffered and combo < 2 and not player_locked():
+		combo += 1
+		start_swing()
+	else:
+		phase = "idle"
+		player.current_animation = ""
+
+func resolve_practice_contact(_source: SnaielDamageSource, point: Vector3) -> Dictionary:
+	if not state.practice_hit:
+		state.practice_hit = true
+		commit()
+	feedback.impact(point, "命中草靶", 0, "straw")
+	tell("命中成立 · 回到赫斯身边按 E 练习防御")
+	return {"accepted": true, "outcome": "practice", "hp_loss": 0.0}
+
+func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dictionary:
+	var before: float = state.health
+	var outcome = receive_attack(monster.attack_origin, monster.locked_direction, source.damage_attributes.health)
+	if outcome == "parry": source.get_parried()
+	return {"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_before": before, "hp_after": state.health, "hp_loss": before - state.health}
+
+func resolved_enemy_contact(result: Dictionary) -> void:
+	var defeated: bool = result.outcome == "defeat"
+	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit")
+	if result.source_id == sword_source.get_instance_id() and combo == 2: stop_on_contact(0.045)
+
 func ground_module() -> void:
-	await get_tree().physics_frame
-	grounded = place_on_ground(hers, HERS_XZ) and place_on_ground(target, PRACTICE_XZ) and place_on_ground(monster, ENCOUNTER_XZ)
+	for attempt in 120:
+		await get_tree().physics_frame
+		grounded = place_on_ground(hers, HERS_XZ) and place_on_ground(target, PRACTICE_XZ) and place_on_ground(monster, ENCOUNTER_XZ)
+		if grounded: break
 	monster.home = monster.global_position
 	if not grounded:
 		push_error("Sword module placement lacks authored village ground")
 	restore_history()
 
 func place_on_ground(body: Node3D, xz: Vector2) -> bool:
-	var excludes: Array[RID] = [player.get_rid(), world.isha.get_rid(), hers.get_rid(), target.get_rid(), monster.get_rid()]
-	var ray = PhysicsRayQueryParameters3D.create(Vector3(xz.x, 100, xz.y), Vector3(xz.x, -100, xz.y), 1, excludes)
-	var result = get_world_3d().direct_space_state.intersect_ray(ray)
-	if result.is_empty() or result.normal.y < 0.65: return false
-	body.global_position = result.position + Vector3.UP * 0.04
-	return true
+	return GROUND.place(world, body, xz)
 
 func restore_history() -> void:
 	interrupt("load")
@@ -112,6 +199,10 @@ func restore_history() -> void:
 	player.traversal.reset()
 	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
 	monster.reset_encounter()
+	player_hitbox.reset_contacts()
+	target_hitbox.reset_contacts()
+	environment_hitbox.reset_contacts()
+	pickup_delay = 0.75
 	if remnant: remnant.queue_free(); remnant = null
 	if state.encounter_defeated and not state.remnant_collected: show_remnant()
 	if state.lives <= 0:
@@ -144,19 +235,19 @@ func tell(message: String, seconds = 2.6) -> void:
 
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
-	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0: return "[E] 领取经验残响 · +10 XP"
-	if hers.can_interact(player): return "[E] 与赫斯交谈" if not state.sword_owned else "[E] 练习 / 重试振刀"
+	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0: return "◇ 靠近拾取经验残响 · +10 XP"
+	if hers.can_interact(player): return "[E] 与赫斯交谈" if not state.sword_owned else ("[E] 复练训练怪 · 无额外奖励" if state.bow_owned and state.remnant_collected else "[E] 练习 / 重试振刀")
 	return ""
 
 func interact() -> bool:
-	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0:
-		collect_remnant()
-		return true
 	if hers.can_interact(player):
 		if not state.q01_accepted:
 			tell("赫斯：先去听伊莎的请求。")
 		elif not state.sword_owned:
 			world.open_hers_dialogue()
+		elif state.bow_owned and state.remnant_collected:
+			monster.begin_practice_replay()
+			tell("赫斯：训练怪已就位，可用剑或弓复练；初战奖励不会重复。", 5)
 		elif not state.practice_hit:
 			hers.demonstrate()
 			tell("赫斯：左键挥剑，击中右侧草靶；1 拔剑。")
@@ -205,7 +296,7 @@ func start_swing() -> void:
 	phase = "anticipation"
 	clock = 0
 	buffered = false
-	struck.clear()
+	if sword_melee: sword_melee.interrupt_attack()
 	var facing = -player.camera.global_basis.z
 	facing.y = 0
 	player.visual.rotation.y = atan2(facing.x, facing.z)
@@ -213,6 +304,8 @@ func start_swing() -> void:
 	# Imported clip contact is compressed to the product's 0.35s attack interval.
 	var length: float = player.animation_player.get_animation(CLIPS[combo]).length
 	player._play_animation(CLIPS[combo], length / 0.35)
+	sword_source.global_position = player.global_position
+	sword_melee.attack(combo, true, false)
 
 func recovery_duration() -> float:
 	return 0.5 if combo == 2 else 0.35
@@ -223,12 +316,17 @@ func interrupt(_reason: String) -> void:
 	buffered = false
 	blocking = false
 	parry_window = 0
-	struck.clear()
+	if sword_melee: sword_melee.interrupt_attack()
 	player.attack_timer = 0
 	if phase != "death": phase = "idle"
 	hurt_time = 0
 	clock = 0
 	hit_stop = 0
+	if sword_events and sword_events.timeline: sword_events.timeline.speed_scale = 1
+	if _reason in ["death", "load", "recovery"] and monster:
+		monster.melee.interrupt_attack()
+		player_hitbox.reset_contacts()
+		if feedback: feedback.clear_feedback()
 	if player.animation_player:
 		player.animation_player.speed_scale = 1
 		player.current_animation = ""
@@ -275,68 +373,24 @@ func advance_player(delta: float) -> void:
 		return
 	if hit_stop > 0:
 		hit_stop = maxf(0, hit_stop - delta)
-		if hit_stop <= 0: player.animation_player.speed_scale = 1
+		if hit_stop <= 0:
+			player.animation_player.speed_scale = 1
+			sword_events.timeline.speed_scale = 1
 		return
 	if player.traversal.action != "" and phase != "idle": interrupt("dodge")
-	if phase == "anticipation":
-		clock += delta
-		if clock >= 0.2:
-			phase = "contact"
-			clock = 0
-	elif phase == "contact":
-		clock += delta
-		resolve_sword_contact()
-		if clock >= 0.15:
-			phase = "recovery"
-			clock = 0
-			player.current_animation = ""
-			if combo < 2:
-				player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
-	elif phase == "recovery":
-		clock += delta
-		if clock >= recovery_duration():
-			if buffered and combo < 2:
-				combo += 1
-				start_swing()
-			else: phase = "idle"
+	if phase in ["anticipation", "contact", "recovery"]: clock += delta
+	if sword_source.can_damage:
+		sword_source.global_position = player.global_position
+		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), {target: target_hitbox, monster: monster.hitbox}, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
 		# Hold the completed guard pose; do not restart it every frame.
 		if player.animation_player.current_animation_position >= 0.5: player.animation_player.pause()
 
-func resolve_sword_contact() -> void:
-	var forward: Vector3 = player.visual.global_basis.z.normalized()
-	var origin = player.global_position + Vector3.UP * 0.95
-	var sphere = SphereShape3D.new()
-	sphere.radius = 0.65
-	var query = PhysicsShapeQueryParameters3D.new()
-	query.shape = sphere
-	query.transform = Transform3D(Basis.IDENTITY, origin + forward * 0.85)
-	query.collision_mask = 2
-	query.exclude = [player.get_rid()]
-	for hit in get_world_3d().direct_space_state.intersect_shape(query, 4):
-		var body: Node3D = hit.collider
-		if struck.has(body.get_instance_id()): continue
-		var point = body.global_position + Vector3.UP * 0.8
-		var ray = PhysicsRayQueryParameters3D.create(origin, point, 3, [player.get_rid()])
-		var obstacle = get_world_3d().direct_space_state.intersect_ray(ray)
-		if obstacle.is_empty() or obstacle.collider != body: continue
-		struck[body.get_instance_id()] = true
-		if body == target:
-			if not state.practice_hit:
-				state.practice_hit = true
-				commit()
-			feedback.impact(point, "命中草靶", 0, "straw")
-			tell("命中成立 · 回到赫斯身边按 E 练习防御")
-		elif body == monster and not state.encounter_defeated:
-			var loss: float = monster.receive_hit(DAMAGES[combo])
-			if loss > 0:
-				var defeated: bool = monster.health <= 0
-				feedback.impact(point, "击败" if defeated else "", loss, "defeat" if defeated else "hit")
-				if combo == 2: stop_on_contact(0.045)
-
 func stop_on_contact(seconds: float) -> void:
+	if state.reduced_motion: return
 	hit_stop = maxf(hit_stop, seconds)
 	player.animation_player.speed_scale = 0
+	sword_events.timeline.speed_scale = 0
 
 func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false) -> String:
 	last_hp_loss = 0
@@ -446,6 +500,10 @@ func show_game_over() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not grounded or player_locked() or world.pause_owners.size() > 0: return
+	pickup_delay = maxf(0, pickup_delay - delta)
+	if remnant and pickup_delay <= 0 and player.global_position.distance_to(remnant.global_position) < 1.65:
+		var ray = PhysicsRayQueryParameters3D.create(player.global_position + Vector3.UP * 0.7, remnant.global_position + Vector3.UP * 0.7, 1, [player.get_rid()])
+		if get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): collect_remnant()
 	if sim_phase == "idle": return
 	sim_clock += delta
 	if sim_phase == "prepare" and sim_clock >= 1.0:
@@ -474,10 +532,11 @@ func _physics_process(delta: float) -> void:
 func enemy_defeated() -> void:
 	if state.encounter_defeated: return
 	state.encounter_defeated = true
-	state.remnant_position = monster.home
+	state.remnant_position = monster.global_position
 	commit()
 	show_remnant()
-	tell("训练怪已倒下 · 金色残响需靠近按 E 领取", 4)
+	pickup_delay = 0.75
+	tell("训练怪已倒下 · 靠近金色残响自动拾取", 4)
 
 func show_remnant() -> void:
 	if remnant or state.remnant_collected: return
@@ -486,7 +545,7 @@ func show_remnant() -> void:
 	add_child(remnant)
 	var xz = Vector2(state.remnant_position.x, state.remnant_position.z)
 	if xz == Vector2.ZERO: xz = ENCOUNTER_XZ
-	if not place_on_ground(remnant, xz):
+	if not place_on_ground(remnant, xz) and not place_on_ground(remnant, ENCOUNTER_XZ):
 		remnant.queue_free()
 		remnant = null
 		return
@@ -529,13 +588,14 @@ func collect_remnant() -> void:
 		state.remnant_collected = false
 		state.experience -= 10
 		return
-	remnant.queue_free()
+	if remnant: remnant.queue_free()
 	remnant = null
+	if not monster.practice_replay: monster.visible = false
 	feedback.reward(10)
 	tell("初战奖励已领取 · +10 XP；Q02 尚未完成", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection}
+	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
 
 func _mcp_state() -> Dictionary:
 	return {"player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}

@@ -31,6 +31,10 @@ func sound(stream: AudioStream, volume: float, pitch = 1.0) -> void:
 	audio.finished.connect(func(): sounds.erase(audio); audio.queue_free())
 	audio.play()
 
+func swing() -> void:
+	# Existing qualified Kenney stem; no template WAV licensing assumed.
+	sound(preload("res://assets/dialogue/sounds/Audio/pluck_002.ogg"), -24, 0.55)
+
 func add_cue(text: String, position: Vector2, color: Color, lifetime = 1.0) -> void:
 	var label = Label.new()
 	label.text = text
@@ -115,6 +119,12 @@ func spark(point: Vector3, color: Color) -> void:
 	particles.restart()
 
 func _process(delta: float) -> void:
+	if training.state.muted_sound and not sounds.is_empty():
+		for source in sounds:
+			if is_instance_valid(source):
+				source.stop()
+				source.queue_free()
+		sounds.clear()
 	for cue in cues.duplicate():
 		cue.time += delta
 		var fraction: float = cue.time / cue.duration
