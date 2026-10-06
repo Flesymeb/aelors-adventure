@@ -19,13 +19,27 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 ## Persistent issue ledger
 
+**Repository-wide GitHub issue counts** (last successful observation; all runs and labels, excluding pull requests).
+
 | Field | Value |
 | --- | --- |
-| Open | 6 |
+| Open | 9 |
 | Closed | 3 |
-| All | 9 |
+| All | 12 |
 
-Counts and current statuses cover this run's persistent ledger. The repository can retain issues from earlier runs; per-loop QA findings below are historical observations, not current issue states.
+GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
+
+### Current run ledger
+
+| Field | Value |
+| --- | --- |
+| Active | 6 |
+| Verified closed | 2 |
+| Policy invalidated | 1 |
+| Waived | 0 |
+| All in this run | 9 |
+
+The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
 | Issue ID | GitHub | Current status | Resolution / latest defect |
 | --- | --- | --- | --- |
