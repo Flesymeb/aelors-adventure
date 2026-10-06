@@ -39,6 +39,23 @@ Counts and current statuses cover this run's persistent ledger. The repository c
 | `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's revised clothing still has conspicuous shoulder-to-sleeve bands during idle. |
 | `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dual portraits remain absent, and 200% last-choice scrolling hides the speaker name. |
 
+### HoH-managed GitHub issues across runs
+
+Snapshot from the last successful issue sync. These counts include earlier runs; unrelated repository issues are outside the HoH namespace.
+
+| Scope | Open | Closed | All |
+| --- | --- | --- | --- |
+| GitHub HoH namespace | 9 | 3 | 12 |
+| Outside this run's table | 3 | 0 | 3 |
+
+Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
+
+| GitHub | Issue ID | GitHub state | Source run |
+| --- | --- | --- | --- |
+| [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | `issue:milestone01-camera-environment` | OPEN | `aelors-adventure-astra-high-20261002` |
+| [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | `issue:milestone01-missing-loop` | OPEN | `aelors-adventure-astra-high-20261002` |
+| [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | `issue:r02-actor-animation-falloff` | OPEN | `aelors-adventure-astra-high-20261002` |
+
 ---
 
 ## Loop 06
