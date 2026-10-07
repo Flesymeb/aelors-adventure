@@ -23,8 +23,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 24 |
-| Closed | 7 |
+| Open | 22 |
+| Closed | 9 |
 | All | 31 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
@@ -33,8 +33,8 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 7 |
-| Verified closed | 2 |
+| Active | 5 |
+| Verified closed | 4 |
 | Policy invalidated | 0 |
 | Waived | 0 |
 | All in this run | 9 |
@@ -47,9 +47,9 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_empty_load_focus_clipped` | [#25](https://github.com/Flesymeb/aelors-adventure/issues/25) | CLOSED | Independently verified resolved at loop 2. |
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity fails because declared portraits are absent. |
-| `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | OPEN | H can be assigned to Roll but is consumed by tracker collapse. |
+| `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Restoration coverage is complete; distinct first-teaching and first-reward layout variants remain insufficiently evidenced. |
-| `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | OPEN | Shared controller telemetry breaks when an observer reaches NPC instances. |
+| `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
 | `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Prior HUD closeout remains unresolved despite completed restoration coverage; broader debt does not expand frozen acceptance. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | RECAPTURE_REQUEST: Deliberate obstacle negotiation remains unverified; prior contact-feedback evidence gaps are retained. |
 
@@ -59,7 +59,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 24 | 7 | 31 |
+| GitHub HoH namespace | 22 | 9 | 31 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -88,6 +88,38 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | `rpg.pause.inherited_control_inventory` | OPEN | `aelors-template-sol-local-20261006` |
 | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | `rpg.recovery.ammunition_not_restored` | OPEN | `aelors-template-sol-local-20261006` |
 | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | `rpg.village.performance_below_target` | OPEN | `aelors-template-sol-local-20261006` |
+
+---
+
+## Loop 13
+
+> A host-derived record of one Planner → Developer → QA Tester cycle.
+
+| Candidate | Base | Current state |
+| --- | --- | --- |
+| `loop-04-2137fc261b16` | `warm_start:loop-03-2137fc261b16` | PLANNED |
+
+### Project Planner
+
+| Field | Value |
+| --- | --- |
+| Status | PLANNED |
+| Focus | phase / game_settings_pause |
+| Objective | Complete the player-facing settings/pause module for the bound loop-04 candidate, replacing the combined prototype controls page with consistent state-bound presentation, real persistent options and safe nested navigation, while making existing evidence debt accurately inspectable without fabricating product state or acceptance. |
+| Strategy | `replace_combined_controls_with_shared_settings_and_owned_pause_flow` |
+| Tasks | 1 |
+
+### Developer
+
+| Field | Value |
+| --- | --- |
+| Status | NOT STARTED |
+
+### QA Tester
+
+| Field | Value |
+| --- | --- |
+| Status | UNTESTED |
 
 ---
 
@@ -243,10 +275,10 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 ## Current pointers
 
-- Latest candidate: `loop-03-2137fc261b16`
+- Latest candidate: `loop-04-2137fc261b16`
 - Accepted candidate: `none`
-- Latest attempted: `loop-03-2137fc261b16`
-- Latest warm start: `loop-03-c74511592252`
+- Latest attempted: `loop-04-2137fc261b16`
+- Latest warm start: `loop-04-2137fc261b16`
 - Last published: `loop-03-2137fc261b16`
 - Best verified: `loop-03-2137fc261b16`
 - Generated by the HoH host from immutable run evidence.
