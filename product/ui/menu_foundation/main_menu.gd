@@ -69,6 +69,10 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	outer.add_child(scroll)
+	var footer := VBoxContainer.new()
+	footer.name = "PageFooter"
+	outer.add_child(footer)
+	parent.set_meta("footer_column", footer)
 	var column := source_column if source_column != null else VBoxContainer.new()
 	if column.get_parent(): column.get_parent().remove_child(column)
 	column.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
@@ -98,14 +102,15 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 	var layout := func():
 		var size_now := get_viewport_rect().size
 		var scale_now: float = state.text_scale
-		panel.custom_minimum_size.x = minf((660 if wide else 384) * scale_now, size_now.x - 80 if wide else size_now.x * 0.55)
+		panel.custom_minimum_size.x = minf((parent.get_meta("page_width", 660) if wide else 384) * scale_now, size_now.x - 80 if wide else size_now.x * 0.55)
 		panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if wide else Control.SIZE_SHRINK_BEGIN
 		parent.theme.default_font_size = int(22 * scale_now)
-		title.add_theme_font_size_override("font_size", int((32 if wide else 42) * scale_now))
-		scroll.custom_minimum_size.y = minf(column.get_combined_minimum_size().y, maxf(120, size_now.y - 140 - header.get_combined_minimum_size().y - 12))
+		title.add_theme_font_size_override("font_size", int((parent.get_meta("page_heading_size", 32) if wide else 42) * scale_now))
+		scroll.custom_minimum_size.y = minf(column.get_combined_minimum_size().y, maxf(120, size_now.y - 140 - header.get_combined_minimum_size().y - footer.get_combined_minimum_size().y - 24))
 		if column.get_child_count() > 0 and column.get_child(0) is BaseButton and column.get_child(0).has_focus(): scroll.scroll_vertical = 0
 	column.minimum_size_changed.connect(func(): layout.call_deferred())
 	header.minimum_size_changed.connect(func(): layout.call_deferred())
+	footer.minimum_size_changed.connect(func(): layout.call_deferred())
 	get_viewport().size_changed.connect(layout)
 	parent.tree_exiting.connect(func():
 		if get_viewport().size_changed.is_connected(layout): get_viewport().size_changed.disconnect(layout))

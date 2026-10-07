@@ -131,6 +131,8 @@ func _process(delta: float) -> void:
 				return
 		initialized = true
 		world.training.restore_history()
+		world.gameplay_hud.restore_view()
+		if entry_kind == "new": world.gameplay_hud.notify("河谷村庄灯台已启用")
 		world._set_pause_owner("entry", false)
 		get_tree().paused = not world.pause_owners.is_empty()
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED

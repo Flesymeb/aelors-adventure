@@ -8,6 +8,7 @@ const HERS_NODES := preload("res://data/hers_dialogue.json")
 var dialogue_kind := "isha"
 signal sword_granted
 signal bow_granted
+signal save_finished(slot: int, error: int)
 var logical_node := "D01"
 var conversation_active := false
 var q01_accepted := false
@@ -15,6 +16,9 @@ var q01_reward_committed := false
 var experience := 0
 var confirmed_choices: Array[String] = []
 var text_scale := 1.0
+var mouse_sensitivity := 1.0
+var tracked_quest := "rescue"
+var tracker_collapsed := false
 var reveal_speed := 30.0
 var instant_text := false
 var save_feedback := ""
@@ -38,7 +42,10 @@ var lives := 3
 var recovery_pending := false
 var hers_node := "H01"
 var reduced_motion := false
-var muted_sound := false
+var muted_sound := false:
+	set(value):
+		muted_sound = value
+		apply_global_audio()
 var sword_selected := false
 var persistence_error := ""
 const TRAINING_KEYS := ["bow_owned", "arrows", "bow_training_complete", "bow_demonstrated", "selected_equipment", "ronen_node", "sword_owned", "practice_hit", "practice_defense", "practice_parry", "encounter_defeated", "remnant_collected", "remnant_position", "health", "lives", "recovery_pending", "hers_node", "reduced_motion", "muted_sound", "sword_selected", "dialogue_kind"]
@@ -46,6 +53,23 @@ const TRAINING_KEYS := ["bow_owned", "arrows", "bow_training_complete", "bow_dem
 func _ready() -> void:
 	# Title previews never restore history. Entry owns loading.
 	load_preferences()
+	apply_global_audio()
+
+func apply_global_audio() -> void:
+	var master := AudioServer.get_bus_index("Master")
+	var gain: AudioEffectAmplify
+	for index in AudioServer.get_bus_effect_count(master):
+		var effect := AudioServer.get_bus_effect(master, index)
+		if effect is AudioEffectAmplify and effect.resource_name == "AdventureOutputGain":
+			gain = effect
+			break
+	if gain == null:
+		gain = AudioEffectAmplify.new()
+		gain.resource_name = "AdventureOutputGain"
+		AudioServer.add_bus_effect(master, gain, 0)
+	# Silence also reaches downstream bus effects/capture; never restart sources.
+	gain.volume_db = -80.0 if muted_sound else 0.0
+	AudioServer.set_bus_mute(master, muted_sound)
 
 func begin() -> void:
 	if not conversation_active:
@@ -77,6 +101,8 @@ func choose(index: int) -> bool:
 
 func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	var config := ConfigFile.new()
+	config.set_value("journal", "tracked", tracked_quest)
+	config.set_value("journal", "collapsed", tracker_collapsed)
 	config.set_value("opening", "node", logical_node)
 	config.set_value("opening", "conversation", conversation_active)
 	config.set_value("opening", "accepted", q01_accepted)
@@ -96,8 +122,9 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	var error := config.save(path + ".tmp")
 	if error == OK:
 		error = DirAccess.rename_absolute(path + ".tmp", path)
-	save_feedback = "检查点已保存" if error == OK else "保存失败，请重试"
+	save_feedback = "进度已保存" if error == OK else "保存失败，请重试"
 	persistence_error = "" if error == OK else save_feedback
+	save_finished.emit(slot, error)
 	return error
 
 func load_progress(slot := 0) -> Dictionary:
@@ -115,6 +142,9 @@ func load_progress(slot := 0) -> Dictionary:
 
 
 func restore_config(config: ConfigFile) -> Dictionary:
+	tracked_quest = str(config.get_value("journal", "tracked", "rescue"))
+	tracker_collapsed = bool(config.get_value("journal", "collapsed", false))
+	save_feedback = ""
 	logical_node = str(config.get_value("opening", "node", "D01"))
 	if not NODES.data.has(logical_node) and not HERS_NODES.data.has(logical_node) and not RONEN_NODES.data.has(logical_node):
 		logical_node = "D01"
@@ -130,7 +160,7 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	arrows = clampi(arrows, 0, 12) if bow_owned else 0
 	if (selected_equipment == "bow" and not bow_owned) or (selected_equipment == "sword" and not sword_owned): selected_equipment = "unarmed"
 	health = clampf(health, 0, 100)
-	lives = clampi(lives, 0, 3)
+	lives = clampi(lives, 0, 5)
 	if remnant_collected: encounter_defeated = true
 	if lives == 0: health = 0
 	text_scale = clampf(float(config.get_value("reading", "scale", 1.0)), 1.0, 2.0)
@@ -165,6 +195,8 @@ func training_snapshot() -> Dictionary:
 	return facts
 
 func reset_adventure() -> void:
+	tracked_quest = "rescue"
+	tracker_collapsed = false
 	dialogue_kind = "isha"
 	logical_node = "D01"
 	conversation_active = false
@@ -200,7 +232,7 @@ func current_nodes() -> Dictionary:
 
 func adventure_snapshot() -> Dictionary:
 	var snapshot := training_snapshot()
-	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error"]:
+	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
 		snapshot[key] = get(key)
 	return snapshot.duplicate(true)
 
@@ -227,7 +259,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if not (saved_lives is int or saved_lives is float): return "存档命数无效"
 	if not (yaw is int or yaw is float) or not is_finite(float(yaw)): return "存档方向无效"
 	if int(saved_lives) < 0 or (int(saved_lives) == 0 and not allow_depleted): return "命数已耗尽"
-	if int(saved_lives) > 3: return "存档命数无效"
+	if not is_finite(float(saved_lives)) or float(saved_lives) != floor(float(saved_lives)) or float(saved_lives) > 5: return "存档命数无效"
 	var saved_health: Variant = config.get_value("training", "health", 100.0)
 	if not (saved_health is int or saved_health is float) or not is_finite(float(saved_health)) or float(saved_health) < 0 or float(saved_health) > 100: return "存档生命无效"
 	var node: Variant = config.get_value("opening", "node", "D01")
@@ -261,7 +293,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 
 func save_preferences() -> Error:
 	var config := ConfigFile.new()
-	for key in ["text_scale", "reveal_speed", "instant_text", "reduced_motion", "muted_sound"]:
+	for key in ["text_scale", "reveal_speed", "instant_text", "reduced_motion", "muted_sound", "mouse_sensitivity"]:
 		config.set_value("settings", key, get(key))
 	var error := config.save("user://adventure_preferences.cfg.tmp")
 	if error == OK: error = DirAccess.rename_absolute("user://adventure_preferences.cfg.tmp", "user://adventure_preferences.cfg")
@@ -271,6 +303,7 @@ func save_preferences() -> Error:
 func load_preferences() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://adventure_preferences.cfg") != OK: return
+	mouse_sensitivity = clampf(float(config.get_value("settings", "mouse_sensitivity", mouse_sensitivity)), 0.25, 2.5)
 	text_scale = clampf(float(config.get_value("settings", "text_scale", text_scale)), 1, 2)
 	reveal_speed = clampf(float(config.get_value("settings", "reveal_speed", reveal_speed)), 15, 60)
 	for key in ["instant_text", "reduced_motion", "muted_sound"]:
@@ -294,3 +327,44 @@ func slot_preview(slot: int) -> Dictionary:
 	facts.arrows = int(config.get_value("training", "arrows", 0))
 	facts.progress = "弓练习已完成" if config.get_value("training", "bow_training_complete", false) else ("已取得巡路弓" if config.get_value("training", "bow_owned", false) else ("已取得巡路剑" if config.get_value("training", "sword_owned", false) else ("已接受救援请求" if config.get_value("opening", "accepted", false) else "伊莎的求援")))
 	return facts
+
+# Read-only journal projection. These rows never grant equipment or rewards.
+func quest_entries() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	rows.append({"id": "rescue", "title": "伊莎的请求", "complete": false,
+		"context": "伊莎的父亲和三位村民被怪物带走。出发前，先在河谷聚落做好准备。" if q01_accepted else "广场边的伊莎似乎需要帮助。靠近她，听听发生了什么。",
+		"action": objective(), "steps": ["答应伊莎的求援"] if q01_accepted else []})
+	if q01_accepted:
+		var steps: Array[String] = []
+		if sword_owned: steps.append("从村口的赫斯处取得巡路剑")
+		if practice_hit: steps.append("用剑击中草靶")
+		if practice_defense: steps.append("挡住或躲开模拟攻击")
+		if practice_parry: steps.append("成功振刀")
+		if encounter_defeated: steps.append("击败路边的训练怪")
+		if remnant_collected: steps.append("拾取初战残响")
+		rows.append({"id": "sword", "title": "出发前的训练", "complete": remnant_collected,
+			"context": "老战士赫斯在村口教授巡路剑。先练习，再到道路旁验证所学。",
+			"action": "剑训练已完成" if remnant_collected else objective(), "steps": steps})
+	if remnant_collected or bow_owned:
+		var steps: Array[String] = []
+		if bow_owned: steps.append("从草地边的罗恩处取得巡路弓")
+		if bow_demonstrated: steps.append("观看罗恩的射箭示范")
+		if bow_training_complete: steps.append("射中罗恩前方的草靶")
+		rows.append({"id": "bow", "title": "巡路弓练习", "complete": bow_training_complete,
+			"context": "猎人罗恩在草地边等候。练习用弓控制距离，箭用尽后可找他补充。",
+			"action": "返回伊莎处" if bow_training_complete else objective(), "steps": steps})
+	return rows
+
+func tracked_entry() -> Dictionary:
+	var rows := quest_entries()
+	for row in rows:
+		if row.id == tracked_quest: return row
+	tracked_quest = "rescue"
+	return rows[0]
+
+func track_quest(id: String) -> bool:
+	for row in quest_entries():
+		if row.id == id:
+			tracked_quest = id
+			return true
+	return false

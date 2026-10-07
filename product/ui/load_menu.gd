@@ -1,6 +1,7 @@
 extends Control
 var host: Control
 var slots: Array[Dictionary] = []
+var back: Button
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var column: VBoxContainer = host.create_page(self, "加载冒险", true)
@@ -14,11 +15,16 @@ func _ready() -> void:
 		item.disabled = facts.reason != ""
 		item.focus_mode = Control.FOCUS_NONE if item.disabled else Control.FOCUS_ALL
 		item.tooltip_text = facts.reason
-	var back: Button = host.button(column, "返回", close)
-	back.grab_focus.call_deferred()
+	back = host.button(get_meta("footer_column"), "返回", close)
 	host.reflow(self)
+	_focus_return.call_deferred()
 func close() -> void:
 	host.audio.play_cue("back")
 	hide()
 func _mcp_state() -> Dictionary:
 	return {"slots": slots, "visible": visible}
+
+func _focus_return() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_visible_in_tree(): back.grab_focus()

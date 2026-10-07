@@ -97,6 +97,11 @@ var bow_elbow_target: Node3D
 var bow_frame := Transform3D.IDENTITY
 var shots_fired := 0
 var traversal: Node
+var free_camera_distance := 3.8
+var smooth_camera_distance := 3.8
+var window_focused := true
+var recapture_guard := false
+
 var camera_height := 1.65
 
 
@@ -327,12 +332,16 @@ func _control_pressed(event: InputEvent, action: String) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if controls_open:
+	if controls_open or not window_focused:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var sensitivity := lerpf(0.003, 0.0017, aim_blend)
+		var sensitivity: float = lerpf(0.003, 0.0017, aim_blend) * get_parent().dialogue_state.mouse_sensitivity
 		arm.rotation.y -= event.relative.x * sensitivity
 		arm.rotation.x = clampf(arm.rotation.x - event.relative.y * sensitivity, -1.25 if first_person else -0.85, 1.1 if first_person else 0.45)
+	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if not first_person and not aim_requested and aim_blend < 0.01:
+			free_camera_distance = clampf(free_camera_distance + (-0.45 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 0.45), 2.0, 6.5)
+		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_1: request_weapon("sword")
@@ -395,6 +404,14 @@ func _input(event: InputEvent) -> void:
 	if get_parent().has_method("handle_controls_input") and get_parent().handle_controls_input(event):
 		get_viewport().set_input_as_handled()
 		return
+	if not window_focused:
+		return
+	if not controls_open and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and (recapture_guard or Input.mouse_mode == Input.MOUSE_MODE_VISIBLE):
+		recapture_guard = false
+		blocked_mouse[MOUSE_BUTTON_LEFT] = true
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+		return
 	if controls_open:
 		# The owner already consumes capture and navigation keys. Allow its
 		# focused GUI buttons to receive unconsumed keyboard and pointer input.
@@ -422,7 +439,14 @@ func _input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		window_focused = true
+		recapture_guard = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		window_focused = false
+		_block_held_controls()
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		cancel_aim()
 		if combat: combat.interrupt("focus")
 
@@ -516,7 +540,8 @@ func _update_archery(delta: float) -> void:
 	shoulder_blend = lerpf(shoulder_blend, shoulder_side, 1.0 - exp(-8.0 * delta))
 	camera.fov = lerpf(lerpf(70.0, 48.0, aim_blend), lerpf(78.0, 55.0, aim_blend), perspective_blend)
 	camera.near = lerpf(0.1, 0.045, perspective_blend)
-	arm.spring_length = lerpf(3.8, 2.65, aim_blend) * (1.0 - perspective_blend)
+	smooth_camera_distance = lerpf(smooth_camera_distance, free_camera_distance, 1.0 - exp(-8.0 * delta))
+	arm.spring_length = lerpf(smooth_camera_distance, minf(2.65, free_camera_distance), aim_blend) * (1.0 - perspective_blend)
 	var desired_height: float = lerpf(1.65 if traversal.posture == "standing" else 1.4, traversal.eye_height(), perspective_blend) if traversal else 1.65
 	camera_height = lerpf(camera_height, desired_height, 1.0 - exp(-10.0 * delta))
 	var pivot := global_position + Vector3(0, camera_height - 0.2 * (1.0 - perspective_blend) + (traversal.camera_step_offset if traversal else 0.0), 0)
@@ -813,4 +838,4 @@ func respawn() -> void:
 	step_distance = 0.0
 
 func _mcp_state() -> Dictionary:
-	return {"bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+	return {"camera_yaw": arm.rotation.y, "camera_pitch": arm.rotation.x, "camera_target": free_camera_distance, "camera_requested_length": arm.spring_length, "camera_collision_length": arm.get_hit_length(), "mouse_sensitivity": get_parent().dialogue_state.mouse_sensitivity, "controls_open": controls_open, "window_focused": window_focused, "bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}

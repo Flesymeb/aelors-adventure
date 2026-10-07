@@ -57,3 +57,69 @@ source music and diagnostic version display are disabled;
 product confirmation and audio remain the active owners. Unrelated bundle files
 are omitted. Earlier observations above remain limited to their original runs;
 independent game_title_entry_review acceptance remains pending.
+
+
+# Gameplay interface increment
+
+GameplayHUD owns player HP/XP, five lit/extinguished life lanterns, one short
+tracked objective, contextual interaction and event notifications. CombatHUD
+retains enemy danger/health and combat outcomes; its player/checkpoint card and
+Preview's objective/prompt/permanent F10 creation paths are retired. ArcheryHUD
+retains the reticle and scaled ammunition readout and hides during modal ownership.
+The inherited Maaack journal uses the live CaptureFocus utility and parchment
+page adapter. J opens it, H collapses/reopens the tracker; current/completed/help
+tabs, selection and tracking project dialogue_state facts. Unreached quest rows
+are hidden. The journal's tracking/collapse fields are backward-compatible save
+fields, not quest/reward authorities. Its persistent footer states exact lives
+and the existing checkpoint rules. Confirmed save results emit one signal;
+success notices last 2.7 seconds of exploration time, failure persists with F5
+retry. Restoration clears old notices. Life changes/recovery are observed from
+existing facts; this increment grants no chapter life rewards. Legal 0–5-life
+histories now validate/restore faithfully instead of clamping to three.
+
+The existing player remains the sole camera/input owner. Free distance is
+clamped to 2.0–6.5 metres, wheel steps are 0.45 metres, and smoothing is independent
+of collision shortening. Aiming freezes the free target and returns to it;
+first person ignores wheel zoom. Mouse sensitivity is a persisted multiplier
+(0.25–2.5) available in title and existing pause controls. Modal owners suspend
+world input, preserve nested journal/dialogue ownership, and retain held-input
+guards. Focus loss cancels aiming/draw; the first recapture click is consumed.
+Arrow collision, launch direction, poses and IK are unchanged.
+
+Load Return now occupies the shared page footer outside the scrolling slot list
+and receives initial focus after settled layout. Mute is applied by the state
+setter and restored preferences to Master, with one reused AudioEffectAmplify
+before downstream effects. Bus mute alone left pre-mute capture samples audible
+in the first diagnostic; gain attenuation plus bus mute was retested. Unmuting
+restores gain without creating/restarting any sound source.
+
+Developer observations: native Godot 4.7 Forward+ import/rescan and title/world
+boot; corrected one parser error and one inherited journal cancellation error.
+1280x720 at 200% showed the original clipped Return and the complete revised
+focused Return. Ordinary J/F10/Esc showed journal pause and nested return;
+relative mouse/wheel changed actual camera angle and free target with settled
+collision length. Real Isha acceptance changed XP to 10 and added the sword
+quest row. In-memory diagnostic configuration checks restored 0–5, rejected
+fractional/six-life records and did not replay a committed reward. They are
+Developer checks, not independently supplied legal-history observations.
+
+Audio diagnostics: baseline forest output was non-silent (290434787-3c3ba2c4).
+The initial bus-only mute capture failed (149542728-fbdfc63a); corrected muted
+forest output (8705988-50dfe57d) reported silence_frame_ratio 1.0 and -120 dB RMS,
+with actual ambient source transitions. Full title/loading/gameplay/manual-load/
+return/restart audio and all six resolution/scale combinations still belong to
+independent Host/Tester acceptance. The Runtime window-size operation did apply
+1920x1080; it is environment setup, not physical-pointer qualification.
+
+Independent closeout remains pending: complete HUD/journal/prompt/death/reward
+and notification timing matrix; ordinary mouse/wheel, sensitivity, aim/shoulder,
+wall/low-ceiling collision and focus-loss regression; isolated valid/empty/corrupt/
+write-failure histories; audio, absolute-pointer and background qualification.
+No phase pass, formal issue closure, chapter award or later progression claim
+is made. The supplied Computer-Use backend remains unready; a supported native
+probe does not establish independent collector readiness.
+
+Official API decisions used ScrollContainer.ensure_control_visible timing and
+follow_focus, Control input propagation/focus, SpringArm3D.spring_length and
+get_hit_length, AudioServer.set_bus_mute and AudioEffectAmplify.volume_db from
+the corresponding stable class references at docs.godotengine.org/en/stable/classes/.

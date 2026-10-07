@@ -28,8 +28,8 @@ var dialogue_state: Node
 var dialogue: CanvasLayer
 var isha: StaticBody3D
 var pause_owners: Dictionary = {}
-var objective_label: Label
-var prompt_label: Label
+var gameplay_hud: CanvasLayer
+var restoring_interface := false
 var developer_ui := false
 var restored_position: Dictionary = {}
 var text_scale_button: Button
@@ -186,15 +186,6 @@ func _process(_delta: float) -> void:
 	# Leave external freezes alone when there is no product pause owner.
 	if not pause_owners.is_empty() and not get_tree().paused:
 		get_tree().paused = true
-	if objective_label:
-		objective_label.text = dialogue_state.objective()
-		objective_label.get_parent().visible = not dialogue.opened
-		var hers_prompt: String = training.interaction_prompt() if training and pause_owners.is_empty() else ""
-		var bow_prompt: String = bow_training.interaction_prompt() if bow_training and pause_owners.is_empty() else ""
-		if bow_prompt != "": hers_prompt = bow_prompt
-		var available: bool = pause_owners.is_empty() and (isha.can_interact(player) or hers_prompt != "")
-		prompt_label.text = hers_prompt if hers_prompt != "" else ("[E] 与伊莎交谈" if available else "")
-		prompt_label.get_parent().visible = available
 	if weapon_label and player:
 		var view_name := "FIRST PERSON" if player.first_person else ("LEFT SHOULDER" if player.shoulder_side < 0 else "RIGHT SHOULDER")
 		var movement: String = player.traversal.action if player.traversal.action != "" else ("sprint" if player.traversal.sprinting else player.traversal.posture)
@@ -230,13 +221,14 @@ func _open_controls() -> void:
 	capturing_control = ""
 	previous_mouse_mode = Input.mouse_mode
 	_set_pause_owner("controls", true)
+	if gameplay_hud.journal.visible: gameplay_hud.journal.suspend_for_menu()
 	dialogue.nested_menu = dialogue.opened
 	if failure_root:
 		failure_root.hide()
 		failure_pending = null
 		failure_armed = false
 	controls_panel.show()
-	controls_feedback.text = "方向键选移动绑定 · Enter 修改 · Backspace 默认\nF6 字号 · F7 速度 · F8 即时文字 · F5 保存 · Esc 返回"
+	controls_feedback.text = "命火 %d / 5 · 检查点：河谷村庄灯台\n方向键选移动绑定 · Enter 修改 · Backspace 默认\nF6 字号 · F7 速度 · F8 即时文字 · F5 保存 · Esc 返回" % dialogue_state.lives
 	control_buttons[controls_selection].grab_focus()
 
 
@@ -268,23 +260,29 @@ func _load_opening(slot: int) -> void:
 		_recovery_error(reason)
 		return
 	var previous: Dictionary = dialogue_state.adventure_snapshot()
+	restoring_interface = true
 	var restored: Dictionary = dialogue_state.load_progress(slot)
 	if restored.is_empty():
+		restoring_interface = false
 		_recovery_error("读取存档失败，请重试。")
 		return
 	var old_position := player.global_position
 	if not training.place_on_ground(player, GROUND.restored_xz(restored.position, restored.get("map_id", ""))) and not training.place_on_ground(player, SPAWN_XZ):
 		dialogue_state.restore_adventure(previous)
+		restoring_interface = false
 		_recovery_error("存档位置无法安全落地 · 请重试或选择新游戏。")
 		return
 	# Promote the selected history only after confirming real ground.
 	if dialogue_state.save_progress(player.global_position, restored.yaw) != OK:
 		dialogue_state.restore_adventure(previous)
 		player.global_position = old_position
+		restoring_interface = false
 		_recovery_error("保存恢复进度失败 · 冒险仍暂停，请重试。")
 		return
 	player.arm.rotation.y = restored.yaw
 	training.restore_history()
+	gameplay_hud.restore_view()
+	restoring_interface = false
 	restored_position = restored
 	_refresh_reading_controls()
 	_finish_recovery()
@@ -316,11 +314,24 @@ func _add_reading_controls() -> void:
 		row.add_child(load_button)
 	for option in ["reduced_motion", "muted_sound"]:
 		var toggle := CheckButton.new()
-		toggle.text = "减少反馈动态" if option == "reduced_motion" else "静音战斗反馈"
+		toggle.text = "减少反馈动态" if option == "reduced_motion" else "静音所有声音"
 		toggle.button_pressed = dialogue_state.get(option)
 		toggle.toggled.connect(_set_feedback_option.bind(option))
 		controls_list.add_child(toggle)
 		feedback_options[option] = toggle
+	var sensitivity_label := Label.new()
+	sensitivity_label.text = "鼠标灵敏度 · %.2f" % dialogue_state.mouse_sensitivity
+	controls_list.add_child(sensitivity_label)
+	var sensitivity := HSlider.new()
+	sensitivity.min_value = 0.25
+	sensitivity.max_value = 2.5
+	sensitivity.step = 0.05
+	sensitivity.value = dialogue_state.mouse_sensitivity
+	controls_list.add_child(sensitivity)
+	sensitivity.value_changed.connect(func(value: float):
+		dialogue_state.mouse_sensitivity = value
+		sensitivity_label.text = "鼠标灵敏度 · %.2f" % value
+		_save_preferences())
 	_refresh_reading_controls()
 
 func _set_feedback_option(value: bool, option: String) -> void:
@@ -380,13 +391,9 @@ func _add_help() -> void:
 	_add_hud_card(layout, weapon_label, 13)
 	help_label.get_parent().hide()
 	weapon_label.get_parent().hide()
-	objective_label = Label.new()
-	_add_hud_card(layout, objective_label, 22)
-	prompt_label = Label.new()
-	_add_hud_card(layout, prompt_label, 22)
-	var settings_cue := Label.new()
-	settings_cue.text = "F10 设置与存档"
-	_add_hud_card(layout, settings_cue, 16)
+	gameplay_hud = preload("res://ui/gameplay_hud.gd").new()
+	gameplay_hud.world = self
+	add_child(gameplay_hud)
 	var archery_hud := Control.new()
 	archery_hud.set_script(ARCHERY_HUD)
 	archery_hud.player = player
@@ -489,6 +496,7 @@ func _close_controls() -> void:
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus: focus.release_focus()
 	controls_panel.hide()
+	if gameplay_hud.journal.suspended: gameplay_hud.journal.resume_from_menu()
 	_set_pause_owner("controls", false)
 	dialogue.nested_menu = false
 	if dialogue.opened:
@@ -508,6 +516,30 @@ func _close_controls() -> void:
 # Called at the start of the player's _input, before mouse attacks and before
 # either script's _unhandled_input. Captured keys cannot leak into the world.
 func handle_controls_input(event: InputEvent) -> bool:
+	if gameplay_hud and gameplay_hud.journal.visible and not controls_panel.visible:
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode in [KEY_J, KEY_ESCAPE]:
+				gameplay_hud.journal.close_journal()
+				return true
+			if event.keycode == KEY_F10:
+				_open_controls()
+				return true
+			if event.keycode == KEY_F5:
+				_save_opening(gameplay_hud.failed_slot if gameplay_hud.failed_slot >= 0 else 0)
+				gameplay_hud.journal.refresh_entries()
+				return true
+		return false
+	if pause_owners.is_empty() and event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_J:
+			gameplay_hud.journal.open_journal()
+			return true
+		if event.keycode == KEY_H:
+			dialogue_state.tracker_collapsed = not dialogue_state.tracker_collapsed
+			_save_opening(0)
+			return true
+		if event.keycode == KEY_F5:
+			_save_opening(gameplay_hud.failed_slot if gameplay_hud.failed_slot >= 0 else 0)
+			return true
 	if pause_owners.has("failure") and not controls_panel.visible:
 		return _handle_failure_input(event)
 	if dialogue.opened and not controls_panel.visible:
@@ -574,7 +606,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 		return true
 	# Mouse clicks may reach controls buttons; the player suppresses all world
 	# mouse input while the panel is open. Mouse motion never drives its camera.
-	return not event is InputEventMouseButton
+	return false
 
 
 func _add_hud_card(parent: Control, label: Label, font_size: int) -> void:
@@ -822,6 +854,8 @@ func _return_to_title() -> void:
 
 
 func _finish_recovery() -> void:
+	gameplay_hud.restore_view()
+	if gameplay_hud.journal.visible or gameplay_hud.journal.suspended: gameplay_hud.journal.close_journal()
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus: focus.release_focus()
 	failure_pending = null
@@ -837,7 +871,7 @@ func _finish_recovery() -> void:
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	player.set_meta("spawn_position", player.global_position)
 	player._update_animation(false)
-	training.tell("冒险已恢复 · 检查点已保存")
+	training.tell("冒险已恢复")
 
 
 func _new_adventure() -> void:

@@ -22,3 +22,17 @@ EB Garamond and Zhuque Fangsong: existing bundled font licenses remain in
 assets/dialogue/garamond and assets/dialogue/zhuque.
 
 Title background and original vector icon provenance: assets/ui/LICENSES.md.
+
+## Gameplay interface
+The journal inherits the same Maaack main-menu scene and product layout/focus
+adapter; no second menu framework or quest authority was added. The gameplay
+theme reuses the bundled serif fonts and Kenney border textures above.
+
+assets/ui/journal_check.png: Kenney Game Icons by Kenney Vleugels, CC0-1.0,
+https://kenney.nl/assets/game-icons. Materialized from PNG/Black/2x/checkmark.png
+through the policy-bound asset provider; its adjacent receipt retains provenance.
+
+assets/ui/life_icons.svg and journal_icons.svg adapt the original product-authored
+old-lamp and book atlas in assets/ui/main_menu_icons.svg. They are source artwork,
+not extracted glyphs or editor icons. Lit flame and extinguished/slashed variants
+make life state distinct by shape as well as color.

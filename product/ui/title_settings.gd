@@ -8,6 +8,17 @@ func _ready() -> void:
 	size_button.name = "TextScale"
 	var speed_button: Button = host.button(column, "对白速度 · %d 字/秒" % int(host.state.reveal_speed), cycle_speed)
 	speed_button.name = "RevealSpeed"
+	var sensitivity := HSlider.new()
+	sensitivity.min_value = 0.25
+	sensitivity.max_value = 2.5
+	sensitivity.step = 0.05
+	sensitivity.value = host.state.mouse_sensitivity
+	var sensitivity_label: Label = host.paragraph(column, "鼠标灵敏度 · %.2f" % sensitivity.value)
+	column.add_child(sensitivity)
+	sensitivity.value_changed.connect(func(value: float):
+		host.state.mouse_sensitivity = value
+		sensitivity_label.text = "鼠标灵敏度 · %.2f" % value
+		commit())
 	for key in ["instant_text", "muted_sound", "reduced_motion"]:
 		var label: String = {"instant_text": "即时显示对白", "muted_sound": "静音", "reduced_motion": "减少动态"}[key]
 		var toggle := CheckButton.new()

@@ -19,11 +19,12 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	if player == null or player.weapon_mode != "bow" :
+	if player == null or player.controls_open or not get_parent().get_parent().pause_owners.is_empty() or player.weapon_mode != "bow" :
 		return
+	var text_scale: float = player.get_parent().dialogue_state.text_scale
 	var ammo := "箭 %d / 12" % (player.archery.state.arrows if player.archery else 0)
-	draw_style_box(ammo_panel, Rect2(Vector2(size.x * 0.5 - 60, size.y - 64), Vector2(120, 40)))
-	draw_string(font, Vector2(size.x * 0.5 - 42, size.y - 36), ammo, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.96, 0.86, 0.65))
+	draw_style_box(ammo_panel, Rect2(Vector2(size.x * 0.5 - 60 * text_scale, size.y - 64 * text_scale), Vector2(120, 40) * text_scale))
+	draw_string(font, Vector2(size.x * 0.5 - 42 * text_scale, size.y - 36 * text_scale), ammo, HORIZONTAL_ALIGNMENT_LEFT, -1, int(20 * text_scale), Color(0.96, 0.86, 0.65))
 	if player.aim_blend < 0.01: return
 	var center := size * 0.5
 	var alpha: float = player.aim_blend
