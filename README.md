@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 23 |
+| Open | 24 |
 | Closed | 7 |
-| All | 30 |
+| All | 31 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 6 |
+| Active | 7 |
 | Verified closed | 2 |
 | Policy invalidated | 0 |
 | Waived | 0 |
-| All in this run | 8 |
+| All in this run | 9 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -48,9 +48,10 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity fails because declared portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | OPEN | H can be assigned to Roll but is consumed by tracker collapse. |
-| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Retained combat notices expose Q02 and overlap bow ammunition. |
-| `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | FIXED_PENDING_VERIFY | Shared controller telemetry breaks when an observer reaches NPC instances. |
-| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | RECAPTURE_REQUEST: Remaining life-history, fault-recovery and camera/modal boundary evidence prevents full HUD closeout. |
+| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Restoration coverage is complete; distinct first-teaching and first-reward layout variants remain insufficiently evidenced. |
+| `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | OPEN | Shared controller telemetry breaks when an observer reaches NPC instances. |
+| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Prior HUD closeout remains unresolved despite completed restoration coverage; broader debt does not expand frozen acceptance. |
+| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | RECAPTURE_REQUEST: Deliberate obstacle negotiation remains unverified; prior contact-feedback evidence gaps are retained. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -58,7 +59,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 23 | 7 | 30 |
+| GitHub HoH namespace | 24 | 7 | 31 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -96,7 +97,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-03-2137fc261b16` | `development_snapshot:attempt-9bafc597fad86ddb6bf30b85` | DEVELOPER REPORT READY |
+| `loop-03-2137fc261b16` | `development_snapshot:attempt-9bafc597fad86ddb6bf30b85` | FAIL |
 
 ### Project Planner
 
@@ -123,7 +124,19 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-03-2137fc261b16` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 3 (2 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `actor_foundation_evidence_remaining` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: Deliberate obstacle negotiation remains unverified; prior contact-feedback evidence gaps are retained. |
+| `feedback_layout_evidence_remaining` | MAJOR | INTERNAL | HIGH | Restoration coverage is complete; distinct first-teaching and first-reward layout variants remain insufficiently evidenced. |
+| `hud_closeout_evidence_remaining` | MAJOR | INTERNAL | HIGH | Prior HUD closeout remains unresolved despite completed restoration coverage; broader debt does not expand frozen acceptance. |
 
 ---
 
@@ -235,5 +248,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-03-2137fc261b16`
 - Latest warm start: `loop-03-c74511592252`
 - Last published: `loop-03-2137fc261b16`
-- Best verified: `loop-02-c74511592252`
+- Best verified: `loop-03-2137fc261b16`
 - Generated by the HoH host from immutable run evidence.
