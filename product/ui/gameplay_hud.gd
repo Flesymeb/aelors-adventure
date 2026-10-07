@@ -269,7 +269,7 @@ func _process(delta: float) -> void:
 	item_slot.panel.visible = item_count > 0
 	item_slot.icon.texture = load(state.inventory.PROTOSET.data[state.quick_item].image)
 	item_slot.key.text = "6 · %d" % item_count
-	equipment_row.text = "B 背包 · K 能力 · J 日志"
+	equipment_row.text = "I 背包 · K 能力 · J 日志"
 	equipment_row.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
 	for slot in shortcut_slots.values(): slot.key.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
 	equipment_back.custom_minimum_size.x = 0

@@ -95,7 +95,7 @@ func _physics_process(delta: float) -> void:
 		sprite.queue_free()
 		pickups.erase(id)
 		world.training.commit()
-		world.training.tell("已拾取 · " + ("疗伤药 [6]" if reward.drop.id == "healing" else "命火 · B 背包使用"),4)
+		world.training.tell("已拾取 · " + ("疗伤药 [6]" if reward.drop.id == "healing" else "命火 · I 背包使用"),4)
 
 func _mcp_state() -> Dictionary:
 	return {"grounded":grounded,"enemies":enemies.map(func(e): return {"id":e.stable_id,"name":e.display_name,"hp":e.health,"phase":e.phase,"engaged":e.engaged,"position":str(e.global_position),"navigation_ready":e.navigation_ready}),"rewards":state.reward_history,"pickups":pickups.keys()}

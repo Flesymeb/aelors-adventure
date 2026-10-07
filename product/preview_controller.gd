@@ -357,7 +357,7 @@ func _add_help() -> void:
 
 
 func _refresh_control_prompts() -> void:
-	help_label.text = "%s/%s/%s/%s move · Mouse look · %s jump · %s sprint · %s shoulder\nUnarmed · Weapons require ownership · E interact / F old lamp reveal\n%s crouch · %s prone · %s roll · %s dodge · %s perspective\nF10 controls · 3 lamp · 4/5 elements · B bag · K skills · F8 dusk (dev) · G graphics · R respawn · Esc cursor" % [
+	help_label.text = "%s/%s/%s/%s move · Mouse look · %s jump · %s sprint · %s shoulder\nUnarmed · Weapons require ownership · E interact / F old lamp reveal\n%s crouch · %s prone · %s roll · %s dodge · %s perspective\nF10 controls · 3 lamp · 4/5 elements · I bag · K skills · F8 dusk (dev) · G graphics · R respawn · Esc cursor" % [
 		player.key_prompt("forward"), player.key_prompt("left"), player.key_prompt("back"), player.key_prompt("right"),
 		player.key_prompt("jump"), player.key_prompt("sprint"), player.key_prompt("shoulder"),
 		player.key_prompt("crouch"), player.key_prompt("prone"), player.key_prompt("roll"), player.key_prompt("dodge"), player.key_prompt("perspective")]
@@ -407,7 +407,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 	for panel in [inventory_panel, skill_panel]:
 		if panel and panel.visible and not controls_panel.visible:
 			if event is InputEventKey and event.pressed and not event.echo:
-				if event.keycode in [KEY_ESCAPE, KEY_B if panel == inventory_panel else KEY_K, KEY_I if panel == inventory_panel else KEY_K]: panel.close_panel(); return true
+				if event.keycode in [KEY_ESCAPE, KEY_I if panel == inventory_panel else KEY_K]: panel.close_panel(); return true
 				if event.keycode == KEY_F10: _open_controls(); return true
 			return false
 	if gameplay_hud and gameplay_hud.journal.visible and not controls_panel.visible:
@@ -425,7 +425,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 		return false
 	if pause_owners.is_empty() and event is InputEventKey and event.pressed and not event.echo:
 		if player.blocked_keys.has(event.keycode): return true
-		if event.keycode in [KEY_B, KEY_I]:
+		if event.keycode == KEY_I:
 			inventory_panel.open_panel()
 			return true
 		if event.keycode == KEY_K:

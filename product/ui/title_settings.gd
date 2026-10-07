@@ -64,7 +64,7 @@ func build() -> void:
 				host.button(column, "重试保存按键", func():
 					var error: String = bindings._save_controls()
 					feedback.text = "按键已保存" if error == "" else error)
-				host.paragraph(column, "E 交互 · F 旧灯 · 1 剑 / 2 弓 · J 日志 · H 收起目标 · Esc 暂停。保留键不能改绑。")
+				host.paragraph(column, "I 背包 · E 交互 · F 旧灯 · 1 剑 / 2 弓 · J 日志 · H 收起目标 · Esc 暂停。保留键不能改绑。")
 			"reading":
 				cycle("文字缩放", "text_scale", [1.0, 1.5, 2.0], ["100%", "150%", "200%"])
 				cycle("对白速度", "reveal_speed", [15.0, 30.0, 45.0, 60.0], ["15 字/秒", "30 字/秒", "45 字/秒", "60 字/秒"])

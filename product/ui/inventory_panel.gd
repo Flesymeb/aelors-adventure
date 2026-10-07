@@ -32,7 +32,7 @@ func _ready() -> void:
 	quick_button = button(row,"设为物品快捷栏 [6]",assign_selected)
 	button(row,"收起装备",unequip)
 	status = paragraph(column,"选择背包中的真实物品，再使用或装备。疗伤药恢复 30 生命；命火最多 5。")
-	button(get_meta("footer_column"),"返回 [B / Esc]",close_panel)
+	button(get_meta("footer_column"),"返回 [I / Esc]",close_panel)
 	state.inventory.changed.connect(refresh)
 	refresh()
 
