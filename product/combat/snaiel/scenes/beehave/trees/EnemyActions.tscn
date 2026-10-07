@@ -1,0 +1,25 @@
+[gd_scene load_steps=7 format=3]
+[ext_resource type="Script" path="res://combat/snaiel/selector.gd" id="1"]
+[ext_resource type="Script" path="res://combat/snaiel/sequence.gd" id="2"]
+[ext_resource type="Script" path="res://combat/snaiel/blackboard_compare.gd" id="3"]
+[ext_resource type="Script" path="res://combat/snaiel/action_leaf.gd" id="4"]
+[ext_resource type="PackedScene" path="res://combat/snaiel/scenes/beehave/trees/Patrol.tscn" id="5"]
+[ext_resource type="Script" path="res://combat/snaiel/wait_leaf.gd" id="6"]
+[node name="EnemyActions" type="Node"]
+script = ExtResource("1")
+[node name="GotHit" type="Node" parent="."]
+script = ExtResource("2")
+[node name="IsGotHitTrue" type="Node" parent="GotHit"]
+script = ExtResource("3")
+left_operand = "get_value(\"got_hit\", false)"
+right_operand = "true"
+[node name="WaitForHurt" type="Node" parent="GotHit"]
+script = ExtResource("4")
+method = &"tick_hurt"
+[node name="Attack" type="Node" parent="."]
+script = ExtResource("4")
+method = &"tick_attack"
+[node name="PursueOrReturn" type="Node" parent="."]
+script = ExtResource("4")
+method = &"tick_approach"
+[node name="Patrol" parent="." instance=ExtResource("5")]

@@ -57,10 +57,8 @@ func _process(_delta: float) -> void:
 	var state: Node = training.state
 	root.visible = training.world.pause_owners.is_empty()
 	var viewport = get_viewport().get_visible_rect().size
-	status.position = Vector2(viewport.x * 0.2, viewport.y - 105)
-	status.size = Vector2(viewport.x * 0.6, 90)
-	status.add_theme_font_size_override("font_size", int(20 * state.text_scale))
-	status.text = training.notice.replace("CP01 ", "") if training.notice_time > 0 and not training.notice.begins_with("命数") and not training.notice.begins_with("保存") else ""
+	# Teaching/reward/restoration notices share the themed gameplay notification lane.
+	status.text = ""
 	var opponent: CharacterBody3D = training.monster
 	var point = opponent.global_position + Vector3.UP * 2.1
 	var camera: Camera3D = training.player.camera

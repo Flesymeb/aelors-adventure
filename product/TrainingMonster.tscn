@@ -1,36 +1,5 @@
-[gd_scene load_steps=11 format=3]
-[ext_resource type="Script" path="res://training_monster.gd" id="1"]
-[ext_resource type="PackedScene" path="res://assets/training/Orc.gltf" id="2"]
-[ext_resource type="Script" path="res://combat/snaiel/health_component.gd" id="3"]
-[ext_resource type="Script" path="res://combat/snaiel/hitbox_component.gd" id="4"]
-[ext_resource type="Script" path="res://combat/snaiel/blackboard.gd" id="5"]
-[ext_resource type="Script" path="res://combat/snaiel/melee_animations.gd" id="6"]
-[ext_resource type="Script" path="res://combat/snaiel/melee_component.gd" id="7"]
-[ext_resource type="Script" path="res://combat/snaiel/damage_source.gd" id="8"]
-[ext_resource type="Script" path="res://combat/snaiel/hit_interaction_handler.gd" id="9"]
-[sub_resource type="CapsuleShape3D" id="Capsule"]
-radius = 0.38
-height = 1.72
-[node name="TrainingMonster" type="CharacterBody3D"]
-script = ExtResource("1")
-floor_snap_length = 0.35
-[node name="Collision" type="CollisionShape3D" parent="."]
-position = Vector3(0, 0.86, 0)
-shape = SubResource("Capsule")
-[node name="Model" parent="." instance=ExtResource("2")]
-
-[node name="HealthComponent" type="Node3D" parent="."]
-script = ExtResource("3")
-max_health = 24.0
-[node name="HitboxComponent" type="Area3D" parent="."]
-script = ExtResource("4")
-[node name="Blackboard" type="Node" parent="."]
-script = ExtResource("5")
-[node name="MeleeAnimations" type="Node" parent="."]
-script = ExtResource("6")
-[node name="MeleeComponent" type="Node" parent="."]
-script = ExtResource("7")
-[node name="Fist" type="Node3D" parent="MeleeComponent"]
-script = ExtResource("8")
-[node name="HitInteractionHandler" type="Node" parent="."]
-script = ExtResource("9")
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://combat/snaiel/scenes/entities/enemies/HybridEnemy.tscn" id="1"]
+[ext_resource type="Script" path="res://combat/enemy_product_adapter.gd" id="2"]
+[node name="TrainingMonster" instance=ExtResource("1")]
+script = ExtResource("2")

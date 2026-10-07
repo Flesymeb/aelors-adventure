@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Script" path="res://combat/snaiel/sequence.gd" id="1"]
+[ext_resource type="Script" path="res://combat/snaiel/selector.gd" id="2"]
+[ext_resource type="Script" path="res://combat/snaiel/action_leaf.gd" id="3"]
+[ext_resource type="Script" path="res://combat/snaiel/blackboard_compare.gd" id="4"]
+[node name="Patrol" type="Node"]
+script = ExtResource("2")
+[node name="Stationary" type="Node" parent="."]
+script = ExtResource("1")
+[node name="AtPoint" type="Node" parent="Stationary"]
+script = ExtResource("4")
+left_operand = "get_value(\"patrol_dist\", 0.0)"
+right_operand = "0.3"
+operator = 5
+[node name="Wait" type="Node" parent="Stationary"]
+script = ExtResource("3")
+method = &"tick_patrol_wait"
+[node name="Move" type="Node" parent="."]
+script = ExtResource("3")
+method = &"tick_patrol_move"

@@ -1,6 +1,6 @@
 extends StaticBody3D
 ## Uses the retained Ranger, complete head and ranged pose/mount adapter.
-var actor: CharacterBody3D
+var actor: Node3D
 var grounded := false
 var demonstration := false
 var demonstration_time := 0.0
@@ -14,20 +14,12 @@ func _ready() -> void:
 	collision.shape = capsule
 	collision.position.y = 0.9
 	add_child(collision)
-	actor = preload("res://Player.tscn").instantiate()
+	actor = preload("res://actors/npc_presentation.tscn").instantiate()
 	actor.name = "RonenPresentation"
 	actor.configure_equipment(false, true, "bow")
-	actor.collision_layer = 0
-	actor.collision_mask = 0
+	actor.appearance = preload("res://actors/ronen_appearance.tres")
 	add_child(actor)
-	actor.set_process_input(false)
-	actor.set_process_unhandled_input(false)
-	actor.set_physics_process(false)
-	actor.arm.get_node("Camera").current = false
-	actor.traversal.set_process(false)
-	actor.traversal.set_physics_process(false)
 	actor.visual.rotation.y = PI
-	actor.arm.rotation.y = 0
 	var marker := Label3D.new()
 	marker.text = "罗恩 · 巡路猎人"
 	marker.font = preload("res://dialogue_theme.tres").default_font

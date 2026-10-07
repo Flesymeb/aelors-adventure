@@ -1,0 +1,8 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/npc_appearance.gd" id="1"]
+[resource]
+script = ExtResource("1")
+hidden_parts = PackedStringArray("Male_Ranger_Head_Hood", "Male_Ranger_Body_Belt_1")
+cloth_color = Color(0.65, 0.66, 0.59, 1)
+metal_color = Color(0.48, 0.5, 0.46, 1)
+armored = true

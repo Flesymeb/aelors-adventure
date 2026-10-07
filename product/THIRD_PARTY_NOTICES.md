@@ -36,3 +36,29 @@ assets/ui/life_icons.svg and journal_icons.svg adapt the original product-author
 old-lamp and book atlas in assets/ui/main_menu_icons.svg. They are source artwork,
 not extracted glyphs or editor icons. Lit flame and extinguished/slashed variants
 make life state distinct by shape as well as color.
+
+## RPG actor foundation
+Snaiel Godot4ThirdPersonCombatPrototype, revision
+cbfecf427f9a703ebf7e940fd067ed31a729d637,
+https://github.com/Snaiel/Godot4ThirdPersonCombatPrototype, MIT code.
+The source-derived BaseEnemy/HybridEnemy, CharacterAnimations recipients and
+Patrol decision tree extend the retained melee, health, hitbox and Beehave unit.
+Full Snaiel and bitbrain MIT notices and adaptation boundary remain in
+combat/snaiel/LICENSES.txt. Registered source transfer:
+reference-stage:620f2754a12c5aae6930d289b21302065ded91d259df209cf3e4f5fefefca462.
+Only required scoped modules ship; the staged sample maps, Globals, additional
+controllers, Blender/Mixamo media and unrelated sounds are omitted.
+
+The live enemy reuses assets/training/Orc.gltf, its embedded animation catalog
+and texture under Quaternius CC0; provenance and original notices remain in
+assets/training/LICENSES.txt, License.txt and adjacent receipts. Temporary
+Blender conversion probes are not shipped or live bindings.
+
+NPC presentation reuses the selected village Ranger and complete base-head
+assembly, Quaternius UAL1/UAL2 and sword/bow/arrow assets (CC0), and KayKit
+Character Animations (CC0). Existing source notices remain in README.md,
+Characters/QuaterniusAnimations/License.txt, Characters/KayKitAnimations/License.txt
+and the retained source licenses/receipts. Ronen and Hers use private material
+instances, selected mesh visibility, mirrored authored armor and authored arrows;
+no source asset bytes were overwritten. Zero-area UV repair operates on private
+runtime mesh instances. The environment remains under its existing licenses.

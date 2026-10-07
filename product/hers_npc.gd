@@ -1,7 +1,6 @@
 extends StaticBody3D
 ## Retained complete Ranger assembly, differentiated as the village's guard.
-const CONTROLLER = preload("res://player_controller.gd")
-var actor: CharacterBody3D
+var actor: Node3D
 var marker: Label3D
 var grounded = false
 
@@ -14,19 +13,11 @@ func _ready() -> void:
 	collision.shape = shape
 	collision.position.y = 0.9
 	add_child(collision)
-	actor = preload("res://Player.tscn").instantiate()
+	actor = preload("res://actors/npc_presentation.tscn").instantiate()
 	actor.name = "GuardPresentation"
 	actor.configure_equipment(true, false, "sword")
-	actor.skin_index = 1
-	actor.collision_layer = 0
-	actor.collision_mask = 0
+	actor.appearance = preload("res://actors/hers_appearance.tres")
 	add_child(actor)
-	actor.set_process_input(false)
-	actor.set_process_unhandled_input(false)
-	actor.set_physics_process(false)
-	actor.arm.get_node("Camera").current = false
-	actor.traversal.set_process(false)
-	actor.traversal.set_physics_process(false)
 	actor.visual.rotation.y = 0
 	marker = Label3D.new()
 	marker.text = "赫斯 · 留守的老战士"

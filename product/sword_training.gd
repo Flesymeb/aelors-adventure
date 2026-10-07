@@ -232,6 +232,8 @@ func commit() -> bool:
 func tell(message: String, seconds = 2.6) -> void:
 	notice = message
 	notice_time = seconds
+	if world.gameplay_hud and not message.begins_with("命数") and not message.begins_with("保存"):
+		world.gameplay_hud.notify(message, true, seconds)
 
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
@@ -324,7 +326,7 @@ func interrupt(_reason: String) -> void:
 	hit_stop = 0
 	if sword_events and sword_events.timeline: sword_events.timeline.speed_scale = 1
 	if _reason in ["death", "load", "recovery"] and monster:
-		monster.melee.interrupt_attack()
+		monster.interrupt_action()
 		player_hitbox.reset_contacts()
 		if feedback: feedback.clear_feedback()
 	if player.animation_player:
@@ -467,7 +469,7 @@ func settle_death() -> void:
 	# One terminal cue carries the same clamped loss as the lethal outcome.
 	feedback.impact(player.global_position + Vector3.UP, "倒下", last_hp_loss, "death")
 	commit()
-	tell("命数 -1 · 剩余 %d · 返回 CP01 河谷村庄" % state.lives, 4)
+	tell("命数 -1 · 剩余 %d · 返回河谷村庄灯台" % state.lives, 4)
 
 func recover_at_checkpoint() -> void:
 	if state.lives <= 0:
@@ -592,10 +594,13 @@ func collect_remnant() -> void:
 	remnant = null
 	if not monster.practice_replay: monster.visible = false
 	feedback.reward(10)
-	tell("初战奖励已领取 · +10 XP；Q02 尚未完成", 4)
+	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
 	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
 
 func _mcp_state() -> Dictionary:
 	return {"player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}
+
+func feedback_swing() -> void:
+	if feedback: feedback.swing()

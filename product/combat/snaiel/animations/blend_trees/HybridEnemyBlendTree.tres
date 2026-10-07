@@ -1,0 +1,33 @@
+[gd_resource type="AnimationNodeBlendTree" load_steps=14 format=3]
+[sub_resource type="AnimationNodeAnimation" id="Idle"]
+animation = &"Idle"
+[sub_resource type="AnimationNodeAnimation" id="Walk"]
+animation = &"Walk"
+[sub_resource type="AnimationNodeAnimation" id="Punch"]
+animation = &"Punch"
+[sub_resource type="AnimationNodeAnimation" id="HitReact"]
+animation = &"HitReact"
+[sub_resource type="AnimationNodeAnimation" id="Death"]
+animation = &"Death"
+[sub_resource type="AnimationNodeStateMachineTransition" id="Transition"]
+xfade_time = 0.08
+[sub_resource type="AnimationNodeStateMachine" id="Action"]
+states/Idle/node = SubResource("Idle")
+states/Idle/position = Vector2(0, 100)
+states/Walk/node = SubResource("Walk")
+states/Walk/position = Vector2(160, 100)
+states/Punch/node = SubResource("Punch")
+states/Punch/position = Vector2(320, 100)
+states/HitReact/node = SubResource("HitReact")
+states/HitReact/position = Vector2(480, 100)
+states/Death/node = SubResource("Death")
+states/Death/position = Vector2(640, 100)
+transitions = ["Idle", "Walk", SubResource("Transition"), "Idle", "Punch", SubResource("Transition"), "Idle", "HitReact", SubResource("Transition"), "Idle", "Death", SubResource("Transition"), "Walk", "Idle", SubResource("Transition"), "Walk", "Punch", SubResource("Transition"), "Walk", "HitReact", SubResource("Transition"), "Walk", "Death", SubResource("Transition"), "Punch", "Idle", SubResource("Transition"), "Punch", "Walk", SubResource("Transition"), "Punch", "HitReact", SubResource("Transition"), "Punch", "Death", SubResource("Transition"), "HitReact", "Idle", SubResource("Transition"), "HitReact", "Walk", SubResource("Transition"), "HitReact", "Punch", SubResource("Transition"), "HitReact", "Death", SubResource("Transition"), "Death", "Idle", SubResource("Transition"), "Death", "Walk", SubResource("Transition"), "Death", "Punch", SubResource("Transition"), "Death", "HitReact", SubResource("Transition")]
+[sub_resource type="AnimationNodeTimeScale" id="Speed"]
+[sub_resource type="AnimationNodeBlendTree" id="TimedAction"]
+nodes/Action/node = SubResource("Action")
+nodes/Speed/node = SubResource("Speed")
+node_connections = [&"Speed", 0, &"Action", &"output", 0, &"Speed"]
+[resource]
+nodes/TimedAction/node = SubResource("TimedAction")
+node_connections = [&"output", 0, &"TimedAction"]

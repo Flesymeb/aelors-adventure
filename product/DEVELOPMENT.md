@@ -123,3 +123,103 @@ Official API decisions used ScrollContainer.ensure_control_visible timing and
 follow_focus, Control input propagation/focus, SpringArm3D.spring_length and
 get_hit_length, AudioServer.set_bus_mute and AudioEffectAmplify.volume_db from
 the corresponding stable class references at docs.godotengine.org/en/stable/classes/.
+
+# RPG actor foundation increment
+
+TrainingMonster.tscn now inherits the reusable Snaiel-derived HybridEnemy and
+BaseEnemy scene unit. combat/enemy_product_adapter.gd injects the existing
+training eligibility, ground support, player hitbox, cues and defeat settlement.
+training_monster.gd is only a compatibility alias; its former hand-written
+state driver and body-centered contact scan are retired. The reusable unit owns
+blackboard decisions, patrol/chase/return, terrain-qualified navigation,
+AnimationTree timing, enemy health, hurt/death and posed palm contact. Existing
+Snaiel melee windows and hitbox instance deduplication retain one damage path.
+SwordTraining owns acquisition, defense, recovery and presentation policy;
+DialogueState retains quest, save and one-time reward facts. No new map or floor.
+
+The actual Orc catalog maps Idle/Walk/Punch/HitReact/Death through the scoped
+Hybrid blend tree and animation recipients. LowerArm.R carries the posed fist
+source; this rig has no separate wrist, so its palm offset is measured from
+Middle1.R's rest transform. Anticipation, delayed active contact and recovery
+are separate stages. Hurt, target loss, load, recovery and death close contact.
+Dead restoration seeks the terminal Death pose; alive restoration reactivates
+its tree. Private runtime meshes repair zero-area UV triangles without changing
+source geometry, skin or materials. Remaining map UV findings are out of scope.
+
+Blender 4.5.14 LTS conversion and native Godot 4.7 Forward+ import of upstream
+YBot/combat-library probes succeeded. YBot contained only a bind-pose clip;
+the combat library contained slash/thrust/block/death clips but lacked the
+retained Orc LowerArm.R contact binding. These temporary probes were removed.
+The live scoped rig remains the qualified Quaternius Orc. A bounded alternate
+NPC outfit acquisition failed: provider_unavailable, Quaternius itch.io file
+resolution failed. No downloaded outfit is claimed. Existing licensed village
+geometry supplies the variants; independent visual suitability remains pending.
+
+Ronen and Hers instantiate actors/npc_presentation.tscn, a Node3D presentation
+unit without input, cameras, traversal, projectiles or save authority. Complete
+base heads, UAL1/UAL2 and KayKit bow retarget/IK and calibrated mounts remain.
+Hers removes the hood and carries authored mirrored metal shoulders; Ronen
+removes shoulder armor and carries an authored arrow bundle. Materials are
+private. Both retain ordinary interaction and sword/bow demonstrations.
+
+H is reserved in both current rebinding and saved-settings sanitization; valid
+unrelated logical-key preferences survive repair. Shared sensitivity telemetry
+safely handles parents without DialogueState. Teaching/reward notices use the
+HUD lane immediately rather than queuing behind autosaves; persistence failures
+retain priority. Restoration/reward messages expose no CP01/Q02 identifiers.
+The notice and contextual prompt lane stays above scaled bow ammunition.
+
+Developer checks: initial NPC telemetry debugger error reproduced, then broad
+observation retested safely; live H rejection and isolated in-memory saved-key
+sanitization passed. Early isolated enemy/contact prototype checked progressing
+Punch/HitReact/Death, anticipation HP100/hits0, active HP94/hits1, hurt/death
+interruption and dead/alive restoration. Ordinary inputs accepted Isha's task,
+earned/equipped the sword, hit the grass target, completed directional blocking,
+walked the real route, acquired the enemy and observed advancing Punch frames
+with HP100 then HP94 and one recorded contact. Two sword hits produced HP24→12→0,
+HitReact/Death, one committed remnant and XP10→20. Ronen's bow grant and draw/release
+demonstration completed with twelve arrows and no NPC projectile authority.
+These are Developer integration checks, not independent foundation acceptance.
+Audio capture 419413322-dc08a7eb was non-silent with no clipped frames but captured
+mainly ambient source events; exact combat-cue causality remains unverified.
+
+Independent rpg_template_foundation_review remains unverified. Retain the full
+HUD closeout matrix: 1280x720 and 1920x1080 at 100/150/200%; ordinary teaching,
+reward/restoration with ammo, pause/nested modal and remaining camera/focus
+boundaries; legal 3→4→5 and 3→2→1→0 life histories with restart/load; valid/empty/
+corrupt/depleted histories, persistence failure and retry, and audio/mute across
+entry/loading/gameplay/load/return/restart. Host life-history and persistence-fault
+fixtures were requested and remain unavailable. Isolated layout/configuration
+checks cannot replace these histories. title_entry_closeout_evidence_missing
+remains unresolved. No phase pass or formal independent issue closure is claimed.
+
+Additional isolated HUD layout probes exercised both viewport sizes and all
+three text scales with twelve visible arrows. Notice bounds stayed above ammo;
+200% shipped-camera frames were readable at 720p and 1080p. A scale-transition
+probe exposed a retained Control minimum that briefly placed a hidden prompt
+below its intended gap; positioning now uses its actual clamped height. These
+synthetic notices/scales do not validate ordinary restoration/fault histories.
+
+Retest after the lane/arrow corrections: ordinary E refill displayed the teaching
+message immediately for its requested duration beside a live contextual prompt
+and twelve arrows. An isolated 200→100% transition kept both bounds above ammo.
+Ronen rear recapture shows the authored arrow bundle; its original +Z mesh axis
+is now rotated up the back. Ordinary replay, charged bow draw/release and first
+contact killed the enemy once for 24 HP, consumed one arrow and retained XP20.
+Latest mesh audit clears newly bound NPC/enemy surfaces; unchanged stowed player
+sword and three existing map surfaces retain UV findings. Latest Preview runtime
+logs contain only engine/bridge startup, with no debugger break.
+
+The editor's earlier import buffer also retained missing res:// texture and
+Objects/Grass_Texture.psd messages from qualification work. They are preserved
+as failed probe evidence; temporary upstream media is not shipped. Final-launch
+logs must be assessed from the new run rather than treating historic diagnostics
+or successful exit codes as clean import evidence.
+
+Final main-scene check restored the earned bow, HP94, eleven arrows and XP20
+without replaying the reward. The exact F10→Enter→H→Escape→H sequence retained
+Roll B; a focused recapture showed readable H rejection, then controls returned
+and H changed the tracker while B moved the player. Incremental editor and fresh
+runtime logs were clean. Final inspection found dead-restoration telemetry reading
+the inactive tree's Start node instead of the paused Death clip; the animation
+observer now reads the actual AnimationPlayer while its tree is inactive.

@@ -155,17 +155,21 @@ func _save_finished(slot: int, error: int) -> void:
 		if notice_time < 0: notice_time = 0
 		notify("进度已保存" if slot == 0 else "存档 %d 已保存" % slot)
 
-func notify(text: String) -> void:
+func notify(text: String, immediate := false, seconds := 2.7) -> void:
 	if failed_slot >= 0: return
+	# Timing instructions and rewards must not wait behind autosave chatter.
+	if immediate:
+		_show_notice(text, false, seconds)
+		return
 	if notice_time > 0 and notice_text.text == text: return
 	for pending in notifications:
 		if pending.text == text: return
 	if notifications.size() < 3: notifications.append({"text": text})
 
-func _show_notice(text: String, failure := false) -> void:
+func _show_notice(text: String, failure := false, seconds := 2.7) -> void:
 	notice_text.text = text
 	retry.visible = failure
-	notice_time = -1 if failure else 2.7
+	notice_time = -1 if failure else seconds
 	notices.modulate.a = 1
 	notices.show()
 
@@ -216,11 +220,15 @@ func _process(delta: float) -> void:
 		if hint == "" and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
 	prompt.text = hint
 	prompt.visible = hint != ""
-	prompt.position = Vector2(view.x * 0.2, view.y - 170)
-	prompt.size = Vector2(view.x * 0.6, 100)
-	notices.position = Vector2(view.x * 0.35, view.y - 280)
-	notices.size.x = view.x * 0.3
-	notice_text.custom_minimum_size.x = view.x * 0.3 - 32
+	var ammo_top := view.y - 64 * scale_now
+	var prompt_height := maxf(prompt.get_minimum_size().y, 28 * scale_now)
+	prompt.size = Vector2(view.x * 0.6, prompt_height)
+	# Control may retain a larger minimum while the new font layout settles.
+	# Position by its actual clamped size, including during a scale change.
+	prompt.position = Vector2(view.x * 0.2, ammo_top - prompt.size.y - 18)
+	notices.size.x = view.x * 0.5
+	notice_text.custom_minimum_size.x = view.x * 0.5 - 32
+	notices.position = Vector2(view.x * 0.25, prompt.position.y - maxf(notices.size.y, notices.get_combined_minimum_size().y) - 18)
 
 func short_action(text: String) -> String:
 	return {"rescue": "与广场边的伊莎交谈" if not state.q01_accepted else _next_action(), "sword": _next_action(), "bow": "返回伊莎处" if state.bow_training_complete else ("找草地边的罗恩" if not state.bow_owned else "瞄准草靶 · 蓄力后松开")}.get(state.tracked_quest, text)

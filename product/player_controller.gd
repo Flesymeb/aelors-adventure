@@ -34,7 +34,7 @@ const CONTROL_LABELS := {
 	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
 }
 # E/F retain interaction/lamp ownership, including while their systems are locked.
-const RESERVED_KEYS := [KEY_E, KEY_F, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
+const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
 	KEY_5, KEY_G, KEY_R, KEY_M, KEY_J, KEY_K, KEY_ESCAPE, KEY_F10,
 	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN,
 	KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F11]
@@ -235,17 +235,30 @@ func _attach_weapons() -> void:
 func _setup_controls() -> void:
 	var config := ConfigFile.new()
 	if config.load(CONTROLS_FILE) == OK:
-		var loaded: Dictionary = {}
-		var valid := true
-		for action in CONTROL_DEFAULTS:
-			var value: Variant = config.get_value("keys", action, CONTROL_DEFAULTS[action])
-			if not value is int or value <= 0 or value in RESERVED_KEYS or value in loaded.values():
-				valid = false
-				break
-			loaded[action] = value
-		if valid:
-			effective_bindings = loaded
+		effective_bindings = _sanitize_controls(config)
 	_apply_controls()
+
+
+func _sanitize_controls(config: ConfigFile) -> Dictionary:
+	var loaded: Dictionary = {}
+	# Preserve valid preferences while repairing obsolete UI conflicts.
+	var used: Array = []
+	for action in CONTROL_DEFAULTS:
+		var value: Variant = config.get_value("keys", action, CONTROL_DEFAULTS[action])
+		if value is int and value > 0 and value not in RESERVED_KEYS and value not in used:
+			loaded[action] = value
+			used.append(value)
+	for action in CONTROL_DEFAULTS:
+		if loaded.has(action): continue
+		var fallback: int = CONTROL_DEFAULTS[action]
+		if fallback in used:
+			for alternative in [KEY_B, KEY_ALT, KEY_TAB, KEY_SPACE, KEY_SHIFT, KEY_W, KEY_S, KEY_A, KEY_D, KEY_C, KEY_Z, KEY_V, KEY_X, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P, KEY_L, KEY_N]:
+				if alternative not in used and alternative not in RESERVED_KEYS:
+					fallback = alternative
+					break
+		loaded[action] = fallback
+		used.append(fallback)
+	return loaded
 
 
 func _apply_controls() -> void:
@@ -335,7 +348,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if controls_open or not window_focused:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var sensitivity: float = lerpf(0.003, 0.0017, aim_blend) * get_parent().dialogue_state.mouse_sensitivity
+		var sensitivity: float = lerpf(0.003, 0.0017, aim_blend) * _mouse_sensitivity()
 		arm.rotation.y -= event.relative.x * sensitivity
 		arm.rotation.x = clampf(arm.rotation.x - event.relative.y * sensitivity, -1.25 if first_person else -0.85, 1.1 if first_person else 0.45)
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
@@ -838,4 +851,14 @@ func respawn() -> void:
 	step_distance = 0.0
 
 func _mcp_state() -> Dictionary:
-	return {"camera_yaw": arm.rotation.y, "camera_pitch": arm.rotation.x, "camera_target": free_camera_distance, "camera_requested_length": arm.spring_length, "camera_collision_length": arm.get_hit_length(), "mouse_sensitivity": get_parent().dialogue_state.mouse_sensitivity, "controls_open": controls_open, "window_focused": window_focused, "bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+	return {"camera_yaw": arm.rotation.y, "camera_pitch": arm.rotation.x, "camera_target": free_camera_distance, "camera_requested_length": arm.spring_length, "camera_collision_length": arm.get_hit_length(), "mouse_sensitivity": _mouse_sensitivity(), "controls_open": controls_open, "window_focused": window_focused, "bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+
+
+func _mouse_sensitivity() -> float:
+	var owner_node := get_parent()
+	if owner_node != null:
+		for property in owner_node.get_property_list():
+			if property.name == "dialogue_state":
+				var state: Node = owner_node.get("dialogue_state")
+				if is_instance_valid(state): return state.mouse_sensitivity
+	return 1.0

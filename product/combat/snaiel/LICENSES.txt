@@ -52,10 +52,13 @@ SOFTWARE.
 Adaptation: scoped class names, removed editor icons/debugger/metrics; included Leaf
 expression base. Product-driven tree ticking and delta-based interruptible waits.
 Health owns enemy HP; hitboxes deduplicate DamageSource instance per victim.
-Melee retains signal gating, attack instances and interruption; AnimationPlayer
-method events replace demo AnimationTree blending. Product adapters own defense,
-player HP, persistence, physics and existing actor presentation. Enemy's blackboard
-target/health/death wiring is adapted without Globals or root motion. The small
-Forest encounter uses collision/ground-checked steering; no demo navmesh is loaded.
+Melee retains signal gating, attack instances and interruption. The scoped
+BaseEnemy/HybridEnemy, CharacterAnimations recipients and Patrol/EnemyActions
+trees coordinate the retained Orc rig through an actual AnimationTree. Product
+adapters own teaching/defense policy, player HP, persistence and reward facts;
+the reusable enemy owns enemy motion, animation, health and posed contact.
+Enemy target/health/death wiring is adapted without Globals or root motion.
+Navigation polygons sample existing authored terrain and occupied volumes;
+no demo map, navmesh or collision floor is loaded.
 No Blender/Mixamo/Kenney/CynicMusic assets or unqualified template audio copied.
 Existing Orc/Ranger/Forest and feedback resources retain their existing notices.

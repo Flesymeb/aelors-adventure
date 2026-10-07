@@ -1,0 +1,7 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/npc_appearance.gd" id="1"]
+[resource]
+script = ExtResource("1")
+hidden_parts = PackedStringArray("Male_Ranger_Acc_Pauldron", "Male_Ranger_Body_Belt_2")
+cloth_color = Color(0.58, 0.46, 0.3, 1)
+quiver = true
