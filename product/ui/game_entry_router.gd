@@ -15,6 +15,7 @@ var entry_error := ""
 var previous_history: Dictionary = {}
 var canvas: CanvasLayer
 var initialization_elapsed := 0.0
+var opening: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -58,6 +59,26 @@ func enter_adventure(kind: String, slot: int) -> void:
 	player_ready = false
 	route = "loading"
 	title.hide()
+	if kind == "new":
+		route = "opening"
+		opening = preload("res://ui/illustrated_opening.tscn").instantiate()
+		opening.router = self
+		opening.name = "IllustratedOpening"
+		canvas.add_child(opening)
+		opening.completed.connect(_opening_finished)
+		return
+	_start_loading()
+
+func _opening_finished() -> void:
+	if route != "opening": return
+	opening.hide()
+	opening.queue_free()
+	opening = null
+	_start_loading()
+
+func _start_loading() -> void:
+	route = "loading"
+	get_tree().paused = false
 	loading = preload("res://ui/menu_foundation/loading_screen.tscn").instantiate()
 	loading.host = title
 	canvas.add_child(loading)
@@ -79,7 +100,9 @@ func _begin_entry() -> void:
 func _construct_world(_resource: PackedScene) -> void:
 	if route != "loading": return
 	var restored: Dictionary = {}
-	if entry_kind == "new": state.reset_adventure()
+	if entry_kind == "new":
+		state.reset_adventure()
+		state.opening_completed = true
 	else:
 		restored = state.load_progress(selected_slot)
 		if restored.is_empty():
@@ -144,7 +167,7 @@ func _process(delta: float) -> void:
 		route = "game_over" if state.lives == 0 else "world"
 
 func _confirmation_held() -> bool:
-	return Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_key_pressed(KEY_SPACE) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)
+	return Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_key_pressed(KEY_SPACE) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)
 
 func _entry_failed(message: String) -> void:
 	loader.cancel()
@@ -166,13 +189,21 @@ func _retry() -> void:
 	if route != "error": return
 	loading.queue_free()
 	loading = null
-	route = "title"
-	enter_adventure(entry_kind, selected_slot)
+	# The completed presentation is an entry boundary, not a durable save yet.
+	# Keep the original rollback history and retry only the loading/commit path.
+	entry_error = ""
+	initialized = false
+	player_ready = false
+	_start_loading()
 
 func return_to_title() -> void:
 	if route == "returning": return
 	loader.cancel()
-	if route in ["loading", "initializing"]: state.restore_adventure(previous_history)
+	if route in ["opening", "loading", "initializing", "error"]: state.restore_adventure(previous_history)
+	if opening:
+		opening.hide()
+		opening.queue_free()
+		opening = null
 	if is_instance_valid(world):
 		world.process_mode = Node.PROCESS_MODE_DISABLED
 		world.player.set_controls_open(true)

@@ -1,6 +1,7 @@
 extends MainMenu
 ## MainMenu submenu lifecycle adapted from Maaack Godot-Menus-Template (MIT).
 var pause_world: Node3D
+var cinematic: Control
 var return_scroll := 0
 var return_focus: Control
 var audio: Node
@@ -157,9 +158,9 @@ func button(column: BoxContainer, text: String, callback: Callable, icon_index :
 		if item.disabled and event is InputEventMouseButton and event.pressed: audio.play_cue("unavailable"))
 	item.pressed.connect(func():
 		if item.disabled: return
-		if (source_button == null or pause_world != null) and not item.is_visible_in_tree(): return
+		if (source_button == null or pause_world != null or cinematic != null) and not item.is_visible_in_tree(): return
 		audio.play_cue("confirm")
-		if source_button == null or pause_world != null: callback.call())
+		if source_button == null or pause_world != null or cinematic != null: callback.call())
 	if item.get_parent() == null: column.add_child(item)
 	elif item.get_parent() != column: item.reparent(column)
 	return item
@@ -204,7 +205,7 @@ func _ready() -> void:
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var column := create_page(self, "暂停" if pause_world else "艾洛的冒险", pause_world != null, source_column, source_heading)
+	var column := create_page(self, "开场暂停" if cinematic else ("暂停" if pause_world else "艾洛的冒险"), pause_world != null or cinematic != null, source_column, source_heading)
 	menu_buttons_box_container = column
 	var subtitle := source_subtitle
 	subtitle.reparent(get_meta("header_column") as VBoxContainer)
@@ -212,6 +213,12 @@ func _ready() -> void:
 	subtitle.remove_theme_font_size_override("font_size")
 	subtitle.text = "AELOR’S ADVENTURE"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if cinematic:
+		background.hide()
+		_build_cinematic(column, source_new, source_settings, source_load, source_exit)
+		source_menu.queue_free()
+		reflow(self)
+		return
 	if pause_world:
 		_build_pause(column, source_new, source_settings, source_load, source_exit)
 		source_menu.queue_free()
@@ -233,6 +240,9 @@ func _ready() -> void:
 	actions[0].grab_focus.call_deferred()
 	reflow(self)
 func refresh() -> void:
+	if cinematic:
+		status_label.text = "河谷遇袭 · %d / 4\n演出已暂停 · 尚未替换冒险进度" % (cinematic.beat + 1)
+		return
 	if pause_world:
 		status_label.text = "第一章 · 河谷聚落\n检查点：河谷村庄灯台 · 命数 %d / 5" % state.lives
 		return
@@ -266,18 +276,33 @@ func show_confirmation(heading: String, message: String, action: Callable) -> vo
 func try_exit_game() -> void:
 	show_confirmation("离开河谷？", "退出游戏。下次可继续最近保存的冒险。", func(): get_tree().quit())
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or (pause_world == null and router.route != "title"): return
+	if not is_visible_in_tree() or (pause_world == null and cinematic == null and router.route != "title"): return
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		if sub_menu: sub_menu.close()
 		elif confirmation: confirmation.close()
 		else:
-			if pause_world: pause_world._close_controls()
+			if cinematic: cinematic.close_pause()
+			elif pause_world: pause_world._close_controls()
 			else: try_exit_game()
 		get_viewport().set_input_as_handled()
 func _mcp_state() -> Dictionary:
 	var buttons := []
 	for item in actions: buttons.append({"text": item.text, "disabled": item.disabled, "rect": str(item.get_global_rect())})
-	return {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "preferences": state.preference_snapshot(), "caller": "pause" if pause_world else "title", "actions": buttons}
+	return {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "preferences": state.preference_snapshot(), "caller": "cinematic" if cinematic else ("pause" if pause_world else "title"), "actions": buttons}
+
+func _build_cinematic(column: BoxContainer, resume: Button, settings: Button, unused: Button, quit_button: Button) -> void:
+	for item in [resume, settings, unused, quit_button]:
+		for connection in item.pressed.get_connections(): item.pressed.disconnect(connection.callable)
+	unused.queue_free()
+	actions.append(button(column, "继续开场", cinematic.close_pause, 1, resume))
+	actions.append(button(column, "设置", func(): _open_sub_menu(preload("res://ui/title_settings.tscn")), 3, settings))
+	actions.append(button(column, "跳过开场", cinematic.finish))
+	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", "开场尚未完成。原有存档会保留，下次新游戏从开场重新开始。", router.return_to_title)))
+	actions.append(button(column, "退出", try_exit_game, 4, quit_button))
+	for index in actions.size(): column.move_child(actions[index], index)
+	status_label = paragraph(column, "")
+	refresh()
+	column.focus_first.call_deferred()
 
 func _build_pause(column: BoxContainer, resume: Button, settings: Button, slots: Button, exit_button_source: Button) -> void:
 	for item in [resume, settings, slots, exit_button_source]:

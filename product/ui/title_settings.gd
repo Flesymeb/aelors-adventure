@@ -28,7 +28,6 @@ func _exit_tree() -> void:
 func build() -> void:
 	var old_focus := get_viewport().gui_get_focus_owner()
 	var focus_name := str(old_focus.name) if old_focus and page and page.is_ancestor_of(old_focus) else ""
-	var scroll_position: int = page.find_child("PageScroll", true, false).scroll_vertical if page else 0
 	if page:
 		remove_child(page)
 		page.queue_free()
@@ -36,6 +35,7 @@ func build() -> void:
 	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(page)
 	column = host.create_page(page, "设置" if group == "" else GROUPS[group], true)
+	column.search_depth = 3
 	if group == "":
 		for key in GROUPS:
 			var item: Button = host.button(column, GROUPS[key], open_group.bind(key))
@@ -71,8 +71,9 @@ func build() -> void:
 				toggle("即时显示对白", "instant_text")
 				slider("镜头震动", "camera_shake", 0, 1, 0.1, true)
 				toggle("伤害数字", "damage_numbers")
-	feedback = host.paragraph(column, host.state.preference_error if host.state.preference_error != "" else "设置会在下次启动时保留。")
 	var footer: BoxContainer = page.get_meta("footer_column")
+	feedback = host.paragraph(footer, host.state.preference_error if host.state.preference_error != "" else "设置会在下次启动时保留。")
+	feedback.name = "SettingsFeedback"
 	host.button(footer, "返回", close)
 	if group == "":
 		host.button(column, "恢复默认设置", func():
@@ -83,8 +84,8 @@ func build() -> void:
 	var next_focus: Control = column.find_child(focus_name, true, false) if focus_name != "" else null
 	if next_focus:
 		next_focus.grab_focus.call_deferred()
-		page.find_child("PageScroll", true, false).set_deferred("scroll_vertical", scroll_position)
 	else: column.focus_first.call_deferred()
+	_keep_focus_visible.call_deferred()
 
 func open_group(key: String) -> void:
 	group = key
@@ -106,7 +107,11 @@ func cycle(label: String, key: String, values: Array, labels: Array) -> void:
 	item.name = key.capitalize()
 
 func slider(label: String, key: String, low: float, high: float, increment: float, percent := false) -> void:
-	var value_label: Label = host.paragraph(column, "")
+	var row := VBoxContainer.new()
+	row.name = key.capitalize() + "Row"
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(row)
+	var value_label: Label = host.paragraph(row, "")
 	var control := HSlider.new()
 	control.name = key.capitalize()
 	control.min_value = low
@@ -115,13 +120,25 @@ func slider(label: String, key: String, low: float, high: float, increment: floa
 	control.value = host.state.get(key)
 	control.custom_minimum_size.y = 40
 	control.focus_mode = Control.FOCUS_ALL
-	column.add_child(control)
+	row.add_child(control)
+	control.set_meta("focus_row", row)
+	control.focus_entered.connect(_keep_focus_visible.call_deferred)
 	var update := func(value: float): value_label.text = label + " · " + ("%d%%" % int(round(value * 100)) if percent else "%.2f" % value)
 	update.call(control.value)
 	control.value_changed.connect(func(value: float):
 		host.state.set(key, value)
 		update.call(value)
 		commit())
+
+func _keep_focus_visible() -> void:
+	if not page or not is_inside_tree(): return
+	# Container sorting and font wrapping settle after a rebuild.
+	await get_tree().process_frame
+	if not is_instance_valid(page): return
+	var focus := get_viewport().gui_get_focus_owner()
+	if focus and page.is_ancestor_of(focus):
+		var scroll: ScrollContainer = page.find_child("PageScroll", true, false)
+		if scroll.is_ancestor_of(focus): scroll.ensure_control_visible(focus.get_meta("focus_row", focus))
 
 func capture(action: String) -> void:
 	capturing = action
@@ -172,4 +189,7 @@ func close() -> void:
 		hide()
 
 func _mcp_state() -> Dictionary:
-	return {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible}
+	var focus := get_viewport().gui_get_focus_owner()
+	var row: Control = focus.get_meta("focus_row", focus) if focus else null
+	var scroll: ScrollContainer = page.find_child("PageScroll", true, false)
+	return {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible, "focus_rect": str(row.get_global_rect()) if row else "", "viewport_rect": str(scroll.get_global_rect()), "feedback": feedback.text, "feedback_rect": str(feedback.get_global_rect()), "scroll": scroll.scroll_vertical}

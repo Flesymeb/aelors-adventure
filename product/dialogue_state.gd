@@ -14,6 +14,7 @@ var conversation_active := false
 var q01_accepted := false
 var q01_reward_committed := false
 var experience := 0
+var opening_completed := false
 var confirmed_choices: Array[String] = []
 var text_scale := 1.0
 var mouse_sensitivity := 1.0
@@ -131,6 +132,8 @@ func choose(index: int) -> bool:
 
 func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	var config := ConfigFile.new()
+	config.set_value("cinematic", "version", 1)
+	config.set_value("cinematic", "completed", opening_completed)
 	config.set_value("journal", "tracked", tracked_quest)
 	config.set_value("journal", "collapsed", tracker_collapsed)
 	config.set_value("opening", "node", logical_node)
@@ -170,6 +173,9 @@ func load_progress(slot := 0) -> Dictionary:
 
 
 func restore_config(config: ConfigFile) -> Dictionary:
+	# Existing adventure histories predate the presentation marker. They have
+	# already crossed the village boundary and must never replay/reset progress.
+	opening_completed = bool(config.get_value("cinematic", "completed", true))
 	tracked_quest = str(config.get_value("journal", "tracked", "rescue"))
 	tracker_collapsed = bool(config.get_value("journal", "collapsed", false))
 	save_feedback = ""
@@ -211,7 +217,7 @@ func objective() -> String:
 	return "弓练习已完成 · 返回伊莎处；旧灯训练尚未完成"
 
 func _mcp_state() -> Dictionary:
-	return {"logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
+	return {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
 
 func training_snapshot() -> Dictionary:
 	var facts := {}
@@ -219,6 +225,7 @@ func training_snapshot() -> Dictionary:
 	return facts
 
 func reset_adventure() -> void:
+	opening_completed = false
 	tracked_quest = "rescue"
 	tracker_collapsed = false
 	dialogue_kind = "isha"
@@ -256,7 +263,7 @@ func current_nodes() -> Dictionary:
 
 func adventure_snapshot() -> Dictionary:
 	var snapshot := training_snapshot()
-	for key in ["logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
+	for key in ["opening_completed", "logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
 		snapshot[key] = get(key)
 	return snapshot.duplicate(true)
 

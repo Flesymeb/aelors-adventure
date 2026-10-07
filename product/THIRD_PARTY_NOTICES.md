@@ -68,3 +68,19 @@ https://alkakrab.itch.io/free-fantasy-medieval-ambient-music-pack .
 Author's explicit permission: “Absolutely Free For Commercial use”.
 Unmodified OGG source member and acquisition details: assets/audio/LICENSES.md.
 This is custom author permission; no CC0 or SPDX license is asserted.
+
+## Illustrated opening (loop 05)
+The four approved full-screen illustrations, storyboard and original generation
+prompts are retained under assets/cinematics/opening. Registered selection:
+Aelor opening illustrated cinematic four full-screen slides,
+e46d3829d599426ba8b7c55c67bf9d4dcce89751a7f683931799c5a85d640ef6:
+df98995d187690a866b0643a821785b33b9f4492b50cc66caa2a67e2b6980ac6.
+These images were generated with image_gen.imagegen. Provider service terms
+apply; the illustrations are not CC0 or MIT. The adjacent registered acquisition
+receipt and generation-prompts.json preserve their provenance.
+
+Opening music reuses alkakrab's Elven Dawn under the permission cited above.
+ambience.ogg and rift_transition.wav are original procedural audio authored for
+this project, without sampled recordings or third-party audio models. They are
+separate from the image service terms. Their synthesis is described in DEVELOPMENT.md.
+No commercial pack or personal-use-only sample from the audio comparison ships.

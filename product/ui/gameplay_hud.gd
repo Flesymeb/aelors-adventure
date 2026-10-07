@@ -209,6 +209,8 @@ func _process(delta: float) -> void:
 	tracker_title.add_theme_font_size_override("font_size", int(14 * scale_now))
 	tracker_text.visible = not state.tracker_collapsed
 	tracker_text.text = short_action(state.tracked_entry().action)
+	# Release the retained expanded height after text/visibility changes.
+	tracker.size = Vector2(tracker.custom_minimum_size.x, 0)
 	tracker.visible = not state.tracked_entry().complete
 	var hint := ""
 	if active:
@@ -240,4 +242,4 @@ func _next_action() -> String:
 	return "瞄准罗恩前方草靶" if not state.bow_training_complete else "返回伊莎处"
 
 func _mcp_state() -> Dictionary:
-	return {"hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
+	return {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}

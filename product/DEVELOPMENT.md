@@ -364,3 +364,109 @@ renderer costs and HP-identical number toggles. Cinematic/skill callers are not
 implemented by this owning phase and remain unavailable observations. Ordinary
 obstacle pursuit/return and rendered contact/audio/VFX still need independent
 capture. ISSUE-0006, ISSUE-0008 and ISSUE-0009 remain unresolved.
+
+## Loop 05 — illustrated opening and shared layout
+
+Ordinary New Game now routes through ui/illustrated_opening.tscn before loading
+the village. Continue/manual histories keep the existing loading path. The four
+approved illustrations and unchanged storyboard/provenance were materialized
+through game-asset-provider into assets/cinematics/opening. Existing Maaack
+MainMenu/CaptureFocus scenes, parchment, source receipts, serif fonts, and the
+single menu audio/preferences owner remain live.
+
+The native canvas presentation uses the storyboard's 10/8/10/10 second beats,
+independent Chinese subtitles, a 0.5-second crossfade, 2–4% slow push-in and
+sparse margin wear/dust. Reduced motion stops the push and motes; low quality
+also omits margin drawing. All motion follows the presentation clock rather
+than shader TIME. The pause caller reuses the live MainMenu lifecycle, with
+resume/settings/skip/title/exit; it offers no fictional cinematic save slot.
+Closing a child leaves its caller paused. Focus loss opens pause. Resume waits
+for confirm/attack/aim release; final world entry also waits for release and
+retains the existing player input gate. Temporary subtitle/art/audio nodes are
+removed before loading. No additional actor/controller or settings authority
+was introduced.
+
+New Game does not touch valid history during playback. Completion and skip
+share one router path: reset only adventure facts, mark opening_completed,
+prepare the unarmed village with three lives, then use the existing atomic
+.tmp/rename save after safe readiness. A failed write restores the previous
+in-memory adventure and preserves the existing on-disk history. Retry starts
+at the complete opening boundary. Exit before commit retains the previous
+history; starting New Game again replays from beat one. Legacy saves without
+the cinematic marker default to completed and preserve choices/equipment/XP.
+Preferences are excluded from rollback and remain independent. Presentation
+never confirms a dialogue choice or grants rewards/equipment.
+
+Slider labels/current values and their controls now share a row. Focus scrolls
+the complete row into view after container sorting; rebuilds restore control
+identity without reapplying an obsolete scroll offset. Capture/rejection/save
+feedback occupies the fixed page footer. Tracker width changes now release
+retained height each frame, allowing current wrapping/collapse to set the size.
+Read-only observations expose actual focused-row, viewport, feedback and tracker
+rectangles plus opening clock/owners; they do not drive gameplay or assert passes.
+
+Documentation consulted through registered godot_docs on Godot 4.7/Forward+:
+stable/tutorials/scripting/pausing_games.html (Always versus Pausable, audio
+pause), classes/class_scrollcontainer.html#class-scrollcontainer-method-ensure-control-visible,
+and stable/tutorials/rendering/renderers.html (native 2D canvas support).
+Native controls/drawing were chosen instead of a new shader/CompositorEffect.
+An early runnable probe found an inherited toolbar theme was null; font overrides
+fixed that failure. A second probe established that ALWAYS presentation must
+also respect external tree freezes; the clock now stops on paused tree state.
+
+Audio comparison: local pool lacked an eligible atmospheric stem. Cyrex's
+Fantasy Sound Pack is paid (CC BY 4.0), and registered download returned no URL;
+3ddisco's free samples permit personal use only. Kenney RPG Audio has no
+registered automated adapter and its public page failed TLS acquisition.
+Additional magic packs were paid. Those assets were not copied. The opening
+reuses the licensed score and adds original, low-level stereo river-air and
+rupture/bell stems. PCM recipe: Python standard library, 24 kHz/16-bit/stereo,
+Random seed 261006; two independent 0.995 lowpass-noise accumulators. Air is
+12 seconds with a 0.20 filtered-noise term and 0.012 sine at 146.83/146.95 Hz,
+slow modulation, and a cosine edge envelope; Vorbis encoded with libvorbis q4.
+Rupture is 4 seconds with a 0.08 sine swept around 82.4 Hz, 0.028 inharmonic
+partial, 0.28 filtered air, 80 ms attack and exponential 1.1/s decay. Bell
+onsets 0.15/0.95 seconds use 293.66 and 708.72 Hz, 65/s attack and 2.1/s decay,
+plus a final 200 ms fade. No recordings or external generation service were
+used. Music goes to Music; air/rupture go to Effects, downstream of the existing
+master/music/effects gains. Their players are Pausable; pause explicitly holds
+playback positions and disposal stops the temporary sources.
+
+Developer probes so far: paired Audio baseline/retest confirms the previously
+hidden master label now lies inside the scroll viewport; 1280x720 100/200% and
+1920x1080 200% focused rows/footer were observed with screenshots and actual
+rectangles. Ordinary capture rejected reserved E and conflicting W without
+changing bindings, then cancellation worked. Nested cinematic settings retained
+the beat timestamp. These are bounded smoke observations, not Tester closure.
+Final runnable delivery checks cover imported art/audio, remaining beats and
+world handoff. Full six-cell interaction coverage, active earned sword/bow
+freeze/effects audio, contact-driven camera-shake/number settings, legacy/manual
+history and injected persistent save-fault cells still require independent
+Host/Tester evidence. Existing deferred debts are unchanged.
+
+Final smoke observed all four beats at 200% text, normal completion, and a
+deliberate held-Space skip at beat one. Both entry paths produced D01, unarmed,
+three lives, 100 health, zero XP/choices and no committed rescue reward. Ordinary
+Isha acceptance then granted 10 XP exactly once; Hers granted the sword and an
+ordinary attack completed the hit practice. Defense/bow progression and active
+projectile comparisons were not established. Restarted Continue preserved the
+earned history and bypassed the opening; after the skip comparison, another
+fresh boot preserved the unarmed baseline. Runtime game logs were clean and no
+new editor errors followed cursor 26; earlier base-project texture errors remain.
+
+Returning through 100→150→200→100% Reading rebuilds settled the objective panel
+at 430×69 pixels, with minimum 430×69. H collapsed it to 430×40 and expanded it
+back to 430×69. At 200% the previous observed size/minimum was 550.4×110.
+Positive Master/Effects output was captured without clipping, but subjective
+sound quality and the full option-effect matrix remain unvalidated. Several
+long steps hit the tool wall budget; post-step state established the handoff,
+not precise timing equivalence. Retry source review found and removed a replay
+of the already completed opening; retry now retains the original rollback
+snapshot and re-enters loading/commit directly. Fresh boot/Continue parsed that
+repair; save-fault/retry execution still requires Host fault authorization.
+
+The final ordinary W input window included a shipped 1280×720 frame and a
+three-field state watch, followed by clean runtime logs. Loaded-resource boundary
+receipts identify the exact project and native process, but return relative raw
+artifact paths without a readable absolute prefix here. Native CharacterBody
+instance attestation was therefore not established; no instance ID was guessed.
