@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 31 |
-| Closed | 14 |
-| All | 45 |
+| Open | 32 |
+| Closed | 15 |
+| All | 47 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 14 |
-| Verified closed | 6 |
+| Active | 15 |
+| Verified closed | 7 |
 | Policy invalidated | 3 |
 | Waived | 0 |
-| All in this run | 23 |
+| All in this run | 25 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -46,26 +46,28 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_adjacent_hud_checkpoint_text` | [#23](https://github.com/Flesymeb/aelors-adventure/issues/23) | OPEN | Adjacent HUD continuity fails: checkpoint code/name and textual life count remain permanently visible. |
 | `title_entry_empty_load_focus_clipped` | [#25](https://github.com/Flesymeb/aelors-adventure/issues/25) | CLOSED | Independently verified resolved at loop 2. |
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
-| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent Isha dialogue continuity still fails because required portraits are absent. |
+| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity still fails because required portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Selected HUD first-event evidence remains incomplete; the existing save does not supply the required notice states. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
 | `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
-| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker height recovery is supported, but one required settled screenshot prevents closure of the frozen matrix. |
+| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker height recovers, but its vertical position does not; the complete frozen matrix remains unfinished. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
 | `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings scale and positive audio observations do not close the required effect-comparison matrix. |
-| `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | OPEN | The default B roll binding is intercepted by inventory, making roll unavailable on its configured key. |
+| `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
 | `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening playback is observed; the selected opening acceptance matrix remains incomplete. |
-| `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | OPEN | The shortcut panel collapses into unreadable wrapping during early ownership states. |
-| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | The vitals panel retains enlarged blank geometry after text scale returns to 100%. |
-| `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | The scoped repair does not establish full Forest environment acceptance. |
-| `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | The lightning error repair is verified, but invalid/freed-target and adjacent fire acceptance remain unobserved. |
+| `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | OPEN | Early equipment states still collapse shortcut instructions into excessive wrapping. |
+| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | Vitals retain enlarged width and blank height after text scale returns to 100%. |
+| `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
+| `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | OPEN | Godot reported a candidate-owned runtime error: Index p_idx = 0 is out of bounds (items.size() = 0). |
+| `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
+| `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | Full R02 acceptance remains blocked by unverified traversal, obstruction and attachment boundaries. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -73,7 +75,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 31 | 14 | 45 |
+| GitHub HoH namespace | 32 | 15 | 47 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -111,7 +113,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-08-ebc3d6646f03` | `development_snapshot:attempt-00f1767cc1a220d482d400c6` | DEVELOPER REPORT READY |
+| `loop-08-ebc3d6646f03` | `development_snapshot:attempt-00f1767cc1a220d482d400c6` | FAIL |
 
 ### Project Planner
 
@@ -138,7 +140,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-08-ebc3d6646f03` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (2 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `r02_runtime_boundaries_unverified` | MAJOR | INTERNAL | HIGH | Full R02 acceptance remains blocked by unverified traversal, obstruction and attachment boundaries. |
+| `tracker_scale_rollback_position_drift` | MINOR | DEGRADED | MEDIUM | Tracker height recovers, but its vertical position does not; the complete frozen matrix remains unfinished. |
+| `shortcut_early_ownership_wrapping` | MINOR | DEGRADED | MEDIUM | Early equipment states still collapse shortcut instructions into excessive wrapping. |
+| `vitals_scale_rollback_retains_geometry` | MINOR | DEGRADED | MEDIUM | Vitals retain enlarged width and blank height after text scale returns to 100%. |
+| `isha_portrait_continuity_remains_open` | MINOR | USER BLOCKING | MEDIUM | Adjacent dialogue continuity still fails because required portraits are absent. |
+| `fps.runtime.candidate-error-ea18d19a2edb` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Index p_idx = 0 is out of bounds (items.size() = 0). |
 
 ---
 
@@ -509,5 +526,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-08-ebc3d6646f03`
 - Latest warm start: `loop-08-878836883f1a`
 - Last published: `loop-08-ebc3d6646f03`
-- Best verified: `loop-07-878836883f1a`
+- Best verified: `loop-08-ebc3d6646f03`
 - Generated by the HoH host from immutable run evidence.
