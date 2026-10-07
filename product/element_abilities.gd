@@ -1,6 +1,7 @@
 extends Node3D
 ## Product release/cooldown authority; Snaiel contacts still settle enemy damage.
 const GROUND = preload("res://forest_ground.gd")
+const CONTACT_ENEMY = preload("res://combat/snaiel/scripts/entities/enemy.gd")
 var world: Node3D
 var state: Node
 var player: CharacterBody3D
@@ -174,14 +175,17 @@ func release() -> void:
 	world.training.feedback.swing()
 
 func lightning_target() -> Node3D:
-	var candidates: Array = targets.duplicate()
+	# duplicate() preserves the practice array's StaticBody3D element type.
+	# Copy its elements into a fresh, untyped collection for both body types.
+	var candidates: Array = []
+	candidates.append_array(targets)
 	if world.training.monster: candidates.append(world.training.monster)
 	if world.bridge_encounter: candidates.append_array(world.bridge_encounter.enemies)
 	var best: Node3D
 	var score = 0.92
 	var forward = -player.camera.global_basis.z.normalized()
 	for target in candidates:
-		if target is CharacterBody3D and target.health <= 0: continue
+		if not eligible_target(target): continue
 		var point = target.global_position + Vector3.UP
 		if player.global_position.distance_to(target.global_position) > 12: continue
 		var alignment = forward.dot(player.camera.global_position.direction_to(point))
@@ -192,8 +196,22 @@ func lightning_target() -> Node3D:
 		best = target
 	return best
 
+func eligible_target(target) -> bool:
+	# Stale collection entries must be rejected before any property access.
+	if not is_instance_valid(target) or not target is Node3D: return false
+	if target.is_queued_for_deletion() or not target.is_inside_tree() or not target.is_node_ready(): return false
+	if target is StaticBody3D and target in targets: return true
+	if not target is CONTACT_ENEMY: return false
+	if not is_instance_valid(target.health_component) or not is_instance_valid(target.handler): return false
+	if not target.health_component.enabled or not target.health_component.is_alive(): return false
+	if not is_instance_valid(target.hitbox) or not target.hitbox.enabled: return false
+	# Use the same product eligibility policy as the authoritative hit handler.
+	return target.handler.eligibility.is_valid() and target.handler.eligibility.call()
+
 func settle(target: Object, src: SnaielDamageSource, point: Vector3, element: String) -> void:
-	if target in targets:
+	if not is_instance_valid(target) or not target is Node3D: return
+	if target.is_queued_for_deletion(): return
+	if target is StaticBody3D and target in targets:
 		world.training.feedback.impact(point,"元素靶命中",0,"straw")
 		if target.get_meta("element") == element and state.trace_investigated:
 			practice_hits[element] += 1
@@ -206,6 +224,7 @@ func settle(target: Object, src: SnaielDamageSource, point: Vector3, element: St
 			world.training.tell("元素练习完成 · 沿村路穿过石桥，清除对岸两名巡守",5)
 		return
 	if target != null and target.has_method("receive_contact"):
+		if not eligible_target(target): return
 		var reaction = target.handler.reaction
 		if element == "lightning": target.handler.reaction = Callable()
 		var result: Dictionary = target.receive_contact(src,point)

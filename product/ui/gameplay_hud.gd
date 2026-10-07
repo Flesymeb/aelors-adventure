@@ -300,4 +300,25 @@ func _next_action() -> String:
 	return "瞄准罗恩前方草靶" if not state.bow_training_complete else state.objective()
 
 func _mcp_state() -> Dictionary:
-	return {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
+	var observation := {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
+	# Read-only correlation for external captures. Layout may still be queued;
+	# successive snapshots and ordinary frames establish settling externally.
+	var viewport_rect := get_viewport().get_visible_rect()
+	var rect := tracker.get_global_rect()
+	var minimum := tracker.get_combined_minimum_size()
+	observation.merge({
+		"process_frame": Engine.get_process_frames(),
+		"physics_frame": Engine.get_physics_frames(),
+		"viewport_rect": {"x": viewport_rect.position.x, "y": viewport_rect.position.y, "w": viewport_rect.size.x, "h": viewport_rect.size.y},
+		"window_size": [get_window().size.x, get_window().size.y],
+		"text_scale": state.text_scale,
+		"tracker_visible": tracker.visible,
+		"tracker_visible_in_tree": tracker.is_visible_in_tree(),
+		"objective_visible": tracker_text.visible,
+		"objective_visible_in_tree": tracker_text.is_visible_in_tree(),
+		"tracker_title": tracker_title.text,
+		"objective_font_size": tracker_text.get_theme_font_size("font_size"),
+		"objective_line_count": tracker_text.get_line_count(),
+		"tracker_geometry": {"x": rect.position.x, "y": rect.position.y, "w": rect.size.x, "h": rect.size.y, "minimum_w": minimum.x, "minimum_h": minimum.y, "custom_minimum_w": tracker.custom_minimum_size.x, "custom_minimum_h": tracker.custom_minimum_size.y}
+	})
+	return observation
