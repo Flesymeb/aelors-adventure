@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 26 |
+| Open | 27 |
 | Closed | 9 |
-| All | 35 |
+| All | 36 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 9 |
+| Active | 10 |
 | Verified closed | 4 |
 | Policy invalidated | 0 |
 | Waived | 0 |
-| All in this run | 13 |
+| All in this run | 14 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -46,16 +46,17 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_adjacent_hud_checkpoint_text` | [#23](https://github.com/Flesymeb/aelors-adventure/issues/23) | OPEN | Adjacent HUD continuity fails: checkpoint code/name and textual life count remain permanently visible. |
 | `title_entry_empty_load_focus_clipped` | [#25](https://github.com/Flesymeb/aelors-adventure/issues/25) | CLOSED | Independently verified resolved at loop 2. |
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
-| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity fails because declared portraits are absent. |
+| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent Isha dialogue continuity still fails because required portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Selected HUD first-event evidence remains incomplete; the existing save does not supply the required notice states. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
 | `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
-| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | The objective panel retains excessive blank height after settings/layout transitions. |
-| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Idle nested pause and safe saves pass observed checks; complete active-world freeze and recovery boundaries remain unverified. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Several release-required settings effects and layout states remain independently unverified. |
+| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker measurements support the repair, but its complete required regression recipe remains unverified. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | OPEN | Settings can focus invisible controls and hide key-binding rejection feedback. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening implementation is observable, but required audio and persistence/skip boundaries remain unverified. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Cinematic and active sword pause checks pass observed cases; the broader active-world matrix remains incomplete. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings visibility repair is verified; several required option effects remain independently unverified. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -63,7 +64,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 26 | 9 | 35 |
+| GitHub HoH namespace | 27 | 9 | 36 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -101,7 +102,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-05-81a46c7da4a0` | `development_snapshot:attempt-ceeb19726c8fd57d268d4f65` | NEEDS VISUAL QA |
+| `loop-05-81a46c7da4a0` | `development_snapshot:attempt-ceeb19726c8fd57d268d4f65` | FAIL |
 
 ### Project Planner
 
@@ -128,7 +129,21 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-05-81a46c7da4a0` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 5 (3 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `opening_acceptance_evidence_incomplete` | MAJOR | INTERNAL | HIGH | Opening implementation is observable, but required audio and persistence/skip boundaries remain unverified. |
+| `pause_active_world_evidence_remaining` | MAJOR | INTERNAL | HIGH | Cinematic and active sword pause checks pass observed cases; the broader active-world matrix remains incomplete. |
+| `settings_effect_evidence_remaining` | MAJOR | INTERNAL | HIGH | Settings visibility repair is verified; several required option effects remain independently unverified. |
+| `hud_reflow_evidence_remaining` | MINOR | INTERNAL | MEDIUM | Tracker measurements support the repair, but its complete required regression recipe remains unverified. |
+| `opening_isha_portrait_continuity` | MINOR | USER BLOCKING | MEDIUM | Adjacent Isha dialogue continuity still fails because required portraits are absent. |
 
 ---
 
@@ -342,5 +357,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-05-81a46c7da4a0`
 - Latest warm start: `loop-05-b183d0425e2a`
 - Last published: `loop-05-81a46c7da4a0`
-- Best verified: `loop-04-b183d0425e2a`
+- Best verified: `loop-05-81a46c7da4a0`
 - Generated by the HoH host from immutable run evidence.
