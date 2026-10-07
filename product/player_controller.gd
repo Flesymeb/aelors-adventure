@@ -17,6 +17,8 @@ const BOW_IDLE_BASIS := Vector3(-0.556121, -0.448697, 3.117197)
 const TRAVERSAL_SCRIPT := preload("res://traversal_controller.gd")
 signal controls_changed
 var archery: Node
+var abilities: Node
+var owns_lamp := false
 var combat: Node
 const SWORD_ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
 
@@ -34,8 +36,8 @@ const CONTROL_LABELS := {
 	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
 }
 # E/F retain interaction/lamp ownership, including while their systems are locked.
-const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
-	KEY_5, KEY_G, KEY_R, KEY_M, KEY_J, KEY_K, KEY_ESCAPE, KEY_F10,
+const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_I, KEY_K,
+	KEY_G, KEY_R, KEY_M, KEY_J, KEY_ESCAPE, KEY_F10,
 	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN,
 	KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F11]
 const CONTROLS_FILE := "user://locomotion_controls.cfg"
@@ -108,7 +110,7 @@ var camera_height := 1.65
 
 
 func owns_weapon(mode: String) -> bool:
-	return (mode == "sword" and owns_sword) or (mode == "bow" and owns_bow)
+	return (mode == "sword" and owns_sword) or (mode == "bow" and owns_bow) or (mode == "lamp" and owns_lamp) or mode == "unarmed"
 
 
 # The product wrapper supplies possession before tree entry. Later callers can
@@ -368,7 +370,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_1: request_weapon("sword")
 			KEY_2: request_weapon("bow")
-			KEY_3: cycle_skin()
+			KEY_3: request_weapon("lamp")
 			KEY_Q: request_weapon("bow" if weapon_mode == "sword" else "sword")
 		if _control_pressed(event, "shoulder"): shoulder_side *= -1.0
 		elif _control_pressed(event, "perspective"): toggle_perspective()
@@ -706,7 +708,7 @@ func _physics_process(delta: float) -> void:
 
 
 func request_weapon(mode: String) -> void:
-	if combat and combat.player_locked(): return
+	if (combat and combat.player_locked()) or (abilities and abilities.busy()): return
 	if not owns_weapon(mode):
 		_equipment_required()
 		return
@@ -729,6 +731,8 @@ func _update_switch(delta: float) -> void:
 		if combat:
 			combat.state.sword_selected = weapon_mode == "sword"
 			combat.state.selected_equipment = weapon_mode
+			combat.state.inventory.ensure_equipment()
+			combat.state.inventory.select_equipment(weapon_mode)
 		_set_weapon_visibility()
 		switch_swapped = true
 	if switch_timer <= 0.0:
@@ -737,6 +741,7 @@ func _update_switch(delta: float) -> void:
 
 func _set_weapon_visibility() -> void:
 	var stowed: bool = traversal != null and traversal.posture == "prone"
+	stowed = stowed or (abilities != null and abilities.busy())
 	if sword_holder: sword_holder.visible = owns_sword and weapon_mode == "sword" and not stowed
 	if bow_holder: bow_holder.visible = owns_bow and weapon_mode == "bow" and not stowed
 	if sword_back_holder: sword_back_holder.visible = owns_sword and (weapon_mode != "sword" or stowed)
@@ -744,7 +749,7 @@ func _set_weapon_visibility() -> void:
 
 
 func _update_animation(moving: bool) -> void:
-	if animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != "") or (combat and combat.pose_owned()):
+	if (abilities and abilities.busy()) or animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != "") or (combat and combat.pose_owned()):
 		return
 	if not is_on_floor() and traversal.step_grace <= 0.0:
 		_play_animation("Jump_Start", 2.0) if traversal.takeoff_timer > 0 else _play_animation("Jump", 2.0)
@@ -769,6 +774,7 @@ func _play_animation(name: String, speed: float = 1.0) -> void:
 
 
 func _attack() -> void:
+	if abilities and abilities.busy(): return
 	if not owns_weapon(weapon_mode):
 		_equipment_required()
 		return

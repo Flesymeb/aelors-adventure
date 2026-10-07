@@ -84,3 +84,42 @@ ambience.ogg and rift_transition.wav are original procedural audio authored for
 this project, without sampled recordings or third-party audio models. They are
 separate from the image service terms. Their synthesis is described in DEVELOPMENT.md.
 No commercial pack or personal-use-only sample from the audio comparison ships.
+
+## RPG inventory and loot components
+
+- GLoot 3.0.2, Peter Kish, MIT. Source: https://github.com/peter-kish/gloot,
+  revision `6b09b87ac07a8536779ef1ab0fafc7e99830f948`. The complete
+  `addons/gloot` dependency unit is retained. License: `addons/gloot/LICENSE`.
+  This pin uses `Inventory.protoset` and declares Godot 4.7; no plugin is enabled
+  and the product adapter binds its actual Inventory, ItemSlot and CtrlInventory
+  APIs after Godot 4.7 native compatibility probes.
+  The pin references an absent `images/icon_item.svg`; the candidate's optional
+  `InventoryItem` editor icon annotation uses the included
+  `images/icon_ctrl_inventory_item.svg` instead. No item artwork is replaced.
+- Godot loot tables, David Mahany, MIT. Source:
+  https://github.com/PieKing1215/godot-loot-tables, revision
+  `159ab6b7116e36929c149a807d6cc1cb361e98f7`. The complete runtime
+  `addons/loot_tables/src` unit is retained; its optional editor is omitted.
+  License: `addons/loot_tables/LICENSE`. The candidate's `Pool.gd` uses each
+  effective weight consistently for summation and selection, rejects invalid
+  weights and roll counts, supports an injected RNG, and returns no entry for
+  all-zero weights. Source pool bytes remain unchanged. These components are
+  adapted through inventory/loot_adapter.gd for once-only bridge death rewards.
+  Native probes cover effective weights; ordinary play covers stored pickups.
+
+## Old lamp model
+Poly Haven, Lantern 01 — https://polyhaven.com/a/Lantern_01 — CC0-1.0. Original mesh and textures staged under `assets/equipment/lantern.zip/`; acquisition receipt retained. Product hand/stow transform is an adaptation. The rejected Polygonal Mind chandelier is retained as an unbound acquisition only.
+
+## Permanent clue interaction
+Nodragem Action Adventure, revision `efc171fd37682811c9efe0df83b02e9102d4f5f5`, project CC0 license retained in `interaction/nodragem/LICENSE`. The selected SwitchComponent and ShortSwitch source units are adapted into permanent reveal activation with optional animation; investigation and rewards remain product-owned in DialogueState/LampTraining.
+
+## RPG item and ability icons
+
+Icons by Delapouite, https://game-icons.net, CC BY 3.0,
+https://creativecommons.org/licenses/by/3.0/. Existing pooled bundle revision
+`82d948812bfe3f269ef8f731dcdb07b08160edc4` is copied without texture changes.
+Individual titles, source links and licenses remain in
+`assets/ui/icons/ATTRIBUTION.txt`, `SOURCE.json` and `license.txt`.
+The product shares these textures across prototype images, backpack tiles,
+pickups, ability choices and ownership-driven shortcuts. This artwork license
+is separate from the GLoot and loot-table MIT code licenses.

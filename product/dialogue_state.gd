@@ -7,6 +7,8 @@ const RONEN_NODES := preload("res://data/ronen_dialogue.json")
 const HERS_NODES := preload("res://data/hers_dialogue.json")
 var dialogue_kind := "isha"
 signal sword_granted
+signal lamp_granted
+signal progression_changed
 signal bow_granted
 signal save_finished(slot: int, error: int)
 var logical_node := "D01"
@@ -34,6 +36,17 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
+var lamp_owned := false
+var trace_revealed := false
+var trace_investigated := false
+var lamp_reward_committed := false
+var element_practice_complete := false
+var skills: Dictionary = {}
+var reward_history: Dictionary = {}
+var bag_history: Dictionary = {}
+var quick_item := "healing"
+var inventory: Node
 var bow_owned := false
 var arrows := 0
 var bow_training_complete := false
@@ -64,6 +77,10 @@ func _ready() -> void:
 	# Title previews never restore history. Entry owns loading.
 	load_preferences()
 	apply_global_audio()
+	inventory = preload("res://inventory/product_inventory.gd").new()
+	inventory.state = self
+	add_child(inventory)
+	inventory.restore()
 
 func apply_global_audio() -> void:
 	for bus in ["Music", "Effects"]:
@@ -105,6 +122,8 @@ func preference_snapshot() -> Dictionary:
 func begin() -> void:
 	if not conversation_active:
 		logical_node = ronen_node if dialogue_kind == "ronen" else (hers_node if dialogue_kind == "hers" else ("D02" if q01_accepted else "D01"))
+		if dialogue_kind == "isha" and bow_training_complete and remnant_collected:
+			logical_node = "L02" if lamp_owned else "L01"
 	reward_feedback = ""
 	conversation_active = true
 
@@ -118,6 +137,11 @@ func choose(index: int) -> bool:
 		sword_granted.emit()
 	if choice.get("grant_bow", false) and dialogue_kind == "ronen":
 		bow_granted.emit()
+	if choice.get("grant_lamp", false) and dialogue_kind == "isha" and bow_training_complete and remnant_collected and not lamp_owned:
+		lamp_owned = true
+		inventory.ensure_equipment()
+		lamp_granted.emit()
+		reward_feedback = "取得奥伦的旧灯 · 3 装备 · F 显形"
 	if choice.get("accept", false):
 		q01_accepted = true
 		if not q01_reward_committed:
@@ -148,6 +172,8 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	config.set_value("opening", "map_id", GROUND.MAP_ID)
 	for key in TRAINING_KEYS:
 		config.set_value("training", key, get(key))
+	bag_history = inventory.snapshot() if inventory else bag_history
+	for key in POST_DEFAULTS: config.set_value("post_bow", key, get(key))
 	config.set_value("reading", "scale", text_scale)
 	config.set_value("reading", "speed", reveal_speed)
 	config.set_value("reading", "instant", instant_text)
@@ -191,8 +217,10 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	var defaults := {"bow_owned": false, "arrows": 0, "bow_training_complete": false, "bow_demonstrated": false, "selected_equipment": "sword" if bool(config.get_value("training", "sword_selected", false)) else "unarmed", "ronen_node": "R01", "sword_owned": false, "practice_hit": false, "practice_defense": false, "practice_parry": false, "encounter_defeated": false, "remnant_collected": false, "remnant_position": Vector3.ZERO, "health": 100.0, "lives": 3, "recovery_pending": false, "hers_node": "H01", "reduced_motion": false, "muted_sound": false, "sword_selected": false, "dialogue_kind": "isha"}
 	for key in TRAINING_KEYS:
 		if key not in PREFERENCE_DEFAULTS: set(key, config.get_value("training", key, defaults[key]))
+	for key in POST_DEFAULTS: set(key, config.get_value("post_bow", key, POST_DEFAULTS[key]).duplicate(true) if POST_DEFAULTS[key] is Dictionary else config.get_value("post_bow", key, POST_DEFAULTS[key]))
+	if inventory: inventory.restore()
 	arrows = clampi(arrows, 0, 12) if bow_owned else 0
-	if (selected_equipment == "bow" and not bow_owned) or (selected_equipment == "sword" and not sword_owned): selected_equipment = "unarmed"
+	if (selected_equipment == "bow" and not bow_owned) or (selected_equipment == "sword" and not sword_owned) or (selected_equipment == "lamp" and not lamp_owned): selected_equipment = "unarmed"
 	health = clampf(health, 0, 100)
 	lives = clampi(lives, 0, 5)
 	if remnant_collected: encounter_defeated = true
@@ -214,7 +242,13 @@ func objective() -> String:
 	if not remnant_collected: return "初战获胜 · 靠近金色残响自动拾取经验"
 	if not bow_owned: return "巡路弓 · 找草地边的罗恩"
 	if not bow_training_complete: return "弓练习 · 瞄准罗恩前方草靶，蓄力后松开；罗恩处免费补箭"
-	return "弓练习已完成 · 返回伊莎处；旧灯训练尚未完成"
+	if not lamp_owned: return "奥伦的旧灯 · 返回伊莎处领取"
+	if not trace_revealed: return "旧灯练习 · 伊莎旁的路碑，3 装备后按 F 显形"
+	if not trace_investigated: return "旧灯线索 · 靠近显形路碑按 E 调查"
+	if skills.is_empty(): return "首次升级 · 按 K 选择火焰或雷电"
+	if not element_practice_complete: return "元素练习 · 罗恩草靶旁，4 火焰 / 5 雷电；可重复尝试"
+	if reward_history.size() < 2: return "追踪救援 · 从罗恩草靶左侧的木板入口过桥，清除对岸两名巡守"
+	return "桥边巡守已清除 · 继续寻找被带走的村民（后续旅程尚未开放）"
 
 func _mcp_state() -> Dictionary:
 	return {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
@@ -222,9 +256,12 @@ func _mcp_state() -> Dictionary:
 func training_snapshot() -> Dictionary:
 	var facts := {}
 	for key in TRAINING_KEYS: facts[key] = get(key)
+	for key in POST_DEFAULTS: facts[key] = get(key)
 	return facts
 
 func reset_adventure() -> void:
+	for key in POST_DEFAULTS: set(key, POST_DEFAULTS[key].duplicate(true) if POST_DEFAULTS[key] is Dictionary else POST_DEFAULTS[key])
+	if inventory: inventory.restore()
 	opening_completed = false
 	tracked_quest = "rescue"
 	tracker_collapsed = false
@@ -253,6 +290,7 @@ func reset_adventure() -> void:
 	recovery_pending = false
 	hers_node = "H01"
 	sword_selected = false
+	if inventory: inventory.restore()
 	save_feedback = ""
 	reward_feedback = ""
 	persistence_error = ""
@@ -262,6 +300,7 @@ func current_nodes() -> Dictionary:
 
 
 func adventure_snapshot() -> Dictionary:
+	if inventory: bag_history = inventory.snapshot()
 	var snapshot := training_snapshot()
 	for key in ["opening_completed", "logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
 		snapshot[key] = get(key)
@@ -271,6 +310,7 @@ func adventure_snapshot() -> Dictionary:
 func restore_adventure(snapshot: Dictionary) -> void:
 	for key in snapshot:
 		if key not in PREFERENCE_DEFAULTS: set(key, snapshot[key])
+	if inventory: inventory.restore()
 
 
 func slot_unavailable_reason(slot: int, allow_depleted := false) -> String:
@@ -309,7 +349,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var ammo: Variant = config.get_value("training", "arrows", 0)
 	if not ammo is int or ammo < 0 or ammo > 12: return "存档箭数无效"
 	var equipment: Variant = config.get_value("training", "selected_equipment", "unarmed")
-	if equipment not in ["unarmed", "sword", "bow"]: return "存档装备无效"
+	if equipment not in ["unarmed", "sword", "bow", "lamp"]: return "存档装备无效"
 	if equipment == "bow" and not config.get_value("training", "bow_owned", false): return "存档装备无效"
 	if config.get_value("training", "ronen_node", "R01") not in ["R01", "R02"]: return "存档对话无效"
 	var remnant: Variant = config.get_value("training", "remnant_position", Vector3.ZERO)
@@ -320,6 +360,25 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var reading: Variant = config.get_value("reading", key, 1.0 if key == "scale" else 30.0)
 		if not (reading is int or reading is float) or not is_finite(float(reading)): return "存档设置无效"
 	if not config.get_value("reading", "instant", false) is bool: return "存档设置无效"
+	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete"]:
+		if not config.get_value("post_bow", key, false) is bool: return "存档旧灯进度无效"
+	for key in ["skills", "reward_history", "bag_history"]:
+		if not config.get_value("post_bow", key, {}) is Dictionary: return "存档物品进度无效"
+	if not preload("res://inventory/product_inventory.gd").valid_history(config.get_value("post_bow", "bag_history", {})): return "存档背包无效"
+	var saved_skills: Dictionary = config.get_value("post_bow", "skills", {})
+	for key in saved_skills:
+		if key not in ["fire", "lightning"] or saved_skills[key] != 1: return "存档技能无效"
+	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
+	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
+	for id in rewards:
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] or not rewards[id] is Dictionary: return "存档掉落无效"
+		var reward: Dictionary = rewards[id]
+		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
+		var position: Variant = reward.get("position",Vector3.INF)
+		if not position is Vector3 or not position.is_finite(): return "存档掉落位置无效"
+		var drop: Variant = reward.get("drop",{})
+		if not drop is Dictionary: return "存档掉落物品无效"
+		if not drop.is_empty() and (drop.get("id","") not in ["healing","lifeflame"] or drop.get("quantity",0) != 1): return "存档掉落物品无效"
 	return ""
 
 
@@ -393,6 +452,16 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id": "bow", "title": "巡路弓练习", "complete": bow_training_complete,
 			"context": "猎人罗恩在草地边等候。练习用弓控制距离，箭用尽后可找他补充。",
 			"action": "返回伊莎处" if bow_training_complete else objective(), "steps": steps})
+	if lamp_owned or bow_training_complete:
+		var steps: Array[String] = []
+		if lamp_owned: steps.append("从伊莎处取得奥伦的旧灯")
+		if trace_revealed: steps.append("用旧灯显形路碑魔法痕迹")
+		if trace_investigated: steps.append("调查显形的线索：村民被带过石桥")
+		if not skills.is_empty(): steps.append("选择第一个元素能力")
+		if element_practice_complete: steps.append("实际命中元素练习目标 · Q02 完成")
+		rows.append({"id":"lamp", "title":"奥伦的旧灯", "complete":element_practice_complete, "context":"旧灯能显形隐藏的痕迹；显形与调查是两个步骤。元素练习可反复尝试。", "action":objective(), "steps":steps})
+	if element_practice_complete:
+		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false, "context":"伊莎看见四人被带过石桥。先清除对岸的两名巡守；更远的救援仍未完成。", "action":objective(), "steps":[]})
 	return rows
 
 func tracked_entry() -> Dictionary:
@@ -408,3 +477,35 @@ func track_quest(id: String) -> bool:
 			tracked_quest = id
 			return true
 	return false
+
+# Cumulative XP is retained for legacy histories; thresholds are per level.
+static func earned_points(total: int) -> int:
+	var left = total
+	var earned = 0
+	for threshold in [30, 50, 80, 110, 150, 200]:
+		if left < threshold: break
+		left -= threshold
+		earned += 1
+	return earned
+
+func level() -> int:
+	return 1 + earned_points(experience)
+
+func xp_progress() -> int:
+	var left = experience
+	for threshold in [30, 50, 80, 110, 150, 200]:
+		if left < threshold: return left
+		left -= threshold
+	return left
+
+func xp_threshold() -> int:
+	return [30, 50, 80, 110, 150, 200][mini(5, level() - 1)]
+
+func pending_points() -> int:
+	return maxi(0, earned_points(experience) - skills.size())
+
+func unlock_element(id: String) -> bool:
+	if not lamp_owned or id not in ["fire", "lightning"] or skills.has(id) or pending_points() <= 0: return false
+	skills[id] = 1
+	progression_changed.emit()
+	return true

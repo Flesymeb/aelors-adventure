@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://ui/menu_foundation/main_menu.tscn" id="1"]
+[ext_resource type="Script" path="res://ui/inventory_panel.gd" id="2"]
+[node name="InventoryPanel" instance=ExtResource("1")]
+script = ExtResource("2")

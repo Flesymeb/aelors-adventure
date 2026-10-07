@@ -1,0 +1,140 @@
+{
+  "source": "https://github.com/game-icons/icons",
+  "commit": "82d948812bfe3f269ef8f731dcdb07b08160edc4",
+  "commit_date": "2026-04-23T19:08:19Z",
+  "author": "Delapouite",
+  "license": "CC-BY-3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "files": [
+    {
+      "role": "sword",
+      "upstream_path": "delapouite/two-handed-sword.svg",
+      "page": "https://game-icons.net/1x1/delapouite/two-handed-sword.html",
+      "sha256": "bf408db1e37ce6d9f6be977ca1f265ddf29cbe2700ac271663a243b99c8c20a2",
+      "png": "png/sword.png",
+      "recommended_product_path": "assets/ui/icons/sword.png",
+      "transparent_svg": "transparent-svg/sword.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/two-handed-sword.svg",
+      "transparent_sha256": "a2ed9d83f347e6a48793884b974fd98306f0e33aea46e083d919d8d8ff6be426",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "8ab9196c98c1b0942c2d15b2483a2765f048e5f321d548184f3bdd179978ad96"
+    },
+    {
+      "role": "bow",
+      "upstream_path": "delapouite/bow-arrow.svg",
+      "page": "https://game-icons.net/1x1/delapouite/bow-arrow.html",
+      "sha256": "80de082a9804b2afea15e54ffe61b54b72ee1307fea3386aa881786132c5c1b0",
+      "png": "png/bow.png",
+      "recommended_product_path": "assets/ui/icons/bow.png",
+      "transparent_svg": "transparent-svg/bow.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/bow-arrow.svg",
+      "transparent_sha256": "660bd72c3c324902ef3f2b73ba9e92e3a4eefb7277ae6fec75b81d689b2e64e8",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "514da4d462342b25751a770c4d7b7c5e4107009232bb1e7b0095c76d40850c57"
+    },
+    {
+      "role": "lantern",
+      "upstream_path": "delapouite/old-lantern.svg",
+      "page": "https://game-icons.net/1x1/delapouite/old-lantern.html",
+      "sha256": "f06677e846a6be234a8a0d3ce23fcd812176c70a0b5a5b8374a23403b5d5d371",
+      "png": "png/lantern.png",
+      "recommended_product_path": "assets/ui/icons/lantern.png",
+      "transparent_svg": "transparent-svg/lantern.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/old-lantern.svg",
+      "transparent_sha256": "3fc4a5e06db17246a99e3429340ef8d5d0c59eb5738e75a23a3f9b26dfdefe3c",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "fa0e4e2dc4f31c2c1e35341aa3104cb4ee44c493ab12806c00a19371be0d1195"
+    },
+    {
+      "role": "potion",
+      "upstream_path": "delapouite/health-potion.svg",
+      "page": "https://game-icons.net/1x1/delapouite/health-potion.html",
+      "sha256": "53c32fe9f69f6e92868434e0cead3e283eb4340d6a629422283cdf4521cec8f5",
+      "png": "png/potion.png",
+      "recommended_product_path": "assets/ui/icons/potion.png",
+      "transparent_svg": "transparent-svg/potion.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/health-potion.svg",
+      "transparent_sha256": "8ece487469057c2e69410cbd6774fac47b4926070634f8d28475e1f08013bdcb",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "d265bf04b05edd04e0324bf06ac32f394ef5f6fba76cddf2c09ca53a06801ec1"
+    },
+    {
+      "role": "backpack",
+      "upstream_path": "delapouite/light-backpack.svg",
+      "page": "https://game-icons.net/1x1/delapouite/light-backpack.html",
+      "sha256": "742244a10ade8bec7d552a5714a35e9c0511a524b76f19f5a5e72a39efb58f79",
+      "png": "png/backpack.png",
+      "recommended_product_path": "assets/ui/icons/backpack.png",
+      "transparent_svg": "transparent-svg/backpack.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/light-backpack.svg",
+      "transparent_sha256": "fc3a322d43ecf587bb07859719bd937db2e2cccadc4c6a49467ce3a614779a26",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "23887f8de945a5c3a54850c8e9837733303f773b2f20c947443e11b1b46145a4"
+    },
+    {
+      "role": "fire",
+      "upstream_path": "delapouite/fire-spell-cast.svg",
+      "page": "https://game-icons.net/1x1/delapouite/fire-spell-cast.html",
+      "sha256": "de0c26cf8ce6ddd747870219a13b895b65f34b636c054a7c33af18f431ea6ddc",
+      "png": "png/fire.png",
+      "recommended_product_path": "assets/ui/icons/fire.png",
+      "transparent_svg": "transparent-svg/fire.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/fire-spell-cast.svg",
+      "transparent_sha256": "40df548f8f542f08859163b582b8ed70f076c1c642e73aab68c005813b152be5",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "1c6bd317ad91e8f364984cb40126ce6140e8015fae84d68af01a7ce889db3097"
+    },
+    {
+      "role": "lightning",
+      "upstream_path": "delapouite/bolt-spell-cast.svg",
+      "page": "https://game-icons.net/1x1/delapouite/bolt-spell-cast.html",
+      "sha256": "94d9dee74c10d9ef394a939b82cbea77500897df7557051801fb3b22b40ba571",
+      "png": "png/lightning.png",
+      "recommended_product_path": "assets/ui/icons/lightning.png",
+      "transparent_svg": "transparent-svg/lightning.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/bolt-spell-cast.svg",
+      "transparent_sha256": "523e54c19330a8b14961d7c1f9a8f0ef88ca8ebcf10041d6c5b662349db033fc",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "09e7bbe7f34037a7672f5924846d95836616fb3d40c7e335cfba28709fd8e5bb"
+    },
+    {
+      "role": "experience",
+      "upstream_path": "delapouite/star-medal.svg",
+      "page": "https://game-icons.net/1x1/delapouite/star-medal.html",
+      "sha256": "4ba329751f5b0c1e480006a281c45431628a2f291ded727dda0fbfad6e2fe224",
+      "png": "png/experience.png",
+      "recommended_product_path": "assets/ui/icons/experience.png",
+      "transparent_svg": "transparent-svg/experience.svg",
+      "transparent_source_url": "https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/star-medal.svg",
+      "transparent_sha256": "aba56a6dec0605dd9f472b0a48dd98a89d08d1e9e688ae5513217e15d7abdd28",
+      "pinned_foreground_render_comparison": {
+        "size": 512,
+        "max_alpha_delta": 0
+      },
+      "png_sha256": "99a9a934efbd0f1844dc58a2fd6d99e9b36a7b533d65b8326b3653c8797975d9"
+    }
+  ],
+  "derived_files": "128px and 48px PNG rasterizations of official white/transparent SVG downloads. Each foreground render compared to pinned original SVG at 512px; max alpha delta <=1/255. No recolor. Preview adds sample frames only.",
+  "attribution": "Icons by Delapouite, https://game-icons.net, CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). Titles and individual source links are listed below. PNG rasterization by this project."
+}

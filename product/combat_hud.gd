@@ -5,6 +5,7 @@ var status: Label
 var enemy: VBoxContainer
 var enemy_name: Label
 var enemy_hp: ProgressBar
+var bridge_bars: Dictionary = {}
 
 func _ready() -> void:
 	layer = 5
@@ -70,6 +71,27 @@ func _process(_delta: float) -> void:
 	enemy_hp.value = opponent.health
 	enemy_name.text = "◇ 抬手预告" if opponent.phase == "telegraph" else "训练怪 · %d/%d" % [int(opponent.health), int(opponent.health_component.max_health)]
 	enemy_name.add_theme_font_size_override("font_size", int(17 * state.text_scale))
+	if training.world.bridge_encounter:
+		for opponent2 in training.world.bridge_encounter.enemies:
+			if not bridge_bars.has(opponent2):
+				var rows = VBoxContainer.new()
+				var title = Label.new()
+				title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				rows.add_child(title)
+				var bar = meter(Color(0.75,0.18,0.11),24)
+				rows.add_child(bar)
+				root.add_child(rows)
+				bridge_bars[opponent2] = {"rows":rows,"title":title,"bar":bar}
+			var b = bridge_bars[opponent2]
+			var p = opponent2.global_position + Vector3.UP * 2.4
+			var front = not camera.is_position_behind(p)
+			var px = camera.unproject_position(p) if front else Vector2(-1000,-1000)
+			b.rows.visible = opponent2.health > 0 and opponent2.engaged and front and Rect2(Vector2.ZERO,viewport).has_point(px) and opponent2.line_clear(training.player.global_position)
+			b.rows.position = px - Vector2(110,50)
+			b.bar.value = opponent2.health
+			b.bar.max_value = opponent2.health_component.max_health
+			b.title.text = opponent2.display_name + (" · 抬手预告" if opponent2.phase == "telegraph" else " · %d/%d" % [int(opponent2.health),int(opponent2.health_component.max_health)])
+			b.title.add_theme_font_size_override("font_size",int(17 * state.text_scale))
 	if training.notice_time > 0: status.add_theme_color_override("font_color", Color(1, 0.91, 0.64))
 
 func _mcp_state() -> Dictionary:

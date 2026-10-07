@@ -30,6 +30,12 @@ var restoring_interface := false
 var developer_ui := false
 var restored_position: Dictionary = {}
 var bow_training: Node3D
+var lamp_training: Node3D
+var element_abilities: Node3D
+var bridge_encounter: Node3D
+var inventory_panel: Control
+var skill_panel: Control
+var initial_skill_prompted = false
 var training: Node3D
 var failure_panel: PanelContainer
 var failure_root: Control
@@ -101,6 +107,22 @@ func _ready() -> void:
 	add_child(bow_training)
 	bow_training.configure(self)
 	dialogue_state.bow_granted.connect(bow_training.grant_bow)
+	lamp_training = preload("res://lamp_training.gd").new()
+	lamp_training.process_mode = Node.PROCESS_MODE_PAUSABLE
+	lamp_training.name = "LampTraining"
+	add_child(lamp_training)
+	lamp_training.configure(self)
+	element_abilities = preload("res://element_abilities.gd").new()
+	element_abilities.process_mode = Node.PROCESS_MODE_PAUSABLE
+	element_abilities.name = "ElementAbilities"
+	add_child(element_abilities)
+	element_abilities.configure(self)
+	bridge_encounter = preload("res://combat/bridge_encounter.gd").new()
+	bridge_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
+	bridge_encounter.name = "BridgeEncounter"
+	add_child(bridge_encounter)
+	bridge_encounter.configure(self)
+	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
 
@@ -169,7 +191,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				developer_ui = not developer_ui
 				help_label.get_parent().visible = developer_ui
 				weapon_label.get_parent().visible = developer_ui
-			KEY_4: _set_dusk(not dusk)
+			KEY_F8:
+				if developer_ui: _set_dusk(not dusk)
 			KEY_F11:
 				if developer_ui: quality.toggle_developer_lamps()
 			KEY_R:
@@ -180,6 +203,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	if skill_panel and not initial_skill_prompted and dialogue_state.lamp_owned and dialogue_state.pending_points() > 0 and dialogue_state.skills.is_empty() and pause_owners.is_empty() and not training.player_locked() and player.attack_timer <= 0 and player.switch_timer <= 0:
+		initial_skill_prompted = true
+		skill_panel.open_panel()
 	if pause_owners.has("failure") and not controls_panel.visible and not _confirmation_held() and failure_pending == null:
 		failure_armed = true
 	# Retain product pause intent after restart or an external debug step.
@@ -221,6 +247,8 @@ func _open_controls() -> void:
 	previous_mouse_mode = Input.mouse_mode
 	_set_pause_owner("controls", true)
 	if gameplay_hud.journal.visible: gameplay_hud.journal.suspend_for_menu()
+	if inventory_panel and inventory_panel.visible: inventory_panel.suspend_for_menu()
+	if skill_panel and skill_panel.visible: skill_panel.suspend_for_menu()
 	dialogue.nested_menu = dialogue.opened
 	if failure_root:
 		failure_root.hide()
@@ -329,7 +357,7 @@ func _add_help() -> void:
 
 
 func _refresh_control_prompts() -> void:
-	help_label.text = "%s/%s/%s/%s move · Mouse look · %s jump · %s sprint · %s shoulder\nUnarmed · Weapons require ownership · E interact / F old lamp (reserved)\n%s crouch · %s prone · %s roll · %s dodge · %s perspective\nF10 controls · 3 skin · 4 dusk/day · G graphics · R respawn · Esc cursor" % [
+	help_label.text = "%s/%s/%s/%s move · Mouse look · %s jump · %s sprint · %s shoulder\nUnarmed · Weapons require ownership · E interact / F old lamp reveal\n%s crouch · %s prone · %s roll · %s dodge · %s perspective\nF10 controls · 3 lamp · 4/5 elements · B bag · K skills · F8 dusk (dev) · G graphics · R respawn · Esc cursor" % [
 		player.key_prompt("forward"), player.key_prompt("left"), player.key_prompt("back"), player.key_prompt("right"),
 		player.key_prompt("jump"), player.key_prompt("sprint"), player.key_prompt("shoulder"),
 		player.key_prompt("crouch"), player.key_prompt("prone"), player.key_prompt("roll"), player.key_prompt("dodge"), player.key_prompt("perspective")]
@@ -356,6 +384,8 @@ func _close_controls() -> void:
 	controls_panel.hide()
 	get_viewport().disable_3d = false
 	if gameplay_hud.journal.suspended: gameplay_hud.journal.resume_from_menu()
+	if inventory_panel and inventory_panel.suspended: inventory_panel.resume_from_menu()
+	if skill_panel and skill_panel.suspended: skill_panel.resume_from_menu()
 	_set_pause_owner("controls", false)
 	dialogue.nested_menu = false
 	if dialogue.opened:
@@ -374,6 +404,12 @@ func _close_controls() -> void:
 # Called at the start of the player's _input, before mouse attacks and before
 # either script's _unhandled_input. Captured keys cannot leak into the world.
 func handle_controls_input(event: InputEvent) -> bool:
+	for panel in [inventory_panel, skill_panel]:
+		if panel and panel.visible and not controls_panel.visible:
+			if event is InputEventKey and event.pressed and not event.echo:
+				if event.keycode in [KEY_ESCAPE, KEY_B if panel == inventory_panel else KEY_K, KEY_I if panel == inventory_panel else KEY_K]: panel.close_panel(); return true
+				if event.keycode == KEY_F10: _open_controls(); return true
+			return false
 	if gameplay_hud and gameplay_hud.journal.visible and not controls_panel.visible:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode in [KEY_J, KEY_ESCAPE]:
@@ -388,6 +424,20 @@ func handle_controls_input(event: InputEvent) -> bool:
 				return true
 		return false
 	if pause_owners.is_empty() and event is InputEventKey and event.pressed and not event.echo:
+		if player.blocked_keys.has(event.keycode): return true
+		if event.keycode in [KEY_B, KEY_I]:
+			inventory_panel.open_panel()
+			return true
+		if event.keycode == KEY_K:
+			skill_panel.open_panel()
+			return true
+		if event.keycode == KEY_F: return lamp_training.reveal()
+		if event.keycode in [KEY_4,KEY_5]: return element_abilities.request("fire" if event.keycode == KEY_4 else "lightning")
+		if event.keycode == KEY_6:
+			if not training.player_locked() and not element_abilities.busy() and player.traversal.action == "" and training.phase == "idle":
+				if dialogue_state.inventory.use_item(dialogue_state.quick_item): training.commit(); training.tell("物品已使用")
+				else: training.tell("物品不可用 · I 查看背包")
+			return true
 		if event.keycode == KEY_J:
 			gameplay_hud.journal.open_journal()
 			return true
@@ -410,6 +460,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bow_training and bow_training.interact():
 				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and training and training.interact():
@@ -668,6 +719,8 @@ func _return_to_title() -> void:
 func _finish_recovery() -> void:
 	gameplay_hud.restore_view()
 	if gameplay_hud.journal.visible or gameplay_hud.journal.suspended: gameplay_hud.journal.close_journal()
+	for panel in [inventory_panel,skill_panel]:
+		if panel and (panel.visible or panel.suspended): panel.close_panel()
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus: focus.release_focus()
 	failure_pending = null
@@ -712,3 +765,17 @@ func _failure_observation() -> Dictionary:
 		actions.append({"label": button.text, "disabled": button.disabled, "focused": button.has_focus()})
 	var focus := get_viewport().gui_get_focus_owner()
 	return {"visible": failure_root != null and failure_root.visible, "selection": failure_selection, "armed": failure_armed, "busy": failure_busy, "focus_owner": str(focus.get_path()) if focus else "", "text_scale": dialogue_state.text_scale, "actions": actions, "message": failure_body.text if failure_body else ""}
+
+func _add_product_panels() -> void:
+	var layer = CanvasLayer.new()
+	layer.layer = 24
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	inventory_panel = preload("res://ui/inventory_panel.tscn").instantiate()
+	skill_panel = preload("res://ui/skill_panel.tscn").instantiate()
+	for panel in [inventory_panel,skill_panel]:
+		panel.world = self
+		panel.state = dialogue_state
+		panel.audio = menu_audio
+		layer.add_child(panel)
+		panel.hide()

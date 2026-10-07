@@ -95,7 +95,7 @@ func _begin_entry() -> void:
 		if reason != "":
 			_entry_failed(reason + "。请返回标题选择另一存档。")
 			return
-	loader.load_scene("res://world.tscn")
+	loader.load_scene("res://world.tscn", true)
 
 func _construct_world(_resource: PackedScene) -> void:
 	if route != "loading": return

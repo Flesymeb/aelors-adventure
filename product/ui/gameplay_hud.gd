@@ -23,6 +23,10 @@ var failed_slot := -1
 var shown_xp := 0.0
 var previous: Dictionary = {}
 var notifications: Array[Dictionary] = []
+var equipment_back: PanelContainer
+var equipment_row: Label
+var shortcut_row: HBoxContainer
+var shortcut_slots: Dictionary = {}
 var journal: Control
 
 func _ready() -> void:
@@ -95,6 +99,33 @@ func _ready() -> void:
 	retry.text = "重试保存 [F5]"
 	retry.pressed.connect(func(): world._save_opening(failed_slot))
 	notice_rows.add_child(retry)
+	equipment_back = PanelContainer.new()
+	equipment_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(equipment_back)
+	var shortcut_column = VBoxContainer.new()
+	equipment_back.add_child(shortcut_column)
+	shortcut_row = HBoxContainer.new()
+	shortcut_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	shortcut_column.add_child(shortcut_row)
+	for pair in [["sword","sword"],["bow","bow"],["lamp","lantern"],["fire","fire"],["lightning","lightning"],["item","potion"]]:
+		var slot = PanelContainer.new()
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shortcut_row.add_child(slot)
+		var column = VBoxContainer.new()
+		slot.add_child(column)
+		var icon = TextureRect.new()
+		icon.texture = load("res://assets/ui/icons/%s.png" % pair[1])
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(44,44)
+		icon.modulate = Color(1,0.84,0.48)
+		column.add_child(icon)
+		var key = label(column)
+		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		shortcut_slots[pair[0]] = {"panel":slot,"icon":icon,"key":key}
+	equipment_row = label(shortcut_column)
+	equipment_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	equipment_row.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	restore_view()
 	state.save_finished.connect(_save_finished)
 	journal = preload("res://ui/quest_journal.tscn").instantiate()
@@ -193,10 +224,12 @@ func _process(delta: float) -> void:
 	vitals.position = Vector2(20, 20)
 	vitals.custom_minimum_size.x = 270 * minf(scale_now, 1.35)
 	health_text.text = "艾洛  ·  %d / 100" % int(ceil(state.health))
-	xp_text.text = "等级 1   ·   %d / 30 XP" % state.experience
+	xp_text.text = "等级 %d   ·   %d / %d XP" % [state.level(),state.xp_progress(),state.xp_threshold()]
+	if state.pending_points() > 0: xp_text.text += " · %d 点 [K]" % state.pending_points()
+	xp.max_value = state.xp_threshold()
 	xp_text.add_theme_font_size_override("font_size", int(15 * scale_now))
 	hp.value = state.health
-	xp.value = shown_xp
+	xp.value = state.xp_progress()
 	for i in 5:
 		life_icons[i].texture = life_textures[0 if i < state.lives else 1]
 		life_icons[i].custom_minimum_size = Vector2(28, 36) * minf(scale_now, 1.3)
@@ -216,10 +249,35 @@ func _process(delta: float) -> void:
 	if active:
 		if world.training: hint = world.training.interaction_prompt()
 		if world.bow_training and world.bow_training.interaction_prompt() != "": hint = world.bow_training.interaction_prompt()
+		if world.lamp_training and world.lamp_training.interaction_prompt() != "": hint = world.lamp_training.interaction_prompt()
 		if hint == "" and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
+	for pair in [["1","sword","巡路剑",state.sword_owned],["2","bow","巡路弓",state.bow_owned],["3","lamp","旧灯",state.lamp_owned]]:
+		var slot: Dictionary = shortcut_slots[pair[1]]
+		slot.panel.visible = pair[3] and state.inventory.count(pair[1]) > 0
+		slot.key.text = pair[0] + (" ◆" if world.player.weapon_mode == pair[1] else "")
+		slot.panel.tooltip_text = pair[2]
+		slot.icon.modulate = Color(1,0.85,0.4) if world.player.weapon_mode == pair[1] else Color(0.72,0.67,0.53)
+	for pair in [["4","fire","火焰"],["5","lightning","雷电"]]:
+		var cd = world.element_abilities.cooldowns[pair[1]] if world.element_abilities else 0.0
+		var slot: Dictionary = shortcut_slots[pair[1]]
+		slot.panel.visible = state.lamp_owned and state.skills.has(pair[1])
+		slot.key.text = "%s · %.1fs" % [pair[0],cd] if cd > 0 else pair[0]
+		slot.panel.tooltip_text = pair[2]
+		slot.icon.modulate = Color(0.35,0.36,0.37) if cd > 0 else Color(1,0.85,0.4)
+	var item_slot: Dictionary = shortcut_slots.item
+	var item_count: int = state.inventory.count(state.quick_item)
+	item_slot.panel.visible = item_count > 0
+	item_slot.icon.texture = load(state.inventory.PROTOSET.data[state.quick_item].image)
+	item_slot.key.text = "6 · %d" % item_count
+	equipment_row.text = "B 背包 · K 能力 · J 日志"
+	equipment_row.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
+	for slot in shortcut_slots.values(): slot.key.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
+	equipment_back.custom_minimum_size.x = 0
+	equipment_back.size = Vector2.ZERO
+	equipment_back.position = Vector2((view.x - equipment_back.get_combined_minimum_size().x) * 0.5,view.y - equipment_back.get_combined_minimum_size().y - 12)
 	prompt.text = hint
 	prompt.visible = hint != ""
-	var ammo_top := view.y - 64 * scale_now
+	var ammo_top := equipment_back.position.y - 36 * scale_now
 	var prompt_height := maxf(prompt.get_minimum_size().y, 28 * scale_now)
 	prompt.size = Vector2(view.x * 0.6, prompt_height)
 	# Control may retain a larger minimum while the new font layout settles.
@@ -239,7 +297,7 @@ func _next_action() -> String:
 	if not state.encounter_defeated: return "沿路前往训练怪"
 	if not state.remnant_collected: return "靠近金色残响"
 	if not state.bow_owned: return "找草地边的罗恩"
-	return "瞄准罗恩前方草靶" if not state.bow_training_complete else "返回伊莎处"
+	return "瞄准罗恩前方草靶" if not state.bow_training_complete else state.objective()
 
 func _mcp_state() -> Dictionary:
 	return {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}

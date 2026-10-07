@@ -1,0 +1,32 @@
+{
+  "sword": {
+    "name": "巡路剑",
+    "max_stack_size": 1,
+    "stack_size": 1,
+    "image": "res://assets/ui/icons/sword.png"
+  },
+  "bow": {
+    "name": "巡路弓",
+    "max_stack_size": 1,
+    "stack_size": 1,
+    "image": "res://assets/ui/icons/bow.png"
+  },
+  "lamp": {
+    "name": "奥伦的旧灯",
+    "max_stack_size": 1,
+    "stack_size": 1,
+    "image": "res://assets/ui/icons/lantern.png"
+  },
+  "healing": {
+    "name": "疗伤药",
+    "max_stack_size": 9,
+    "stack_size": 1,
+    "image": "res://assets/ui/icons/potion.png"
+  },
+  "lifeflame": {
+    "name": "命火",
+    "max_stack_size": 5,
+    "stack_size": 1,
+    "image": "res://assets/ui/icons/lantern.png"
+  }
+}

@@ -6,12 +6,22 @@ var _scene_path := ""
 var progress := 0.0
 var status := ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
 var elapsed := 0.0
-func load_scene(scene_path: String) -> void:
+var _request_generation := 0
+func load_scene(scene_path: String, main_thread := false) -> void:
+	_request_generation += 1
 	_scene_path = scene_path
 	progress = 0.0
 	elapsed = 0.0
 	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		load_failed.emit("冒险资源无法读取。请重试或返回标题。")
+		return
+	if main_thread:
+		# The authored world's native resources load successfully on the main
+		# thread but stall in load_threaded_request. Keep the actual loading
+		# surface visible, then load without moving native initialization to a worker.
+		set_process(false)
+		status = ResourceLoader.THREAD_LOAD_IN_PROGRESS
+		_load_on_main_thread.call_deferred(scene_path, _request_generation)
 		return
 	var error := ResourceLoader.load_threaded_request(_scene_path, "PackedScene")
 	if error != OK:
@@ -19,7 +29,20 @@ func load_scene(scene_path: String) -> void:
 		return
 	set_process(true)
 func cancel() -> void:
+	_request_generation += 1
 	set_process(false)
+func _load_on_main_thread(scene_path: String, generation: int) -> void:
+	await get_tree().process_frame
+	if generation != _request_generation: return
+	var resource := ResourceLoader.load(scene_path, "PackedScene") as PackedScene
+	if generation != _request_generation: return
+	if resource == null:
+		status = ResourceLoader.THREAD_LOAD_FAILED
+		load_failed.emit("冒险资源不完整。请重试或返回标题。")
+		return
+	status = ResourceLoader.THREAD_LOAD_LOADED
+	progress = 1.0
+	scene_loaded.emit(resource)
 func _ready() -> void:
 	set_process(false)
 func _process(delta: float) -> void:

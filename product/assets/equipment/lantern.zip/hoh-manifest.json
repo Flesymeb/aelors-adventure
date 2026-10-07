@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "Lantern_01.bin",
+      "sha256": "cb0c7eaaea361546201ba1c4324581ac7147c221851657b6e23d2f854beabe49",
+      "size_bytes": 864852,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/Lantern_01/Lantern_01.bin"
+    },
+    {
+      "path": "scene.gltf",
+      "sha256": "86f12126e0a5c1c369249371537eed653fa308de8b3554fa088b3fe503d9ec8c",
+      "size_bytes": 4866,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/Lantern_01/Lantern_01_2k.gltf"
+    },
+    {
+      "path": "textures/Lantern_01_brass_arm_2k.jpg",
+      "sha256": "f35b2f236301c13da9c127f1a480d06fd61815750c6b0d4a55dc857d576f6385",
+      "size_bytes": 847840,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/Lantern_01/Lantern_01_brass_arm_2k.jpg"
+    },
+    {
+      "path": "textures/Lantern_01_brass_diff_2k.jpg",
+      "sha256": "85d0e815adce257bc8288d21ba585f37d612a8a13bde9d54e7a98b08510ed869",
+      "size_bytes": 519828,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/Lantern_01/Lantern_01_brass_diff_2k.jpg"
+    },
+    {
+      "path": "textures/Lantern_01_brass_nor_gl_2k.jpg",
+      "sha256": "d0c090bbc39cf26828070fe816fa996959578888a9a661713d4c2d1b2f79449e",
+      "size_bytes": 805944,
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/Lantern_01/Lantern_01_brass_nor_gl_2k.jpg"
+    }
+  ],
+  "format": "gltf",
+  "resolution": "2k",
+  "source": "polyhaven"
+}

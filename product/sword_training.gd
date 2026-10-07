@@ -160,7 +160,7 @@ func resolve_practice_contact(_source: SnaielDamageSource, point: Vector3) -> Di
 
 func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dictionary:
 	var before: float = state.health
-	var outcome = receive_attack(monster.attack_origin, monster.locked_direction, source.damage_attributes.health)
+	var outcome = receive_attack(source.entity.attack_origin, source.entity.locked_direction, source.damage_attributes.health)
 	if outcome == "parry": source.get_parried()
 	return {"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_before": before, "hp_after": state.health, "hp_loss": before - state.health}
 
@@ -197,6 +197,9 @@ func restore_history() -> void:
 	notice_time = 0
 	hers.idle()
 	player.traversal.reset()
+	player.owns_lamp = state.lamp_owned
+	state.inventory.ensure_equipment()
+	state.inventory.select_equipment(state.selected_equipment)
 	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
 	monster.reset_encounter()
 	player_hitbox.reset_contacts()
@@ -213,10 +216,12 @@ func restore_history() -> void:
 		phase = "death"
 	else:
 		phase = "idle"
+	if world.lamp_training: world.lamp_training.restore_history()
+	if world.bridge_encounter: world.bridge_encounter.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
-	return phase != "death" and not monster.engaged and sim_phase == "idle"
+	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
 func commit() -> bool:
 	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
@@ -282,6 +287,7 @@ func pose_owned() -> bool:
 	return motion_restricted() or player_locked() or hit_stop > 0
 
 func request_attack() -> void:
+	if player.abilities and player.abilities.busy(): return
 	if player_locked() or player.controls_open or player.switch_timer > 0 or not player.is_on_floor() or player.traversal.action != "" or player.traversal.posture != "standing": return
 	if not state.sword_owned or player.weapon_mode != "sword": return
 	if phase == "recovery" and clock >= recovery_duration() - 0.2 and combo < 2:
@@ -313,6 +319,8 @@ func recovery_duration() -> float:
 	return 0.5 if combo == 2 else 0.35
 
 func interrupt(_reason: String) -> void:
+	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
+	if world.bridge_encounter and _reason in ["death", "load", "recovery"]: world.bridge_encounter.interrupt()
 	player.reset_archery()
 	if world.bow_training and _reason in ["death", "load", "recovery"]: world.bow_training.clear_transients()
 	buffered = false
@@ -334,6 +342,7 @@ func interrupt(_reason: String) -> void:
 		player.current_animation = ""
 
 func set_block(pressed: bool) -> void:
+	if pressed and player.abilities and player.abilities.busy(): return
 	if not pressed:
 		if blocking: player.current_animation = ""
 		blocking = false
@@ -383,7 +392,9 @@ func advance_player(delta: float) -> void:
 	if phase in ["anticipation", "contact", "recovery"]: clock += delta
 	if sword_source.can_damage:
 		sword_source.global_position = player.global_position
-		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), {target: target_hitbox, monster: monster.hitbox}, 3)
+		var registry = {target: target_hitbox, monster: monster.hitbox}
+		if world.bridge_encounter: registry.merge(world.bridge_encounter.registry())
+		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
 		# Hold the completed guard pose; do not restart it every frame.
 		if player.animation_player.current_animation_position >= 0.5: player.animation_player.pause()
@@ -476,11 +487,15 @@ func recover_at_checkpoint() -> void:
 		show_game_over()
 		return
 	monster.reset_encounter()
+	if world.bridge_encounter: world.bridge_encounter.restore_history()
 	sim_phase = "idle"
 	hers.idle()
 	player.traversal.reset()
 	# Recovery restores possession, selection and mounts together, including
 	# interrupted switches or a sword stowed by the previous posture.
+	player.owns_lamp = state.lamp_owned
+	state.inventory.ensure_equipment()
+	state.inventory.select_equipment(state.selected_equipment)
 	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
 	if not place_on_ground(player, CP01):
 		tell("检查点落地失败，请加载安全存档")

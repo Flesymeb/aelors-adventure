@@ -110,6 +110,7 @@ func _physics_process(_delta: float) -> void:
 		world.training.tell("罗恩：现在由你试。靶在我前方，木箱会挡住箭；可随时回来补箭。", 5)
 
 func can_draw() -> bool:
+	if player.abilities and player.abilities.busy(): return false
 	if not state.bow_owned or world.training.player_locked(): return false
 	if state.arrows <= 0:
 		world.training.tell("箭已用尽 · 回罗恩处按 E 免费补满")
@@ -151,7 +152,7 @@ func _contact(hit: Dictionary, id: int) -> void:
 		if shot.charge >= 0.12:
 			state.bow_training_complete = true
 		world.training.feedback.impact(hit.position, "蓄力靶命中", 0, "straw")
-		world.training.tell("蓄力靶命中 · 可重复练习；旧灯训练尚未完成", 4)
+		world.training.tell("蓄力靶命中 · 可重复练习；返回伊莎处领取旧灯", 4)
 	elif body != null and body.has_method("receive_contact"):
 		var resolved: Dictionary = body.receive_contact(shot.source, hit.position)
 		loss = resolved.get("hp_loss", 0.0)
