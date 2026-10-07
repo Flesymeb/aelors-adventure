@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 26 |
-| Closed | 10 |
-| All | 36 |
+| Open | 30 |
+| Closed | 13 |
+| All | 43 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 9 |
+| Active | 13 |
 | Verified closed | 5 |
-| Policy invalidated | 0 |
+| Policy invalidated | 3 |
 | Waived | 0 |
-| All in this run | 14 |
+| All in this run | 21 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -52,11 +52,18 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
 | `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
-| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker measurements support the repair, but its complete required regression recipe remains unverified. |
+| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker observations support the repair, but the complete frozen content/resolution matrix remains incomplete. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening implementation is observable, but required audio and persistence/skip boundaries remain unverified. |
-| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Cinematic and active sword pause checks pass observed cases; the broader active-world matrix remains incomplete. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings visibility repair is verified; several required option effects remain independently unverified. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings scale and positive audio observations do not close the required effect-comparison matrix. |
+| `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | OPEN | The default B roll binding is intercepted by inventory, making roll unavailable on its configured key. |
+| `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | OPEN | Godot reported a candidate-owned runtime error: Condition "!_p->typed.validate(write[i], "append_array")" is true. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening playback is observed; the selected opening acceptance matrix remains incomplete. |
+| `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | OPEN | The shortcut panel collapses into unreadable wrapping during early ownership states. |
+| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | The vitals panel retains enlarged blank geometry after text scale returns to 100%. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -64,7 +71,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 26 | 10 | 36 |
+| GitHub HoH namespace | 30 | 13 | 43 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -102,7 +109,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-06-6a7a368c99e8` | `development_snapshot:attempt-12128038f172031fb4b65735` | DEVELOPER REPORT READY |
+| `loop-06-6a7a368c99e8` | `development_snapshot:attempt-12128038f172031fb4b65735` | FAIL |
 
 ### Project Planner
 
@@ -129,7 +136,27 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-06-6a7a368c99e8` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 11 (8 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `default_roll_opens_inventory` | MAJOR | DEGRADED | HIGH | The default B roll binding is intercepted by inventory, making roll unavailable on its configured key. |
+| `shortcut_panel_narrow_ownership_states` | MINOR | DEGRADED | MEDIUM | The shortcut panel collapses into unreadable wrapping during early ownership states. |
+| `vitals_retains_enlarged_geometry` | MINOR | DEGRADED | MEDIUM | The vitals panel retains enlarged blank geometry after text scale returns to 100%. |
+| `tracker_matrix_incomplete` | MINOR | INTERNAL | MEDIUM | Tracker observations support the repair, but the complete frozen content/resolution matrix remains incomplete. |
+| `opening_matrix_incomplete` | MAJOR | INTERNAL | HIGH | Normal opening playback is observed; the selected opening acceptance matrix remains incomplete. |
+| `active_pause_matrix_incomplete` | MAJOR | INTERNAL | HIGH | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
+| `settings_effect_matrix_incomplete` | MAJOR | INTERNAL | HIGH | Settings scale and positive audio observations do not close the required effect-comparison matrix. |
+| `fps.runtime.candidate-error-fbd2eca17385` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Attempted to push_back an object of type 'CharacterBody3D' into a TypedArray, which does not inherit from 'StaticBody3D'. |
+| `fps.runtime.candidate-error-d6ccfb2695ca` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Condition "!_p->typed.validate(value, "push_back")" is true. |
+| `fps.runtime.candidate-error-19b1aab47037` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Attempted to append_array an object of type 'CharacterBody3D' into a TypedArray, which does not inherit from 'StaticBody3D'. |
+| `fps.runtime.candidate-error-9d723d49756b` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Condition "!_p->typed.validate(write[i], "append_array")" is true. |
 
 ---
 
@@ -394,5 +421,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-06-6a7a368c99e8`
 - Latest warm start: `loop-06-81a46c7da4a0`
 - Last published: `loop-06-6a7a368c99e8`
-- Best verified: `loop-05-81a46c7da4a0`
+- Best verified: `loop-06-6a7a368c99e8`
 - Generated by the HoH host from immutable run evidence.
