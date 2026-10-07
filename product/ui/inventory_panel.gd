@@ -1,4 +1,5 @@
 extends "res://ui/menu_foundation/main_menu.gd"
+const FOCUS_HELPER := preload("res://ui/menu_foundation/capture_focus.gd")
 var world: Node3D
 var suspended = false
 var bag_list: CtrlInventory
@@ -6,6 +7,7 @@ var status: Label
 var equipped: Label
 var use_button: Button
 var quick_button: Button
+var return_button: Button
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -32,7 +34,7 @@ func _ready() -> void:
 	quick_button = button(row,"设为物品快捷栏 [6]",assign_selected)
 	button(row,"收起装备",unequip)
 	status = paragraph(column,"选择背包中的真实物品，再使用或装备。疗伤药恢复 30 生命；命火最多 5。")
-	button(get_meta("footer_column"),"返回 [I / Esc]",close_panel)
+	return_button = button(get_meta("footer_column"),"返回 [I / Esc]",close_panel)
 	state.inventory.changed.connect(refresh)
 	refresh()
 
@@ -41,8 +43,13 @@ func refresh() -> void:
 	var item = state.inventory.equipment.get_item()
 	equipped.text = "当前装备：%s · 箭 %d / 12\n物品快捷栏 [6]：%s ×%d" % [item.get_title() if item else "空",state.arrows,"疗伤药" if state.quick_item == "healing" else "命火",state.inventory.count(state.quick_item)]
 	var selected = bag_list.get_selected_inventory_item()
+	var focused := get_viewport().gui_get_focus_owner()
 	use_button.disabled = selected == null
 	quick_button.disabled = selected == null or selected.get_prototype().get_prototype_id() not in ["healing","lifeflame"]
+	# An empty/nonselectable grid must not trap keyboard navigation.
+	bag_list.focus_mode = Control.FOCUS_ALL if FOCUS_HELPER.selectable_item(bag_list) >= 0 else Control.FOCUS_NONE
+	if is_visible_in_tree() and return_button and (focused == bag_list and bag_list.focus_mode == Control.FOCUS_NONE or focused == use_button and use_button.disabled or focused == quick_button and quick_button.disabled):
+		return_button.grab_focus.call_deferred()
 	reflow(self)
 
 func use_selected() -> void:
@@ -74,8 +81,18 @@ func open_panel() -> void:
 	world._set_pause_owner("bag",true)
 	show()
 	refresh()
-	bag_list.grab_focus.call_deferred()
-	if bag_list.item_count > 0: bag_list.select(0)
+	_restore_bag_focus.call_deferred()
+
+func _restore_bag_focus() -> void:
+	if not is_visible_in_tree() or suspended: return
+	var index := FOCUS_HELPER.selectable_item(bag_list)
+	if index >= 0:
+		bag_list.select(index)
+		bag_list.grab_focus()
+	else:
+		return_button.grab_focus()
+	# ItemList.select does not emit item_selected; synchronize actions explicitly.
+	refresh()
 
 func close_panel() -> void:
 	suspended = false
@@ -91,10 +108,11 @@ func resume_from_menu() -> void:
 	suspended = false
 	show()
 	refresh()
-	bag_list.grab_focus.call_deferred()
+	_restore_bag_focus.call_deferred()
 
 func _input(_event: InputEvent) -> void: pass
 func _unhandled_input(_event: InputEvent) -> void: pass
 
 func _mcp_state() -> Dictionary:
-	return {"visible":visible,"contents":state.inventory.snapshot(),"selected":bag_list.get_selected_inventory_item().get_title() if bag_list.get_selected_inventory_item() else "","status":status.text}
+	var focus := get_viewport().gui_get_focus_owner()
+	return {"visible":visible,"suspended":suspended,"contents":state.inventory.snapshot(),"item_count":bag_list.item_count,"selected_indices":Array(bag_list.get_selected_items()),"selected":bag_list.get_selected_inventory_item().get_title() if bag_list.get_selected_inventory_item() else "","focus_owner":str(focus.get_path()) if focus else "","use_disabled":use_button.disabled,"quick_disabled":quick_button.disabled,"return_focused":return_button.has_focus(),"status":status.text}

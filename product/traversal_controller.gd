@@ -23,6 +23,7 @@ var motion_pose: SkeletonModifier3D
 var collision: CollisionShape3D
 var step_count := 0
 var step_grace := 0.0
+var last_step: Dictionary = {}
 var feedback := ""
 var feedback_time := 0.0
 var standing_shape: CapsuleShape3D
@@ -227,7 +228,11 @@ func _try_step(horizontal: Vector3) -> bool:
 		return false
 	# Capsule contacts at a ledge corner have a diagonal normal. Determine the
 	# actual tread normal from a short ray instead of treating it as a slope.
-	var probe: Vector3 = player.global_position + horizontal.normalized() * (standing_shape.radius + horizontal.length() + 0.04)
+	# A wall contact removes horizontal velocity each frame. At that small
+	# acceleration distance the ray can hit the sloped riser before its tread.
+	# Keep a short minimum lookahead; the same distance is swept for clearance.
+	var probe_distance := standing_shape.radius + maxf(horizontal.length(), 0.05) + 0.04
+	var probe: Vector3 = player.global_position + horizontal.normalized() * probe_distance
 	var query := PhysicsRayQueryParameters3D.create(probe + Vector3.UP * (STEP_HEIGHT + 0.04), probe + Vector3.DOWN * 0.04)
 	query.exclude = [player.get_rid()]
 	query.collision_mask = player.collision_mask
@@ -242,12 +247,14 @@ func _try_step(horizontal: Vector3) -> bool:
 	if player.test_move(raised, rise):
 		return false
 	raised.origin += rise
-	if player.test_move(raised, horizontal.normalized() * (standing_shape.radius + horizontal.length() + 0.04)):
+	if player.test_move(raised, horizontal.normalized() * probe_distance):
 		return false
 	# Only lift vertically; horizontal movement is still swept by move_and_slide.
 	# Brief support grace prevents floor-snap pulling the capsule off the corner
 	# before its centre reaches the tread. It is never granted at a drop-off.
+	last_step = {"from":player.global_position,"tread":landing.position,"normal":landing.normal,"height":height,"collider":str(landing.collider.get_path()) if landing.collider is Node else ""}
 	player.global_position += rise
+	last_step["raised_position"] = player.global_position
 	player.velocity.y = 0.0
 	step_grace = 0.14
 	player.floor_snap_length = 0.0
@@ -255,10 +262,25 @@ func _try_step(horizontal: Vector3) -> bool:
 	step_count += 1
 	return true
 
+func _support_observation(point: Vector3) -> Dictionary:
+	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 2.0, point + Vector3.DOWN * 2.0)
+	query.exclude = [player.get_rid()]
+	query.collision_mask = player.collision_mask
+	var hit := player.get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty(): return {}
+	return {"position":hit.position,"normal":hit.normal,"collider":str(hit.collider.get_path()) if hit.collider is Node else ""}
+
+func observation() -> Dictionary:
+	# Called only by read-only runtime inspection; never drives the player or UI.
+	var heading: Vector3 = moving_direction if moving_direction.length_squared() > 0.01 else player.visual.global_basis.z
+	heading.y = 0.0
+	return {"grounded":player.is_on_floor(),"floor_normal":player.get_floor_normal() if player.is_on_floor() else Vector3.ZERO,"posture":posture,"action":action,"step_height_limit":STEP_HEIGHT,"step_grace":step_grace,"support":_support_observation(player.global_position),"ahead_support":_support_observation(player.global_position + heading.normalized() * 0.5),"last_step":last_step}
+
 func eye_height() -> float:
 	return 1.65 if posture == "standing" else (1.0 if posture == "crouch" else 0.62)
 
 func reset() -> void:
+	last_step.clear()
 	action = ""
 	cooldown = 0.0
 	takeoff_timer = 0.0

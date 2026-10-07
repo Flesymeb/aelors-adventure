@@ -26,14 +26,29 @@ extends Control
 		if value_changed and not lock:
 			update_focus()
 
-func _focus_first_search(control_node : Control, levels : int = 1) -> bool:
-	if control_node == null or !control_node.is_visible_in_tree():
+static func selectable_item(control_node: ItemList) -> int:
+	# Retain a real selection when returning from a submenu.
+	for index in control_node.get_selected_items():
+		if index < control_node.item_count and control_node.is_item_selectable(index) and not control_node.is_item_disabled(index):
+			return index
+	for index in range(control_node.item_count):
+		if control_node.is_item_selectable(index) and not control_node.is_item_disabled(index):
+			return index
+	return -1
+
+func _focus_first_search(control_node : Node, levels : int = 1) -> bool:
+	if not control_node is Control or !control_node.is_visible_in_tree():
 		return false
 	if control_node.focus_mode == FOCUS_ALL and not (control_node is BaseButton and control_node.disabled):
-		control_node.grab_focus()
 		if control_node is ItemList:
-			control_node.select(0)
-		return true
+			var index := selectable_item(control_node)
+			if index >= 0:
+				control_node.select(index)
+				control_node.grab_focus()
+				return true
+		else:
+			control_node.grab_focus()
+			return true
 	if levels < 1:
 		return false
 	var children = control_node.get_children()
