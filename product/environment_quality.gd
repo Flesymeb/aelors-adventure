@@ -6,12 +6,20 @@ var sun: DirectionalLight3D
 var environment: Environment
 var dusk := false
 var enhanced := true
+var state: Node
 var developer_lamp_overlay := false
 func configure(map: Node3D) -> void:
 	village = map
 	world = village.get_node("Sky3D")
 	sun = world.get_node("SunLight")
 	environment = world.environment
+	# Authored forest ambience belongs to the same effects mix as world cues.
+	# Preserve stream/lifecycle settings and any explicitly authored bus.
+	for player_type in ["AudioStreamPlayer", "AudioStreamPlayer2D", "AudioStreamPlayer3D"]:
+		for source in village.find_children("*", player_type, true, false):
+			if source.bus == &"Master": source.bus = &"Effects"
+	if state:
+		state.preferences_changed.connect(apply_quality)
 	apply_quality()
 func set_dusk(value: bool) -> void:
 	dusk = value
@@ -20,6 +28,7 @@ func toggle_quality() -> void:
 	enhanced = not enhanced
 	apply_quality()
 func apply_quality() -> void:
+	if state: enhanced = state.graphics_quality == "normal"
 	get_viewport().msaa_3d = Viewport.MSAA_DISABLED
 	get_viewport().scaling_3d_scale = 1.0 if enhanced else 0.7
 	sun.directional_shadow_max_distance = 45.0 if enhanced else 25.0

@@ -27,6 +27,7 @@ func _ready() -> void:
 	root = $Root
 	root.hide()
 	sound = AudioStreamPlayer.new()
+	sound.bus = "Effects"
 	sound.volume_db = -18
 	add_child(sound)
 	_build()

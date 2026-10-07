@@ -9,6 +9,7 @@ const SPAWN_XZ := GROUND.SPAWN
 
 signal entry_ready
 signal entry_failed(message: String)
+var menu_audio: Node
 var entry_router: Node
 var village: Node3D
 var player: CharacterBody3D
@@ -16,12 +17,8 @@ var dusk := false
 var quality: Node
 var weapon_label: Label
 var help_label: Label
-var controls_panel: PanelContainer
-var controls_list: VBoxContainer
+var controls_panel: Control
 var controls_feedback: Label
-var control_buttons: Array[Button] = []
-var controls_selection := 0
-var capturing_control := ""
 var previous_mouse_mode := Input.MOUSE_MODE_CAPTURED
 var ui_font: Font = preload("res://dialogue_theme.tres").default_font
 var dialogue_state: Node
@@ -32,10 +29,6 @@ var gameplay_hud: CanvasLayer
 var restoring_interface := false
 var developer_ui := false
 var restored_position: Dictionary = {}
-var text_scale_button: Button
-var speed_button: Button
-var instant_button: Button
-var feedback_options: Dictionary = {}
 var bow_training: Node3D
 var training: Node3D
 var failure_panel: PanelContainer
@@ -72,12 +65,18 @@ func _ready() -> void:
 	quality = Node.new()
 	quality.set_script(ENVIRONMENT_QUALITY)
 	add_child(quality)
-	quality.configure(village)
 	if dialogue_state == null:
 		dialogue_state = preload("res://dialogue_state.gd").new()
 		dialogue_state.name = "OpeningState"
 		add_child(dialogue_state)
 		restored_position = dialogue_state.load_progress()
+	quality.state = dialogue_state
+	quality.configure(village)
+	if entry_router == null:
+		menu_audio = preload("res://ui/menu_audio.gd").new()
+		menu_audio.state = dialogue_state
+		add_child(menu_audio)
+	else: menu_audio = entry_router.audio
 	dialogue = preload("res://IshaDialogue.tscn").instantiate()
 	dialogue.state = dialogue_state
 	add_child(dialogue)
@@ -175,7 +174,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				if developer_ui: quality.toggle_developer_lamps()
 			KEY_R:
 				if developer_ui: player.respawn()
-			KEY_G: quality.toggle_quality()
+			KEY_G:
+				if developer_ui: quality.toggle_quality()
 			KEY_ESCAPE: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
@@ -218,7 +218,6 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 
 
 func _open_controls() -> void:
-	capturing_control = ""
 	previous_mouse_mode = Input.mouse_mode
 	_set_pause_owner("controls", true)
 	if gameplay_hud.journal.visible: gameplay_hud.journal.suspend_for_menu()
@@ -227,9 +226,8 @@ func _open_controls() -> void:
 		failure_root.hide()
 		failure_pending = null
 		failure_armed = false
-	controls_panel.show()
-	controls_feedback.text = "命火 %d / 5 · 检查点：河谷村庄灯台\n方向键选移动绑定 · Enter 修改 · Backspace 默认\nF6 字号 · F7 速度 · F8 即时文字 · F5 保存 · Esc 返回" % dialogue_state.lives
-	control_buttons[controls_selection].grab_focus()
+	get_viewport().disable_3d = true
+	controls_panel.open_pause()
 
 
 func _dialogue_closed() -> void:
@@ -238,8 +236,8 @@ func _dialogue_closed() -> void:
 
 
 func _save_opening(slot: int) -> void:
-	if training and (not training.can_save() or (bow_training and not bow_training.can_save())):
-		dialogue_state.save_feedback = "战斗中不能保存 · 请先退回安全处"
+	if dialogue_state.lives <= 0 or (training and (not training.can_save() or (bow_training and not bow_training.can_save()))):
+		dialogue_state.save_feedback = "当前不能保存 · 请先退回安全处或恢复冒险"
 		if controls_feedback: controls_feedback.text = dialogue_state.save_feedback
 		return
 	if training:
@@ -291,79 +289,9 @@ func _load_opening(slot: int) -> void:
 		dialogue.open_dialogue(true)
 
 
-func _add_reading_controls() -> void:
-	text_scale_button = Button.new()
-	text_scale_button.pressed.connect(_cycle_text_scale)
-	controls_list.add_child(text_scale_button)
-	speed_button = Button.new()
-	speed_button.pressed.connect(_cycle_reveal_speed)
-	controls_list.add_child(speed_button)
-	instant_button = Button.new()
-	instant_button.pressed.connect(_toggle_instant_text)
-	controls_list.add_child(instant_button)
-	for slot in [1, 2]:
-		var row := HBoxContainer.new()
-		controls_list.add_child(row)
-		var save := Button.new()
-		save.text = "保存到槽位 %d" % slot
-		save.pressed.connect(_save_opening.bind(slot))
-		row.add_child(save)
-		var load_button := Button.new()
-		load_button.text = "加载槽位 %d" % slot
-		load_button.pressed.connect(_load_opening.bind(slot))
-		row.add_child(load_button)
-	for option in ["reduced_motion", "muted_sound"]:
-		var toggle := CheckButton.new()
-		toggle.text = "减少反馈动态" if option == "reduced_motion" else "静音所有声音"
-		toggle.button_pressed = dialogue_state.get(option)
-		toggle.toggled.connect(_set_feedback_option.bind(option))
-		controls_list.add_child(toggle)
-		feedback_options[option] = toggle
-	var sensitivity_label := Label.new()
-	sensitivity_label.text = "鼠标灵敏度 · %.2f" % dialogue_state.mouse_sensitivity
-	controls_list.add_child(sensitivity_label)
-	var sensitivity := HSlider.new()
-	sensitivity.min_value = 0.25
-	sensitivity.max_value = 2.5
-	sensitivity.step = 0.05
-	sensitivity.value = dialogue_state.mouse_sensitivity
-	controls_list.add_child(sensitivity)
-	sensitivity.value_changed.connect(func(value: float):
-		dialogue_state.mouse_sensitivity = value
-		sensitivity_label.text = "鼠标灵敏度 · %.2f" % value
-		_save_preferences())
-	_refresh_reading_controls()
-
-func _set_feedback_option(value: bool, option: String) -> void:
-	dialogue_state.set(option, value)
-	_save_preferences()
-
 func _refresh_reading_controls() -> void:
-	text_scale_button.text = "文字缩放 [F6] · %d%%" % int(dialogue_state.text_scale * 100)
-	speed_button.text = "显示速度 [F7] · %d 字/秒" % int(dialogue_state.reveal_speed)
-	instant_button.text = "即时显示 [F8] · " + ("开启" if dialogue_state.instant_text else "关闭")
-	for option in feedback_options:
-		feedback_options[option].set_pressed_no_signal(dialogue_state.get(option))
 	dialogue._layout()
 	if failure_panel: _layout_failure()
-
-
-func _cycle_text_scale() -> void:
-	dialogue_state.text_scale = 1.0 if dialogue_state.text_scale >= 2.0 else dialogue_state.text_scale + 0.5
-	_refresh_reading_controls()
-	_save_preferences()
-
-
-func _cycle_reveal_speed() -> void:
-	dialogue_state.reveal_speed = 15.0 if dialogue_state.reveal_speed >= 60.0 else dialogue_state.reveal_speed + 15.0
-	_refresh_reading_controls()
-	_save_preferences()
-
-
-func _toggle_instant_text() -> void:
-	dialogue_state.instant_text = not dialogue_state.instant_text
-	_refresh_reading_controls()
-	_save_preferences()
 
 
 func _mcp_state() -> Dictionary:
@@ -374,7 +302,7 @@ func _mcp_state() -> Dictionary:
 		story_actors.append(str(actor.get_path()))
 	var position := player.global_position
 	var velocity := player.velocity
-	return {"failure": _failure_observation(), "pause_owners": pause_owners.keys(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
+	return {"failure": _failure_observation(), "pause_owners": pause_owners.keys(), "preferences": dialogue_state.preference_snapshot(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
 
 
 func _add_help() -> void:
@@ -405,97 +333,28 @@ func _refresh_control_prompts() -> void:
 		player.key_prompt("forward"), player.key_prompt("left"), player.key_prompt("back"), player.key_prompt("right"),
 		player.key_prompt("jump"), player.key_prompt("sprint"), player.key_prompt("shoulder"),
 		player.key_prompt("crouch"), player.key_prompt("prone"), player.key_prompt("roll"), player.key_prompt("dodge"), player.key_prompt("perspective")]
-	for i in control_buttons.size():
-		var action: String = player.CONTROL_DEFAULTS.keys()[i]
-		control_buttons[i].text = "%s    [%s]" % [player.CONTROL_LABELS[action], player.key_prompt(action)]
+
 
 
 func _add_controls() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 30
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(layer)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(center)
-	controls_panel = PanelContainer.new()
-	controls_panel.name = "LocomotionControls"
-	controls_panel.custom_minimum_size = Vector2(600, 0)
-	center.add_child(controls_panel)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.025, 0.045, 0.065, 0.97)
-	style.border_color = Color(0.65, 0.55, 0.32)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(7)
-	style.content_margin_left = 22
-	style.content_margin_right = 22
-	style.content_margin_top = 14
-	style.content_margin_bottom = 14
-	controls_panel.add_theme_stylebox_override("panel", style)
-	controls_list = VBoxContainer.new()
-	controls_list.add_theme_constant_override("separation", 3)
-	controls_list.add_theme_font_override("font", ui_font)
-	controls_list.add_theme_font_size_override("font_size", 17)
-	var scroll := ScrollContainer.new()
-	scroll.follow_focus = true
-	scroll.custom_minimum_size = Vector2(580, 580)
-	controls_panel.add_child(scroll)
-	scroll.add_child(controls_list)
-	controls_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var title := Label.new()
-	title.text = "LOCOMOTION CONTROLS"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls_list.add_child(title)
-	for action in player.CONTROL_DEFAULTS:
-		var button := Button.new()
-		button.pressed.connect(_begin_capture.bind(String(action)))
-		button.focus_entered.connect(_select_control.bind(control_buttons.size()))
-		controls_list.add_child(button)
-		control_buttons.append(button)
-	controls_feedback = Label.new()
-	controls_feedback.custom_minimum_size.x = 490
-	controls_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	controls_list.add_child(controls_feedback)
-	var restore := Button.new()
-	restore.text = "Restore defaults [Backspace]"
-	restore.pressed.connect(_restore_controls)
-	controls_list.add_child(restore)
-	var close := Button.new()
-	close.text = "Return to exploration [Esc / F10]"
-	close.pressed.connect(_close_controls)
-	controls_list.add_child(close)
-	_add_reading_controls()
-	var title_return := Button.new()
-	title_return.text = "返回标题"
-	title_return.pressed.connect(_return_to_title)
-	controls_list.add_child(title_return)
+	controls_panel = preload("res://ui/menu_foundation/main_menu.tscn").instantiate()
+	controls_panel.router = entry_router
+	controls_panel.pause_world = self
+	layer.add_child(controls_panel)
 	controls_panel.hide()
-
-
-func _select_control(index: int) -> void:
-	controls_selection = index
-
-
-func _begin_capture(action: String) -> void:
-	# A GUI button held while the panel closes can emit its callback later.
-	# It must not arm the next visit's capture or consume exploration input.
-	if not controls_panel.visible:
-		return
-	capturing_control = action
-	controls_feedback.text = "Press an unused key for %s. Esc cancels.\nE / F and menu keys stay reserved." % player.CONTROL_LABELS[action]
-
-
-func _restore_controls() -> void:
-	capturing_control = ""
-	var error: String = player.restore_controls()
-	controls_feedback.text = "Default controls restored." if error == "" else error
-	control_buttons[controls_selection].grab_focus()
 
 
 func _close_controls() -> void:
 	var focus := get_viewport().gui_get_focus_owner()
 	if focus: focus.release_focus()
+	if controls_panel.sub_menu: controls_panel._close_sub_menu()
+	if controls_panel.confirmation: controls_panel.confirmation.close(false)
 	controls_panel.hide()
+	get_viewport().disable_3d = false
 	if gameplay_hud.journal.suspended: gameplay_hud.journal.resume_from_menu()
 	_set_pause_owner("controls", false)
 	dialogue.nested_menu = false
@@ -503,7 +362,6 @@ func _close_controls() -> void:
 		# A release handled by the nested menu never reaches the dialogue.
 		# Rearm only when all advance keys are up; a held key cannot submit.
 		dialogue.advance_armed = not (Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER))
-	capturing_control = ""
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if not pause_owners.is_empty() else previous_mouse_mode
 	if pause_owners.has("failure"):
 		failure_root.show()
@@ -565,48 +423,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 				dialogue.open_dialogue()
 				return true
 		return false
-	if event is InputEventKey:
-		if event.echo: return true
-		if not event.pressed:
-			# Focused GUI buttons commit on release. World controls remain
-			# gated by controls_open; only active key capture consumes it.
-			return capturing_control != ""
-		if capturing_control != "":
-			if event.keycode == KEY_ESCAPE:
-				capturing_control = ""
-				controls_feedback.text = "Key change cancelled. Enter to try again."
-			else:
-				var error: String = player.rebind_control(capturing_control, event.keycode)
-				if error == "":
-					controls_feedback.text = "%s now uses %s. Esc returns to exploration." % [player.CONTROL_LABELS[capturing_control], player.key_prompt(capturing_control)]
-					capturing_control = ""
-				else:
-					controls_feedback.text = error + " Esc cancels."
-		elif event.keycode in [KEY_ESCAPE, KEY_F10]:
-			_close_controls()
-		elif event.keycode == KEY_BACKSPACE:
-			_restore_controls()
-		elif event.keycode == KEY_F5:
-			_save_opening(0)
-		elif event.keycode == KEY_F6:
-			_cycle_text_scale()
-		elif event.keycode == KEY_F7:
-			_cycle_reveal_speed()
-		elif event.keycode == KEY_F8:
-			_toggle_instant_text()
-		elif event.keycode in [KEY_UP, KEY_DOWN]:
-			return false # Native focus traverses bindings, save controls and title return.
-		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
-			if control_buttons.has(get_viewport().gui_get_focus_owner()):
-				_begin_capture(player.CONTROL_DEFAULTS.keys()[controls_selection])
-			else:
-				return false
-		else:
-			return false
-		return true
-	# Mouse clicks may reach controls buttons; the player suppresses all world
-	# mouse input while the panel is open. Mouse motion never drives its camera.
-	return false
+	return controls_panel.handle_menu_input(event)
 
 
 func _add_hud_card(parent: Control, label: Label, font_size: int) -> void:
@@ -641,11 +458,6 @@ func open_hers_dialogue() -> void:
 	dialogue_state.conversation_active = false
 	_set_pause_owner("dialogue", true)
 	dialogue.open_dialogue()
-
-func _save_preferences() -> void:
-	var error: Error = dialogue_state.save_preferences()
-	controls_feedback.text = "设置已保存" if error == OK else "设置仅本次生效 · 保存失败，请重试"
-
 
 func show_failure() -> void:
 	if pause_owners.has("failure"): return

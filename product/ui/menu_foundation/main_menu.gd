@@ -1,5 +1,7 @@
 extends MainMenu
 ## MainMenu submenu lifecycle adapted from Maaack Godot-Menus-Template (MIT).
+var pause_world: Node3D
+var return_scroll := 0
 var return_focus: Control
 var audio: Node
 var state: Node
@@ -7,16 +9,18 @@ var background: TextureRect
 var _background_motion := Vector2.ZERO
 func _open_sub_menu(menu: PackedScene) -> Node:
 	return_focus = get_viewport().gui_get_focus_owner()
+	return_scroll = find_child("PageScroll", true, false).scroll_vertical
 	return super._open_sub_menu(menu)
 func _close_sub_menu() -> void:
 	super._close_sub_menu()
-	if is_instance_valid(return_focus): return_focus.grab_focus.call_deferred()
+	find_child("PageScroll", true, false).scroll_vertical = return_scroll
+	_restore_parent_focus.call_deferred()
 # Keep cancellation in the product's unhandled-input path, after submenu input.
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") and get_viewport().gui_get_focus_owner() == null and is_visible_in_tree():
 		menu_buttons_box_container.focus_first()
 func _process(delta: float) -> void:
-	if not background: return
+	if not background or not is_visible_in_tree(): return
 	var target := Vector2.ZERO
 	if not state.reduced_motion:
 		target = -(get_viewport().get_mouse_position() / get_viewport_rect().size - Vector2(0.5, 0.5)).clamp(Vector2(-0.5, -0.5), Vector2(0.5, 0.5)) * 8.0
@@ -100,6 +104,7 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header.add_child(divider)
 	var layout := func():
+		if not is_instance_valid(parent) or not parent.is_inside_tree() or not is_instance_valid(panel): return
 		var size_now := get_viewport_rect().size
 		var scale_now: float = state.text_scale
 		panel.custom_minimum_size.x = minf((parent.get_meta("page_width", 660) if wide else 384) * scale_now, size_now.x - 80 if wide else size_now.x * 0.55)
@@ -113,7 +118,7 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 	footer.minimum_size_changed.connect(func(): layout.call_deferred())
 	get_viewport().size_changed.connect(layout)
 	parent.tree_exiting.connect(func():
-		if get_viewport().size_changed.is_connected(layout): get_viewport().size_changed.disconnect(layout))
+		if is_inside_tree() and get_viewport().size_changed.is_connected(layout): get_viewport().size_changed.disconnect(layout))
 	parent.set_meta("page_layout", layout)
 	layout.call_deferred()
 	if parent == self: menu_container = panel
@@ -152,8 +157,9 @@ func button(column: BoxContainer, text: String, callback: Callable, icon_index :
 		if item.disabled and event is InputEventMouseButton and event.pressed: audio.play_cue("unavailable"))
 	item.pressed.connect(func():
 		if item.disabled: return
+		if (source_button == null or pause_world != null) and not item.is_visible_in_tree(): return
 		audio.play_cue("confirm")
-		if source_button == null: callback.call())
+		if source_button == null or pause_world != null: callback.call())
 	if item.get_parent() == null: column.add_child(item)
 	elif item.get_parent() != column: item.reparent(column)
 	return item
@@ -161,6 +167,7 @@ func paragraph(column: BoxContainer, text: String) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(label)
 	return label
 func reflow(page: Control) -> void:
@@ -176,10 +183,11 @@ func get_game_scene_path() -> String:
 func load_game_scene() -> void:
 	new_game()
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = preload("res://ui/title_theme.tres")
-	state = router.state
-	audio = router.audio
-	scene_loader = router.loader
+	state = pause_world.dialogue_state if pause_world else router.state
+	audio = router.audio if router else pause_world.menu_audio
+	scene_loader = router.loader if router else null
 	# Use the copied Maaack scene's editable runtime nodes, then reflow them
 	# into the already qualified product parchment layout.
 	var source_menu: Control = %MenuContainer
@@ -196,7 +204,7 @@ func _ready() -> void:
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var column := create_page(self, "艾洛的冒险", false, source_column, source_heading)
+	var column := create_page(self, "暂停" if pause_world else "艾洛的冒险", pause_world != null, source_column, source_heading)
 	menu_buttons_box_container = column
 	var subtitle := source_subtitle
 	subtitle.reparent(get_meta("header_column") as VBoxContainer)
@@ -204,6 +212,11 @@ func _ready() -> void:
 	subtitle.remove_theme_font_size_override("font_size")
 	subtitle.text = "AELOR’S ADVENTURE"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if pause_world:
+		_build_pause(column, source_new, source_settings, source_load, source_exit)
+		source_menu.queue_free()
+		reflow(self)
+		return
 	actions.append(button(column, "新游戏", new_game, 0, source_new))
 	continue_button = button(column, "继续", func(): router.enter_adventure("continue", 0), 1)
 	column.move_child(continue_button, 1)
@@ -220,6 +233,9 @@ func _ready() -> void:
 	actions[0].grab_focus.call_deferred()
 	reflow(self)
 func refresh() -> void:
+	if pause_world:
+		status_label.text = "第一章 · 河谷聚落\n检查点：河谷村庄灯台 · 命数 %d / 5" % state.lives
+		return
 	status_label.add_theme_font_size_override("font_size", int(16 * state.text_scale))
 	var reason: String = state.slot_unavailable_reason(0, true)
 	continue_button.disabled = reason != ""
@@ -246,17 +262,80 @@ func show_confirmation(heading: String, message: String, action: Callable) -> vo
 		confirmation.queue_free()
 		confirmation = null
 		menu_container.show()
-		if is_instance_valid(return_focus): return_focus.grab_focus.call_deferred())
+		_restore_parent_focus.call_deferred())
 func try_exit_game() -> void:
 	show_confirmation("离开河谷？", "退出游戏。下次可继续最近保存的冒险。", func(): get_tree().quit())
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or router.route != "title": return
+	if not is_visible_in_tree() or (pause_world == null and router.route != "title"): return
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		if sub_menu: sub_menu.close()
 		elif confirmation: confirmation.close()
-		else: try_exit_game()
+		else:
+			if pause_world: pause_world._close_controls()
+			else: try_exit_game()
 		get_viewport().set_input_as_handled()
 func _mcp_state() -> Dictionary:
 	var buttons := []
 	for item in actions: buttons.append({"text": item.text, "disabled": item.disabled, "rect": str(item.get_global_rect())})
-	return {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "actions": buttons}
+	return {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "preferences": state.preference_snapshot(), "caller": "pause" if pause_world else "title", "actions": buttons}
+
+func _build_pause(column: BoxContainer, resume: Button, settings: Button, slots: Button, exit_button_source: Button) -> void:
+	for item in [resume, settings, slots, exit_button_source]:
+		for connection in item.pressed.get_connections(): item.pressed.disconnect(connection.callable)
+	# Reuse MainMenu nodes/lifecycle; never restore the source window's saved
+	# boolean pause state. The product owner keeps the pause_world frozen throughout.
+	actions.append(button(column, "继续冒险", pause_world._close_controls, 1, resume))
+	actions.append(button(column, "存档与加载", func(): _open_sub_menu(preload("res://ui/load_menu.tscn")), 2, slots))
+	actions.append(button(column, "设置", func(): _open_sub_menu(preload("res://ui/title_settings.tscn")), 3, settings))
+	actions.append(button(column, "帮助", open_help))
+	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", "未保存的探索进度将不会保留。", pause_world._return_to_title)))
+	actions.append(button(column, "退出", try_exit_game, 4, exit_button_source))
+	for index in actions.size():
+		column.move_child(actions[index], index)
+		actions[index].name = ["Resume", "SaveLoad", "Settings", "Help", "ReturnTitle", "Quit"][index]
+	status_label = paragraph(column, "")
+	pause_world.controls_feedback = status_label
+	refresh()
+
+func open_pause() -> void:
+	refresh()
+	show()
+	menu_buttons_box_container.focus_first.call_deferred()
+
+func handle_menu_input(event: InputEvent) -> bool:
+	if sub_menu and sub_menu.has_method("handle_input") and sub_menu.handle_input(event): return true
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ESCAPE, KEY_F10]:
+		if sub_menu: sub_menu.close()
+		elif confirmation: confirmation.close()
+		elif pause_world: pause_world._close_controls()
+		return true
+	return false
+
+func open_help() -> void:
+	var page := Control.new()
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return_focus = get_viewport().gui_get_focus_owner()
+	return_scroll = find_child("PageScroll", true, false).scroll_vertical
+	add_child(page)
+	menu_container.hide()
+	var column := create_page(page, "旅途指南", true)
+	paragraph(column, "移动与观察：鼠标环视，滚轮调整距离。操作页可查看与修改移动按键。")
+	paragraph(column, "E 与附近人物交谈。J 查看任务日志，H 收起目标。")
+	if state.sword_owned: paragraph(column, "1 巡路剑 · 左键挥剑 · 右键防御 · Q 振刀。")
+	if state.bow_owned: paragraph(column, "2 巡路弓 · 右键瞄准 · 左键蓄力后释放。箭用尽可找罗恩补充。")
+	button(page.get_meta("footer_column"), "返回", func(): page.hide())
+	page.hidden.connect(func():
+		page.queue_free()
+		sub_menu = null
+		menu_container.show()
+		find_child("PageScroll", true, false).scroll_vertical = return_scroll
+		_restore_parent_focus.call_deferred())
+	# Help is an ordinary child page with the same cancellation contract.
+	page.set_script(preload("res://ui/menu_help.gd"))
+	sub_menu = page
+	column.focus_first.call_deferred()
+
+func _restore_parent_focus() -> void:
+	# Deferred child cleanup may finish after loading/resuming hid the parent.
+	if not is_visible_in_tree() or not menu_container.is_visible_in_tree(): return
+	if is_instance_valid(return_focus) and return_focus.is_visible_in_tree(): return_focus.grab_focus()

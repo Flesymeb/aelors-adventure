@@ -223,3 +223,144 @@ and H changed the tracker while B moved the player. Incremental editor and fresh
 runtime logs were clean. Final inspection found dead-restoration telemetry reading
 the inactive tree's Start node instead of the paused Death clip; the animation
 observer now reads the actual AnimationPlayer while its tree is inactive.
+
+# Shared settings, pause and save module (loop 04)
+
+The active LOCOMOTION CONTROLS construction and F6/F7/F8 settings routes are
+retired. Preview now binds the same live Maaack MainMenu scene used at title,
+with product pause actions and the original CaptureFocus container, approved
+background, serif fonts, Kenney frames and source license/receipt closure.
+Existing source button callbacks are disconnected only in the pause adapter:
+resume cannot call New Game. Child settings/save/help/confirmation pages retain
+the `controls` owner; the source OverlaidWindow's saved-boolean pause/mouse
+restoration is deliberately excluded from these active product paths.
+
+Four settings groups share AdventureState: master/music/effects gain, mute,
+normal/low rendering quality, sensitivity, existing reserved-key-safe bindings,
+100/150/200% text, reveal speed/instant text, reduced motion, camera shake
+(including zero) and damage numbers. They apply immediately and atomically save
+to the separate preference record; a failed write is explicit and retryable.
+Adventure restoration/rollback never assigns preference fields or reloads the
+preference file: even an unsaved session setting survives adventure loads. Valid existing
+manual histories and equipment/reward/teaching facts retain their format.
+Key migration keeps valid B/X and other unrelated bindings, repairs conflicts,
+and atomically persists the effective binding set; failures remain inspectable.
+
+Effects and menu/dialogue cues route through Effects. A single router-owned
+Music source plays the necessary unmodified Elven Dawn loop (see audio license).
+All three buses use an output gain before capture, without a second fader gain;
+no volume update restarts a source. Low quality applies the existing native
+0.7 render scale, shorter shadow/foliage ranges and fewer Terrain3D mesh LODs;
+the engine/renderer are unchanged. Camera shake is a short resolved-contact
+camera offset, frozen with the player and suppressed by reduced motion. Turning
+off damage numbers removes the amount from the outcome cue without changing HP
+or suppressing XP and block/contact feedback.
+
+Pause shows current lives and the existing CP01 checkpoint. Two manual-slot
+pages read actual metadata, disable unavailable loads/unsafe saves with reasons,
+confirm overwrite/load, and retain write-failure/retry feedback. MainMenu keeps
+parent focus/scroll on child return. Settings maintain focused options when
+rebuilt, with a fixed back footer and focus-following content scroll. Existing
+player held-input tracking and pause-owner model remain the only gameplay gate.
+Help is reached explicitly and displays equipment teaching only when earned.
+
+Inspected reference: Maaack MainMenu/CaptureFocus and OverlaidWindow sources
+(the latter restores a stale saved pause boolean on close). Compared Broken
+Seals IngameMenu/InterfaceOptions source layout: a compact pause action list
+and a separate options surface. Its desktop screenshot was also inspected:
+compact framed actions/icons leave the world visible; its tiny bitmap text
+and dense action bars are unsuitable for this product’s serif scaled menu.
+It is a source/screenshot reference, not a current rendered candidate comparison or engine-compatible adoption; no assets copied.
+Supplied concepts guide the parchment/old-lamp hierarchy and background safe
+area. Actual pixels and all six resolution/text-scale cells remain unobserved.
+Official docs consulted: tutorials/scripting/pausing_games.html (Pausable versus
+Always; animation/audio/particles pause but signals still execute), Control
+class description (GUI event consumption/focus), AudioServer methods (bus
+routing/gain), and tutorials/rendering/renderers.html (renderer feature table).
+The previous research audio_effects.rst section was read; no new shader or
+renderer change is needed for this menu.
+
+Self-validation: bounded source checks found no duplicate functions, missing
+literal resource dependencies or trailing whitespace, and confirmed the native
+project marker, shared menu binding and retirement of prototype construction.
+A read-only hoh-history diff against loop 03 verified the preview replacement.
+These are not engine parse/boot or business-postcondition checks.
+
+The bridge was initially unavailable and the allowed rebind was requested.
+It later connected to this exact project. Rescan imported the music/theme and
+native 4.7 Forward+ title boot succeeded. Title settings at 100/150% were
+captured, ordinary controls saved 200% text and a fresh process restored it.
+The test user had no earned history, so ordinary New Game was used; no teaching,
+equipment or reward was injected. Entry exposed a quest-journal inheritance
+conflict with the new menu `world` field; the adapter was renamed `pause_world`
+and native entry then passed with clean runtime logs. A debugger summary also
+referenced inherited PSD/import diagnostics; the actionable runtime parser
+message was the duplicate member, absent after the repair.
+
+Ordinary pause froze gameplay time/physics through child pages. Both empty
+manual slots were saved through their actual buttons; previews showed real
+chapter/time/checkpoint/lives. A confirmed manual load restored the player and
+kept 200% preferences. Paused positions remained constant across slot visits;
+post-load small grounding correction was observed. The deferred submenu return
+initially focused a hidden pause button after load; focus restoration is now
+visibility-guarded. The opaque illustrated pause
+page disables covered 3D rendering, restored on close/title, so its UI does not
+pay the hidden world's rendering cost. This is not overall environment
+performance acceptance.
+
+Music snapshot found the real looping Music source and Effects UI voice. A
+Master/Music/Effects capture (117063250-f685d09a, before the inheritance repair)
+was non-silent on Music/Master and silent on idle Effects, with no clipping.
+This supports source/output readiness only; heard quality and independently
+paired volume adjustments remain unvalidated. 1280x720 title/settings/pause and
+slot pages were captured at selected scales; window resize to 1920x1080 and
+slot display at 200% were observed. The complete visual/fault/caller matrix,
+earned equipment route and independent settings acceptance remain pending.
+Early short key windows missed some GUI actions on the slow covered 3D view;
+longer bounded ordinary key holds and pointer input completed save/load.
+No candidate mutation or test-only history setup was used.
+
+The pinned wrapper reports 4.7.stable.official.5b4e0cb0f. OGG headers/pages and
+finite duration were checked. Capture 63647637-3d3b63b0 on the repaired candidate
+again found non-silent Music/Master without clipping. Ordinary input set music
+to 60%, with 200% text retained. Its source snapshot exposed inherited forest
+ambience bypassing Effects through Master; configure now routes those sources
+to Effects without replacing streams or changing their lifecycle. Final native
+checks follow this routing repair; no phase or broader debt closure is claimed.
+
+Final restart restored music 60% and text 200% with clean game logs. Continue
+then timed out in the existing threaded world loader at 50%, before adventure
+construction; final nested/load/dialogue retests could not use that entry.
+This failed check is not independent acceptance or a pending pass. Source
+inspection also guarded the slot-confirmation deferred focus return against
+the hidden/deleted page after successful loading. A separate native Preview
+boot check is used to distinguish world/script loading from title entry.
+
+Direct Preview boot succeeded with clean native game logs and verified forest
+sources on Effects. It exposed two fallback music players in the direct-scene
+path; the journal now shares the world's existing menu audio owner. Ordinary
+unfrozen title Continue then completed loading and grounding, unlike the frozen
+debug-entry attempt; that frozen timeout remains a failed scenario, with no
+claim about its cause. Final native main-route checks passed Audio → Settings →
+Pause with constant position, zero gameplay/physics during child pages and focus
+returned to Settings. Both slots remained genuine pre-event histories; safe
+overwrite of slot 1 and confirmed load of slot 2 worked. Loading removed all
+pause owners, restored captured mouse and cleared GUI focus, retaining 60%
+music/200% text. Dialogue → F10 added controls alongside dialogue; closing the
+menu removed only controls, and closing dialogue resumed coherently. Final
+snapshot found one looping router Music source and forest sources on Effects.
+Post-interaction game logs were clean. The startup-only preference assertion
+was corrected to the actual `load_preferences` spelling and passed alongside
+native marker, dependencies, duplicate functions and prototype-retirement
+checks. These results are Developer self-validation, not phase acceptance.
+
+Host/Tester dependencies: provide isolated legal pre-teaching/pre-reward
+histories for six layout cells, 4/5-life/depleted recovery and conflicting-H
+fixtures, and persistent save-failure/successful-retry fixtures. Preserve all
+committed one-time facts; replay/restoration notices are not first-event proof.
+Exercise held attack/aim/advance, menu scroll, dialogue/journal callers, nested
+world/cue freeze and final-owner resume, focus loss/load/title boundaries, actual
+renderer costs and HP-identical number toggles. Cinematic/skill callers are not
+implemented by this owning phase and remain unavailable observations. Ordinary
+obstacle pursuit/return and rendered contact/audio/VFX still need independent
+capture. ISSUE-0006, ISSUE-0008 and ISSUE-0009 remain unresolved.

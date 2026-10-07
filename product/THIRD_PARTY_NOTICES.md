@@ -62,3 +62,9 @@ and the retained source licenses/receipts. Ronen and Hers use private material
 instances, selected mesh visibility, mirrored authored armor and authored arrows;
 no source asset bytes were overwritten. Zero-area UV repair operates on private
 runtime mesh instances. The environment remains under its existing licenses.
+
+Settings/pause background music: “Elven Dawn” (loop), by alkakrab, from
+https://alkakrab.itch.io/free-fantasy-medieval-ambient-music-pack .
+Author's explicit permission: “Absolutely Free For Commercial use”.
+Unmodified OGG source member and acquisition details: assets/audio/LICENSES.md.
+This is custom author permission; no CC0 or SPDX license is asserted.

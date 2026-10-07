@@ -23,6 +23,7 @@ func clear_feedback() -> void:
 func sound(stream: AudioStream, volume: float, pitch = 1.0) -> void:
 	if training.state.muted_sound: return
 	var audio = AudioStreamPlayer.new()
+	audio.bus = "Effects"
 	audio.stream = stream
 	audio.volume_db = volume
 	audio.pitch_scale = pitch
@@ -84,10 +85,11 @@ func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit") -> vo
 			pitch = 0.72
 	var camera: Camera3D = training.player.camera
 	if not camera.is_position_behind(point):
-		var text = outcome if hp_loss <= 0 else (outcome + " −%s" % snappedf(hp_loss, 0.1))
+		var text = outcome if hp_loss <= 0 or not training.state.damage_numbers else (outcome + " −%s" % snappedf(hp_loss, 0.1))
 		add_cue(text, camera.unproject_position(point) + Vector2(-25, -45), color)
 	sound(stream, volume, pitch)
 	spark(point, color)
+	if kind in ["hurt", "hit", "parry", "defeat"]: training.player.start_camera_shake()
 
 func spark(point: Vector3, color: Color) -> void:
 	if training.state.reduced_motion: return

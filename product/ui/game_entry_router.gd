@@ -38,6 +38,7 @@ func _ready() -> void:
 	_show_title()
 
 func _show_title() -> void:
+	get_viewport().disable_3d = false
 	route = "title"
 	initialized = false
 	player_ready = false

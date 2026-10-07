@@ -39,7 +39,9 @@ const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4,
 	KEY_ENTER, KEY_KP_ENTER, KEY_BACKSPACE, KEY_UP, KEY_DOWN,
 	KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F11]
 const CONTROLS_FILE := "user://locomotion_controls.cfg"
+var control_persistence_error := ""
 var effective_bindings: Dictionary = CONTROL_DEFAULTS.duplicate()
+var shake_remaining := 0.0
 var controls_open := false
 var blocked_keys: Dictionary = {}
 var blocked_mouse: Dictionary = {}
@@ -236,6 +238,10 @@ func _setup_controls() -> void:
 	var config := ConfigFile.new()
 	if config.load(CONTROLS_FILE) == OK:
 		effective_bindings = _sanitize_controls(config)
+		for action in effective_bindings:
+			if config.get_value("keys", action, CONTROL_DEFAULTS[action]) != effective_bindings[action]:
+				_save_controls()
+				break
 	_apply_controls()
 
 
@@ -279,12 +285,12 @@ func key_prompt(action: String) -> String:
 
 func rebind_control(action: String, key: int) -> String:
 	if not effective_bindings.has(action) or key <= 0:
-		return "Choose a keyboard key."
+		return "请选择一个键盘按键。"
 	if key in RESERVED_KEYS:
-		return "%s is reserved for another control." % OS.get_keycode_string(key)
+		return "%s 是保留键，请选择其他按键。" % OS.get_keycode_string(key)
 	for other in effective_bindings:
 		if other != action and effective_bindings[other] == key:
-			return "%s already belongs to %s. Choose an unused key." % [OS.get_keycode_string(key), CONTROL_LABELS[other]]
+			return "%s 已用于 %s，请选择未占用的按键。" % [OS.get_keycode_string(key), CONTROL_LABELS[other]]
 	effective_bindings[action] = key
 	_apply_controls()
 	return _save_controls()
@@ -300,7 +306,10 @@ func _save_controls() -> String:
 	var config := ConfigFile.new()
 	for action in effective_bindings:
 		config.set_value("keys", action, effective_bindings[action])
-	return "" if config.save(CONTROLS_FILE) == OK else "Applied for this session; settings could not be saved."
+	var error := config.save(CONTROLS_FILE + ".tmp")
+	if error == OK: error = DirAccess.rename_absolute(CONTROLS_FILE + ".tmp", CONTROLS_FILE)
+	control_persistence_error = "" if error == OK else "本次已生效 · 按键保存失败，请重试。"
+	return control_persistence_error
 
 
 func _block_held_controls() -> void:
@@ -627,6 +636,7 @@ func _update_bow_visual() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_update_camera_shake(delta)
 	if controls_open:
 		return
 	if combat:
@@ -862,3 +872,14 @@ func _mouse_sensitivity() -> float:
 				var state: Node = owner_node.get("dialogue_state")
 				if is_instance_valid(state): return state.mouse_sensitivity
 	return 1.0
+
+func start_camera_shake() -> void:
+	shake_remaining = 0.18
+
+func _update_camera_shake(delta: float) -> void:
+	shake_remaining = maxf(0, shake_remaining - delta)
+	var state: Node = archery.state if archery else (combat.state if combat and "state" in combat else null)
+	var strength: float = state.camera_shake if state and not state.reduced_motion else 0.0
+	var wave := sin(shake_remaining * 180.0) * shake_remaining * strength
+	camera.h_offset = wave * 0.12
+	camera.v_offset = cos(shake_remaining * 150.0) * shake_remaining * strength * 0.07

@@ -100,10 +100,7 @@ func _ready() -> void:
 	journal = preload("res://ui/quest_journal.tscn").instantiate()
 	journal.world = world
 	journal.state = state
-	journal.audio = world.entry_router.audio if world.entry_router else preload("res://ui/menu_audio.gd").new()
-	if not world.entry_router:
-		journal.audio.state = state
-		add_child(journal.audio)
+	journal.audio = world.menu_audio
 	var journal_layer := CanvasLayer.new()
 	journal_layer.layer = 24
 	add_child(journal_layer)

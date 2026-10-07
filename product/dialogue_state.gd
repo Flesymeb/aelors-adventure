@@ -17,6 +17,15 @@ var experience := 0
 var confirmed_choices: Array[String] = []
 var text_scale := 1.0
 var mouse_sensitivity := 1.0
+signal preferences_changed
+const PREFERENCE_DEFAULTS := {"text_scale": 1.0, "reveal_speed": 30.0, "instant_text": false, "reduced_motion": false, "muted_sound": false, "mouse_sensitivity": 1.0, "master_volume": 1.0, "music_volume": 0.65, "effects_volume": 1.0, "graphics_quality": "normal", "camera_shake": 0.5, "damage_numbers": true}
+var master_volume := 1.0
+var music_volume := 0.65
+var effects_volume := 1.0
+var graphics_quality := "normal"
+var camera_shake := 0.5
+var damage_numbers := true
+var preference_error := ""
 var tracked_quest := "rescue"
 var tracker_collapsed := false
 var reveal_speed := 30.0
@@ -56,20 +65,41 @@ func _ready() -> void:
 	apply_global_audio()
 
 func apply_global_audio() -> void:
-	var master := AudioServer.get_bus_index("Master")
-	var gain: AudioEffectAmplify
-	for index in AudioServer.get_bus_effect_count(master):
-		var effect := AudioServer.get_bus_effect(master, index)
-		if effect is AudioEffectAmplify and effect.resource_name == "AdventureOutputGain":
-			gain = effect
-			break
-	if gain == null:
-		gain = AudioEffectAmplify.new()
-		gain.resource_name = "AdventureOutputGain"
-		AudioServer.add_bus_effect(master, gain, 0)
-	# Silence also reaches downstream bus effects/capture; never restart sources.
-	gain.volume_db = -80.0 if muted_sound else 0.0
-	AudioServer.set_bus_mute(master, muted_sound)
+	for bus in ["Music", "Effects"]:
+		if AudioServer.get_bus_index(bus) < 0:
+			AudioServer.add_bus()
+			var index := AudioServer.bus_count - 1
+			AudioServer.set_bus_name(index, bus)
+			AudioServer.set_bus_send(index, "Master")
+	for bus in ["Master", "Music", "Effects"]:
+		var volume: float = master_volume if bus == "Master" else (music_volume if bus == "Music" else effects_volume)
+		var index := AudioServer.get_bus_index(bus)
+		var gain: AudioEffectAmplify
+		for effect_index in AudioServer.get_bus_effect_count(index):
+			var effect := AudioServer.get_bus_effect(index, effect_index)
+			if effect is AudioEffectAmplify and effect.resource_name == "AdventureOutputGain": gain = effect
+		if gain == null:
+			gain = AudioEffectAmplify.new()
+			gain.resource_name = "AdventureOutputGain"
+			AudioServer.add_bus_effect(index, gain, 0)
+		# Keep capture and audible output behind the same gain, without doubling it.
+		gain.volume_db = -80.0 if bus == "Master" and muted_sound else linear_to_db(maxf(volume, 0.0001))
+		AudioServer.set_bus_volume_db(index, 0)
+		AudioServer.set_bus_mute(index, (bus == "Master" and muted_sound) or volume <= 0)
+
+func apply_preferences() -> void:
+	apply_global_audio()
+	preferences_changed.emit()
+
+func reset_preferences() -> void:
+	for key in PREFERENCE_DEFAULTS: set(key, PREFERENCE_DEFAULTS[key])
+	apply_preferences()
+
+func preference_snapshot() -> Dictionary:
+	var result := {}
+	for key in PREFERENCE_DEFAULTS: result[key] = get(key)
+	result["persistence_error"] = preference_error
+	return result
 
 func begin() -> void:
 	if not conversation_active:
@@ -131,12 +161,10 @@ func load_progress(slot := 0) -> Dictionary:
 	var config := ConfigFile.new()
 	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
 	if config.load(path) != OK:
-		load_preferences()
 		return {}
 	var invalid := slot_unavailable_reason(slot, true)
 	if invalid != "":
 		persistence_error = invalid
-		load_preferences()
 		return {}
 	return restore_config(config)
 
@@ -156,17 +184,13 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	# Missing fields in an opening-only save do not erase its choices or XP.
 	var defaults := {"bow_owned": false, "arrows": 0, "bow_training_complete": false, "bow_demonstrated": false, "selected_equipment": "sword" if bool(config.get_value("training", "sword_selected", false)) else "unarmed", "ronen_node": "R01", "sword_owned": false, "practice_hit": false, "practice_defense": false, "practice_parry": false, "encounter_defeated": false, "remnant_collected": false, "remnant_position": Vector3.ZERO, "health": 100.0, "lives": 3, "recovery_pending": false, "hers_node": "H01", "reduced_motion": false, "muted_sound": false, "sword_selected": false, "dialogue_kind": "isha"}
 	for key in TRAINING_KEYS:
-		set(key, config.get_value("training", key, defaults[key]))
+		if key not in PREFERENCE_DEFAULTS: set(key, config.get_value("training", key, defaults[key]))
 	arrows = clampi(arrows, 0, 12) if bow_owned else 0
 	if (selected_equipment == "bow" and not bow_owned) or (selected_equipment == "sword" and not sword_owned): selected_equipment = "unarmed"
 	health = clampf(health, 0, 100)
 	lives = clampi(lives, 0, 5)
 	if remnant_collected: encounter_defeated = true
 	if lives == 0: health = 0
-	text_scale = clampf(float(config.get_value("reading", "scale", 1.0)), 1.0, 2.0)
-	reveal_speed = clampf(float(config.get_value("reading", "speed", 30.0)), 15.0, 60.0)
-	instant_text = bool(config.get_value("reading", "instant", false))
-	load_preferences()
 	var map_id := str(config.get_value("opening", "map_id", "village-v2"))
 	var saved: Vector3 = config.get_value("opening", "position", Vector3.ZERO)
 	var xz := GROUND.restored_xz(saved, map_id)
@@ -187,7 +211,7 @@ func objective() -> String:
 	return "弓练习已完成 · 返回伊莎处；旧灯训练尚未完成"
 
 func _mcp_state() -> Dictionary:
-	return {"logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot()}
+	return {"logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
 
 func training_snapshot() -> Dictionary:
 	var facts := {}
@@ -238,7 +262,8 @@ func adventure_snapshot() -> Dictionary:
 
 
 func restore_adventure(snapshot: Dictionary) -> void:
-	for key in snapshot: set(key, snapshot[key])
+	for key in snapshot:
+		if key not in PREFERENCE_DEFAULTS: set(key, snapshot[key])
 
 
 func slot_unavailable_reason(slot: int, allow_depleted := false) -> String:
@@ -292,22 +317,29 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 
 
 func save_preferences() -> Error:
+	apply_preferences()
 	var config := ConfigFile.new()
-	for key in ["text_scale", "reveal_speed", "instant_text", "reduced_motion", "muted_sound", "mouse_sensitivity"]:
-		config.set_value("settings", key, get(key))
+	for key in PREFERENCE_DEFAULTS: config.set_value("settings", key, get(key))
 	var error := config.save("user://adventure_preferences.cfg.tmp")
 	if error == OK: error = DirAccess.rename_absolute("user://adventure_preferences.cfg.tmp", "user://adventure_preferences.cfg")
+	preference_error = "" if error == OK else "设置仅本次生效 · 保存失败，请重试"
 	return error
-
 
 func load_preferences() -> void:
 	var config := ConfigFile.new()
-	if config.load("user://adventure_preferences.cfg") != OK: return
-	mouse_sensitivity = clampf(float(config.get_value("settings", "mouse_sensitivity", mouse_sensitivity)), 0.25, 2.5)
-	text_scale = clampf(float(config.get_value("settings", "text_scale", text_scale)), 1, 2)
-	reveal_speed = clampf(float(config.get_value("settings", "reveal_speed", reveal_speed)), 15, 60)
-	for key in ["instant_text", "reduced_motion", "muted_sound"]:
-		set(key, bool(config.get_value("settings", key, get(key))))
+	if config.load("user://adventure_preferences.cfg") == OK:
+		for key in PREFERENCE_DEFAULTS:
+			var value: Variant = config.get_value("settings", key, get(key))
+			if PREFERENCE_DEFAULTS[key] is bool:
+				if value is bool: set(key, value)
+			elif PREFERENCE_DEFAULTS[key] is float:
+				if (value is float or value is int) and is_finite(float(value)): set(key, float(value))
+			elif key == "graphics_quality" and value in ["low", "normal"]: set(key, value)
+	mouse_sensitivity = clampf(mouse_sensitivity, 0.25, 2.5)
+	text_scale = 1.0 if text_scale < 1.25 else (1.5 if text_scale < 1.75 else 2.0)
+	reveal_speed = clampf(reveal_speed, 15, 60)
+	for key in ["master_volume", "music_volume", "effects_volume", "camera_shake"]: set(key, clampf(get(key), 0, 1))
+	apply_preferences()
 
 
 func slot_preview(slot: int) -> Dictionary:
@@ -322,6 +354,7 @@ func slot_preview(slot: int) -> Dictionary:
 		return facts
 	facts.chapter = "第一章 · 河谷聚落"
 	facts.time = Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time(path)).replace("T", " ")
+	facts.checkpoint = "河谷村庄灯台"
 	facts.experience = int(config.get_value("opening", "experience", 0))
 	facts.lives = int(config.get_value("training", "lives", 3))
 	facts.arrows = int(config.get_value("training", "arrows", 0))

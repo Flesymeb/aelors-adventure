@@ -1,54 +1,175 @@
 extends Control
+## Shared title/adventure settings. Effective values belong to AdventureState.
 var host: Control
 var feedback: Label
+var group := ""
+var page: Control
+var bindings: Node
+var owns_bindings := false
+var capturing := ""
+var capture_button: Button
+var column: BoxContainer
+const GROUPS := {"audio": "声音", "graphics": "画面", "controls": "操作", "reading": "阅读与反馈"}
+const KEY_LABELS := {"roll": "翻滚", "dodge": "闪避", "shoulder": "切换肩位", "jump": "跳跃", "sprint": "奔跑（按住）", "forward": "前进", "back": "后退", "left": "向左", "right": "向右", "crouch": "蹲伏", "prone": "俯卧", "perspective": "切换视角"}
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var column: VBoxContainer = host.create_page(self, "设置", true)
-	var size_button: Button = host.button(column, "文字缩放 · %d%%" % int(host.state.text_scale * 100), cycle_scale)
-	size_button.name = "TextScale"
-	var speed_button: Button = host.button(column, "对白速度 · %d 字/秒" % int(host.state.reveal_speed), cycle_speed)
-	speed_button.name = "RevealSpeed"
-	var sensitivity := HSlider.new()
-	sensitivity.min_value = 0.25
-	sensitivity.max_value = 2.5
-	sensitivity.step = 0.05
-	sensitivity.value = host.state.mouse_sensitivity
-	var sensitivity_label: Label = host.paragraph(column, "鼠标灵敏度 · %.2f" % sensitivity.value)
-	column.add_child(sensitivity)
-	sensitivity.value_changed.connect(func(value: float):
-		host.state.mouse_sensitivity = value
-		sensitivity_label.text = "鼠标灵敏度 · %.2f" % value
+	if host.pause_world:
+		bindings = host.pause_world.player
+	else:
+		# Only the existing binding adapter; never instantiate an actor/scene.
+		bindings = preload("res://player_controller.gd").new()
+		bindings._setup_controls()
+		owns_bindings = true
+	build()
+
+func _exit_tree() -> void:
+	if owns_bindings and is_instance_valid(bindings): bindings.free()
+
+func build() -> void:
+	var old_focus := get_viewport().gui_get_focus_owner()
+	var focus_name := str(old_focus.name) if old_focus and page and page.is_ancestor_of(old_focus) else ""
+	var scroll_position: int = page.find_child("PageScroll", true, false).scroll_vertical if page else 0
+	if page:
+		remove_child(page)
+		page.queue_free()
+	page = Control.new()
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(page)
+	column = host.create_page(page, "设置" if group == "" else GROUPS[group], true)
+	if group == "":
+		for key in GROUPS:
+			var item: Button = host.button(column, GROUPS[key], open_group.bind(key))
+			item.name = key.capitalize()
+		host.paragraph(column, "更改立即生效，并独立于冒险存档保留。")
+	else:
+		match group:
+			"audio":
+				slider("主音量", "master_volume", 0, 1, 0.05, true)
+				slider("音乐音量", "music_volume", 0, 1, 0.05, true)
+				slider("音效音量", "effects_volume", 0, 1, 0.05, true)
+				toggle("静音", "muted_sound")
+			"graphics":
+				cycle("画质", "graphics_quality", ["normal", "low"], ["标准", "低"])
+				host.paragraph(column, "低画质降低三维渲染分辨率、阴影距离与植被细节；界面保持清晰。")
+				toggle("减少动态", "reduced_motion")
+			"controls":
+				slider("鼠标灵敏度", "mouse_sensitivity", 0.25, 2.5, 0.05)
+				for action in bindings.CONTROL_DEFAULTS:
+					var item: Button = host.button(column, KEY_LABELS[action] + " · " + bindings.key_prompt(action), capture.bind(action))
+					item.name = action.capitalize()
+				host.button(column, "恢复默认按键", func():
+					var error: String = bindings.restore_controls()
+					build()
+					feedback.text = "默认按键已保存" if error == "" else error)
+				host.button(column, "重试保存按键", func():
+					var error: String = bindings._save_controls()
+					feedback.text = "按键已保存" if error == "" else error)
+				host.paragraph(column, "E 交互 · F 旧灯 · 1 剑 / 2 弓 · J 日志 · H 收起目标 · Esc 暂停。保留键不能改绑。")
+			"reading":
+				cycle("文字缩放", "text_scale", [1.0, 1.5, 2.0], ["100%", "150%", "200%"])
+				cycle("对白速度", "reveal_speed", [15.0, 30.0, 45.0, 60.0], ["15 字/秒", "30 字/秒", "45 字/秒", "60 字/秒"])
+				toggle("即时显示对白", "instant_text")
+				slider("镜头震动", "camera_shake", 0, 1, 0.1, true)
+				toggle("伤害数字", "damage_numbers")
+	feedback = host.paragraph(column, host.state.preference_error if host.state.preference_error != "" else "设置会在下次启动时保留。")
+	var footer: BoxContainer = page.get_meta("footer_column")
+	host.button(footer, "返回", close)
+	if group == "":
+		host.button(column, "恢复默认设置", func():
+				host.state.reset_preferences()
+				commit())
+	host.button(column, "重试保存设置", commit)
+	host.reflow(page)
+	var next_focus: Control = column.find_child(focus_name, true, false) if focus_name != "" else null
+	if next_focus:
+		next_focus.grab_focus.call_deferred()
+		page.find_child("PageScroll", true, false).set_deferred("scroll_vertical", scroll_position)
+	else: column.focus_first.call_deferred()
+
+func open_group(key: String) -> void:
+	group = key
+	build()
+
+func toggle(label: String, key: String) -> void:
+	var item: Button = host.button(column, "", func():
+		host.state.set(key, not host.state.get(key))
+		commit()
+		build())
+	item.name = key.capitalize()
+	item.text = label + " · " + ("开启 ✓" if host.state.get(key) else "关闭")
+
+func cycle(label: String, key: String, values: Array, labels: Array) -> void:
+	var item: Button = host.button(column, label + " · " + labels[maxi(0, values.find(host.state.get(key)))], func():
+		host.state.set(key, values[(values.find(host.state.get(key)) + 1) % values.size()])
+		commit()
+		build())
+	item.name = key.capitalize()
+
+func slider(label: String, key: String, low: float, high: float, increment: float, percent := false) -> void:
+	var value_label: Label = host.paragraph(column, "")
+	var control := HSlider.new()
+	control.name = key.capitalize()
+	control.min_value = low
+	control.max_value = high
+	control.step = increment
+	control.value = host.state.get(key)
+	control.custom_minimum_size.y = 40
+	control.focus_mode = Control.FOCUS_ALL
+	column.add_child(control)
+	var update := func(value: float): value_label.text = label + " · " + ("%d%%" % int(round(value * 100)) if percent else "%.2f" % value)
+	update.call(control.value)
+	control.value_changed.connect(func(value: float):
+		host.state.set(key, value)
+		update.call(value)
 		commit())
-	for key in ["instant_text", "muted_sound", "reduced_motion"]:
-		var label: String = {"instant_text": "即时显示对白", "muted_sound": "静音", "reduced_motion": "减少动态"}[key]
-		var toggle := CheckButton.new()
-		toggle.text = label
-		toggle.button_pressed = host.state.get(key)
-		toggle.toggled.connect(func(value: bool):
-			host.state.set(key, value)
-			if key == "muted_sound" and value: host.audio.voice.stop()
-			commit())
-		column.add_child(toggle)
-	feedback = host.paragraph(column, "设置会在下次启动时保留。")
-	host.button(column, "返回", close)
-	size_button.grab_focus.call_deferred()
-	host.reflow(self)
+
+func capture(action: String) -> void:
+	capturing = action
+	capture_button = get_viewport().gui_get_focus_owner()
+	feedback.text = "按一个未占用的键设置“%s” · Esc 取消" % KEY_LABELS[action]
+
+func handle_input(event: InputEvent) -> bool:
+	if capturing == "" or not event is InputEventKey: return false
+	if event.echo or not event.pressed: return true
+	if event.keycode == KEY_ESCAPE:
+		capturing = ""
+		feedback.text = "按键修改已取消"
+	else:
+		var error: String = bindings.rebind_control(capturing, event.keycode)
+		if error != "":
+			feedback.text = error
+			host.audio.play_cue("failure")
+		else:
+			capture_button.text = KEY_LABELS[capturing] + " · " + bindings.key_prompt(capturing)
+			capturing = ""
+			feedback.text = "按键已保存"
+	return true
+
+func _input(event: InputEvent) -> void:
+	if not host.pause_world and handle_input(event): get_viewport().set_input_as_handled()
+
 func commit() -> void:
-	feedback.text = "设置已保存" if host.state.save_preferences() == OK else "设置保存失败，请重试。"
-	if feedback.text.contains("失败"): host.audio.play_cue("failure")
-	host.reflow(self)
-func cycle_scale() -> void:
-	host.state.text_scale = 1.5 if host.state.text_scale == 1.0 else (2.0 if host.state.text_scale == 1.5 else 1.0)
-	find_child("TextScale", true, false).text = "文字缩放 · %d%%" % int(host.state.text_scale * 100)
-	host.add_theme_font_size_override("font_size", int(22 * host.state.text_scale))
+	var error: int = host.state.save_preferences()
+	feedback.text = "设置已保存" if error == OK else host.state.preference_error
+	if error != OK: host.audio.play_cue("failure")
 	host.reflow(host)
-	commit()
-func cycle_speed() -> void:
-	host.state.reveal_speed = 45.0 if host.state.reveal_speed == 30.0 else (60.0 if host.state.reveal_speed == 45.0 else 30.0)
-	find_child("RevealSpeed", true, false).text = "对白速度 · %d 字/秒" % int(host.state.reveal_speed)
-	commit()
+	host.reflow(page)
+	if host.pause_world:
+		host.pause_world.dialogue._layout()
+		if host.pause_world.failure_panel: host.pause_world._layout_failure()
+
 func close() -> void:
-	host.refresh()
-	host.reflow(host)
+	capturing = ""
 	host.audio.play_cue("back")
-	hide()
+	if group != "":
+		var previous := group
+		group = ""
+		build()
+		column.find_child(previous.capitalize(), false, false).grab_focus.call_deferred()
+	else:
+		host.refresh()
+		host.reflow(host)
+		hide()
+
+func _mcp_state() -> Dictionary:
+	return {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible}
