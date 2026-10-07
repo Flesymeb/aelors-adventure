@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 22 |
+| Open | 26 |
 | Closed | 9 |
-| All | 31 |
+| All | 35 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 5 |
+| Active | 9 |
 | Verified closed | 4 |
 | Policy invalidated | 0 |
 | Waived | 0 |
-| All in this run | 9 |
+| All in this run | 13 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -48,10 +48,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity fails because declared portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
-| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Restoration coverage is complete; distinct first-teaching and first-reward layout variants remain insufficiently evidenced. |
+| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Selected HUD first-event evidence remains incomplete; the existing save does not supply the required notice states. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
-| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Prior HUD closeout remains unresolved despite completed restoration coverage; broader debt does not expand frozen acceptance. |
-| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | RECAPTURE_REQUEST: Deliberate obstacle negotiation remains unverified; prior contact-feedback evidence gaps are retained. |
+| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
+| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
+| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | The objective panel retains excessive blank height after settings/layout transitions. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Idle nested pause and safe saves pass observed checks; complete active-world freeze and recovery boundaries remain unverified. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Several release-required settings effects and layout states remain independently unverified. |
+| `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | OPEN | Settings can focus invisible controls and hide key-binding rejection feedback. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -59,7 +63,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 22 | 9 | 31 |
+| GitHub HoH namespace | 26 | 9 | 35 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -97,7 +101,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-04-b183d0425e2a` | `development_snapshot:attempt-d75b663440d699e3922c750b` | NEEDS VISUAL QA |
+| `loop-04-b183d0425e2a` | `development_snapshot:attempt-d75b663440d699e3922c750b` | FAIL |
 
 ### Project Planner
 
@@ -124,7 +128,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-04-b183d0425e2a` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (3 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `settings_focus_feedback_hidden` | MAJOR | DEGRADED | HIGH | Settings can focus invisible controls and hide key-binding rejection feedback. |
+| `hud_tracker_retained_height` | MINOR | DEGRADED | MEDIUM | The objective panel retains excessive blank height after settings/layout transitions. |
+| `settings_effect_validation_incomplete` | MAJOR | INTERNAL | HIGH | Several release-required settings effects and layout states remain independently unverified. |
+| `pause_active_world_validation_incomplete` | MAJOR | INTERNAL | HIGH | Idle nested pause and safe saves pass observed checks; complete active-world freeze and recovery boundaries remain unverified. |
+| `hud_legacy_feedback_evidence_remaining` | MINOR | INTERNAL | LOW | Selected HUD first-event evidence remains incomplete; the existing save does not supply the required notice states. |
+| `title_closeout_evidence_remaining` | MINOR | INTERNAL | LOW | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
+| `actor_continuity_evidence_remaining` | MINOR | INTERNAL | LOW | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
 
 ---
 
@@ -285,5 +305,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-04-b183d0425e2a`
 - Latest warm start: `loop-04-2137fc261b16`
 - Last published: `loop-04-b183d0425e2a`
-- Best verified: `loop-03-2137fc261b16`
+- Best verified: `loop-04-b183d0425e2a`
 - Generated by the HoH host from immutable run evidence.
