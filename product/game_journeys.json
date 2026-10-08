@@ -2221,6 +2221,1178 @@
         "requires-safe-idle-boundary",
         "not-full-r11-acceptance"
       ]
+    },
+    {
+      "schema_version": 1,
+      "id": "r15-first-sword-acquisition-nested-pause-lifecycle",
+      "requirement_ids": [
+        "R15"
+      ],
+      "budget": {
+        "gameplay_ms": 13000,
+        "wall_seconds": 180
+      },
+      "steps": [
+        {
+          "id": "legal_unowned_h01",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/IshaDialogue"
+          ],
+          "fields": [
+            "opened",
+            "node",
+            "reveal_complete",
+            "focused_choice",
+            "nested_menu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "opened",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "node",
+              "value_type": "string",
+              "op": "equals",
+              "value": "H01"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "reveal_complete",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "focused_choice",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "nested_menu",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "accepted_request",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/AdventureState"
+          ],
+          "fields": [
+            "q01_accepted",
+            "experience"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/AdventureState",
+              "field": "q01_accepted",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "unowned_player",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "owns_bow",
+            "equipment",
+            "attack_button_held",
+            "aim_button_held",
+            "window_focused"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "owns_sword",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "window_focused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "no_grant_yet",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining"
+          ],
+          "fields": [
+            "sword_grants"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining",
+              "field": "sword_grants",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "no_acquisition_yet",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "accept_coach_choice",
+          "kind": "input",
+          "duration_ms": 400,
+          "inputs": [
+            {
+              "key": "Enter",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "new_ownership",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "owns_sword",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            }
+          ]
+        },
+        {
+          "id": "one_guarded_grant",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining"
+          ],
+          "fields": [
+            "sword_grants"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining",
+              "field": "sword_grants",
+              "value_type": "integer",
+              "op": "delta",
+              "baseline": "no_grant_yet",
+              "delta": 1
+            }
+          ]
+        },
+        {
+          "id": "first_acquisition",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_event_id",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword_acquired"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "equals",
+              "value": 5.0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_active_elapsed",
+              "value_type": "number",
+              "op": "equals",
+              "value": 0.0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "delta",
+              "baseline": "no_acquisition_yet",
+              "delta": 1
+            }
+          ]
+        },
+        {
+          "id": "coach_followup",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/IshaDialogue"
+          ],
+          "fields": [
+            "opened",
+            "node"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "opened",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/IshaDialogue",
+              "field": "node",
+              "value_type": "string",
+              "op": "equals",
+              "value": "H02"
+            }
+          ]
+        },
+        {
+          "id": "leave_coach_dialogue",
+          "kind": "input",
+          "duration_ms": 800,
+          "inputs": [
+            {
+              "key": "Escape",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "active_notice",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree",
+            "notice"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_event_id",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword_acquired"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_visible_in_tree",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice",
+              "value_type": "string",
+              "op": "equals",
+              "value": "取得巡路剑 · 1 拔剑 · 试击草靶"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "range",
+              "min": 4,
+              "max": 5,
+              "tolerance": 0.05
+            }
+          ]
+        },
+        {
+          "id": "first_notice_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        },
+        {
+          "id": "partial_active_lifetime",
+          "kind": "game_time",
+          "duration_ms": 1000
+        },
+        {
+          "id": "open_product_pause",
+          "kind": "input",
+          "duration_ms": 350,
+          "inputs": [
+            {
+              "key": "Escape",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "parent_pause",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 1
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_visible",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "paused_notice",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_event_id",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword_acquired"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_visible_in_tree",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "range",
+              "min": 2.8,
+              "max": 4.2,
+              "tolerance": 0.05
+            }
+          ]
+        },
+        {
+          "id": "paused_wall_reading",
+          "kind": "game_time",
+          "duration_ms": 1600
+        },
+        {
+          "id": "pause_lifetime_unchanged",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_active_elapsed",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "first_acquisition"
+            }
+          ]
+        },
+        {
+          "id": "enter_nested_settings",
+          "kind": "input",
+          "duration_ms": 1300,
+          "inputs": [
+            {
+              "key": "Down",
+              "start_ms": 0,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 350,
+              "duration_ms": 80
+            },
+            {
+              "key": "Enter",
+              "start_ms": 700,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "actual_settings_entry",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_submenu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 1
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": "TitleSettings"
+            }
+          ]
+        },
+        {
+          "id": "nested_settings_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        },
+        {
+          "id": "read_settings_while_paused",
+          "kind": "game_time",
+          "duration_ms": 1200
+        },
+        {
+          "id": "settings_lifetime_unchanged",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_active_elapsed",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            }
+          ]
+        },
+        {
+          "id": "return_to_parent_pause",
+          "kind": "input",
+          "duration_ms": 350,
+          "inputs": [
+            {
+              "key": "Escape",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "parent_still_owns_pause",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_submenu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 1
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "child_return_lifetime",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_remaining",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_active_elapsed",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "paused_notice"
+            }
+          ]
+        },
+        {
+          "id": "final_return_to_play",
+          "kind": "input",
+          "duration_ms": 350,
+          "inputs": [
+            {
+              "key": "Escape",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "resumed_world",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_visible"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_visible",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "remaining_notice_restored",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_event_id",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword_acquired"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "notice_visible_in_tree",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "first_acquisition"
+            }
+          ]
+        },
+        {
+          "id": "resumed_notice_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        },
+        {
+          "id": "remaining_active_window",
+          "kind": "input",
+          "duration_ms": 4000,
+          "inputs": [],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "five_active_seconds_expired",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_active_elapsed",
+              "value_type": "number",
+              "op": "near",
+              "value": 5.0,
+              "tolerance": 0.001
+            },
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "first_acquisition"
+            }
+          ]
+        },
+        {
+          "id": "after_acquisition_expiry",
+          "kind": "screenshot",
+          "max_width": 1280
+        },
+        {
+          "id": "repeat_coach_interaction",
+          "kind": "input",
+          "duration_ms": 500,
+          "inputs": [
+            {
+              "key": "E",
+              "start_ms": 0,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_visible",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/SwordTraining",
+                "fields": [
+                  "sword_grants"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "repeat_grants_no_equipment",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining"
+          ],
+          "fields": [
+            "sword_grants"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining",
+              "field": "sword_grants",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "one_guarded_grant"
+            }
+          ]
+        },
+        {
+          "id": "repeat_emits_no_acquisition",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "notice_event_id",
+            "notice_remaining",
+            "notice_active_elapsed",
+            "sword_acquisition_active_elapsed",
+            "sword_acquisition_emissions",
+            "notice_visible_in_tree"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/GameplayHUD",
+              "field": "sword_acquisition_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "first_acquisition"
+            }
+          ]
+        },
+        {
+          "id": "repeat_no_reward",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/AdventureState"
+          ],
+          "fields": [
+            "experience"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/AdventureState",
+              "field": "experience",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "accepted_request"
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "legal-h01-choice-required",
+        "fresh-session-unowned-sword",
+        "independent-tester-review-required"
+      ]
     }
   ]
 }

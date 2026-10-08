@@ -38,6 +38,8 @@ var protection = 0.0
 var hit_stop = 0.0
 var notice = ""
 var notice_time = 0.0
+# Counts guarded first grants in this live session; restoration is not a grant.
+var sword_grants := 0
 var sim_phase = "idle"
 var sim_clock = 0.0
 var sim_direction = Vector3.ZERO
@@ -239,11 +241,11 @@ func commit() -> bool:
 		tell("保存失败 · 保留当前进度，正在重试")
 	return not commit_retry
 
-func tell(message: String, seconds = 2.6) -> void:
+func tell(message: String, seconds = 2.6, event_id := "") -> void:
 	notice = message
 	notice_time = seconds
 	if world.gameplay_hud and not message.begins_with("命数") and not message.begins_with("保存"):
-		world.gameplay_hud.notify(message, true, seconds)
+		world.gameplay_hud.notify(message, true, seconds, event_id)
 
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
@@ -273,6 +275,7 @@ func interact() -> bool:
 func grant_sword() -> void:
 	if not state.q01_accepted or state.sword_owned: return
 	state.sword_owned = true
+	sword_grants += 1
 	state.hers_node = "H02"
 	state.sword_selected = true
 	state.selected_equipment = "sword"
@@ -280,7 +283,7 @@ func grant_sword() -> void:
 	player.request_weapon("sword")
 	hers.demonstrate()
 	commit()
-	tell("取得巡路剑 · 1 拔剑 · 试击草靶", 5)
+	tell("取得巡路剑 · 1 拔剑 · 试击草靶", 5, "sword_acquired")
 
 func player_locked() -> bool:
 	return state.lives <= 0 or phase == "death" or hurt_time > 0
@@ -623,7 +626,8 @@ func player_snapshot() -> Dictionary:
 	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
 
 func _mcp_state() -> Dictionary:
-	return {"player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}
+	# Scalar correlation only; reading this never grants or saves equipment.
+	return {"sword_grants": sword_grants, "player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}
 
 func feedback_swing() -> void:
 	if feedback: feedback.swing()

@@ -19,6 +19,11 @@ var notices: VBoxContainer
 var notice_text: Label
 var retry: Button
 var notice_time := 0.0
+# Session observations of real presentations, never persisted or shown in UI.
+var notice_event_id := ""
+var notice_active_elapsed := 0.0
+var sword_acquisition_emissions := 0
+var sword_acquisition_active_elapsed := 0.0
 var failed_slot := -1
 var shown_xp := 0.0
 var previous: Dictionary = {}
@@ -174,6 +179,9 @@ func restore_view() -> void:
 	shown_xp = state.experience
 	notifications.clear()
 	notice_time = 0
+	notice_event_id = ""
+	notice_active_elapsed = 0.0
+	sword_acquisition_active_elapsed = 0.0
 	failed_slot = -1
 	if notices: notices.hide()
 
@@ -192,19 +200,24 @@ func _save_finished(slot: int, error: int) -> void:
 		if notice_time < 0: notice_time = 0
 		notify("进度已保存" if slot == 0 else "存档 %d 已保存" % slot)
 
-func notify(text: String, immediate := false, seconds := 2.7) -> void:
+func notify(text: String, immediate := false, seconds := 2.7, event_id := "") -> void:
 	if failed_slot >= 0: return
 	# Timing instructions and rewards must not wait behind autosave chatter.
 	if immediate:
-		_show_notice(text, false, seconds)
+		_show_notice(text, false, seconds, event_id)
 		return
 	if notice_time > 0 and notice_text.text == text: return
 	for pending in notifications:
 		if pending.text == text: return
 	if notifications.size() < 3: notifications.append({"text": text})
 
-func _show_notice(text: String, failure := false, seconds := 2.7) -> void:
+func _show_notice(text: String, failure := false, seconds := 2.7, event_id := "") -> void:
 	notice_text.text = text
+	notice_event_id = event_id
+	notice_active_elapsed = 0.0
+	if event_id == "sword_acquired":
+		sword_acquisition_emissions += 1
+		sword_acquisition_active_elapsed = 0.0
 	retry.visible = failure
 	notice_time = -1 if failure else seconds
 	notices.modulate.a = 1
@@ -219,9 +232,13 @@ func _process(delta: float) -> void:
 		if previous.recovery and not facts.recovery and state.health > 0 and state.persistence_error == "": notify("已返回河谷村庄灯台")
 	previous = facts
 	root.visible = active
-	if active:
+	# Always-process UI still lays out while the game tree is frozen. Transient
+	# gameplay clocks advance only during active play, including Host stepping.
+	if active and not get_tree().paused:
 		shown_xp = move_toward(shown_xp, state.experience, delta * 22)
 		if notice_time > 0:
+			notice_active_elapsed += minf(delta, notice_time)
+			if notice_event_id == "sword_acquired": sword_acquisition_active_elapsed += minf(delta, notice_time)
 			notice_time = maxf(0, notice_time - delta)
 			notices.modulate.a = minf(1, notice_time / 0.4)
 		if notice_time == 0:
@@ -328,6 +345,7 @@ func _next_action() -> String:
 func _mcp_state() -> Dictionary:
 	var observation := {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
 	# Read-only correlation for external captures. Layout may still be queued;
+	observation.merge({"notice_event_id": notice_event_id, "notice_active_elapsed": notice_active_elapsed, "sword_acquisition_emissions": sword_acquisition_emissions, "sword_acquisition_active_elapsed": sword_acquisition_active_elapsed, "notice_visible_in_tree": notice_text.is_visible_in_tree()})
 	# successive snapshots and ordinary frames establish settling externally.
 	var viewport_rect := get_viewport().get_visible_rect()
 	var rect := tracker.get_global_rect()
