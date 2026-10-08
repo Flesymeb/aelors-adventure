@@ -2,6 +2,7 @@ extends Node
 ## Only confirmed choices commit rewards. Focus and reveal position are UI state.
 const GROUND := preload("res://forest_ground.gd")
 const SAVE_PATH := "user://isha_opening.cfg"
+const HISTORY_READER := preload("res://systems/history_config_reader.gd")
 const NODES := preload("res://data/isha_dialogue.json")
 const RONEN_NODES := preload("res://data/ronen_dialogue.json")
 const HERS_NODES := preload("res://data/hers_dialogue.json")
@@ -236,11 +237,13 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	return error
 
 func load_progress(slot := 0) -> Dictionary:
-	var config := ConfigFile.new()
-	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
-	if config.load(path) != OK:
+	var path := _history_path(slot)
+	var history := HISTORY_READER.read(path)
+	if history.reason != "":
+		persistence_error = history.reason
 		return {}
-	var invalid := slot_unavailable_reason(slot, true)
+	var config: ConfigFile = history.config
+	var invalid := config_unavailable_reason(config, true)
 	if invalid != "":
 		persistence_error = invalid
 		return {}
@@ -370,16 +373,20 @@ func restore_adventure(snapshot: Dictionary) -> void:
 	if inventory: inventory.restore()
 
 
+func _history_path(slot: int) -> String:
+	return SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
+
 func slot_unavailable_reason(slot: int, allow_depleted := false) -> String:
-	var config := ConfigFile.new()
-	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
-	if not FileAccess.file_exists(path): return "暂无存档"
-	if config.load(path) != OK: return "存档无法读取"
-	return config_unavailable_reason(config, allow_depleted)
+	var path := _history_path(slot)
+	var history := HISTORY_READER.read(path)
+	if history.reason != "": return history.reason
+	return config_unavailable_reason(history.config, allow_depleted)
 
 
 func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> String:
-	var saved_position: Variant = config.get_value("opening", "position", null)
+	# A null ConfigFile default itself logs an error for a missing key.
+	if not config.has_section_key("opening", "position"): return "存档位置无效"
+	var saved_position: Variant = config.get_value("opening", "position", Vector3.ZERO)
 	var saved_lives: Variant = config.get_value("training", "lives", 3)
 	var yaw: Variant = config.get_value("opening", "yaw", 0.0)
 	if not saved_position is Vector3 or not saved_position.is_finite(): return "存档位置无效"
@@ -481,14 +488,13 @@ func load_preferences() -> void:
 
 func slot_preview(slot: int) -> Dictionary:
 	# Read-only: no restore_config, signals, preference loads or writes.
-	var reason := slot_unavailable_reason(slot, slot == 0)
+	var path := _history_path(slot)
+	var history := HISTORY_READER.read(path)
+	var reason: String = history.reason
+	if reason == "": reason = config_unavailable_reason(history.config, slot == 0)
 	var facts := {"slot": slot, "reason": reason}
 	if reason != "": return facts
-	var config := ConfigFile.new()
-	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
-	if config.load(path) != OK:
-		facts.reason = "存档无法读取"
-		return facts
+	var config: ConfigFile = history.config
 	facts.chapter = "第一章 · 河谷聚落"
 	facts.time = Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time(path)).replace("T", " ")
 	facts.checkpoint = "河谷村庄灯台"
