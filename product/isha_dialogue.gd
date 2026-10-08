@@ -81,7 +81,7 @@ func _build() -> void:
 	panel.add_child(footer)
 	# Portrait slots bind only distributable, qualified art. Missing art is an
 	# explicit delivery gap, never replaced with the PRD reference screenshot.
-	for path in ["res://assets/dialogue/aelor_portrait.png", "res://assets/dialogue/isha_portrait.png"]:
+	for path in ["res://assets/dialogue/aelor_portrait.tres", "res://assets/dialogue/isha_portrait.tres"]:
 		var portrait := TextureRect.new()
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -148,7 +148,7 @@ func open_dialogue(restored := false) -> void:
 func _show_node(full := false) -> void:
 	var node: Dictionary = state.current_nodes()[state.logical_node]
 	speaker.text = "—  %s  —" % node.speaker
-	body.text = node.text
+	body.text = state.bridge_response() if state.dialogue_kind == "isha" and state.logical_node == "B05" else node.text
 	reveal_count = float(body.text.length()) if full or state.instant_text else 0.0
 	body.visible_characters = int(reveal_count)
 	reveal_complete = full or state.instant_text
@@ -173,7 +173,7 @@ func _show_node(full := false) -> void:
 		choice_buttons.append(button)
 	advance_button.visible = definitions.is_empty() or not reveal_complete
 	if portraits.size() == 2:
-		var counterpart_path: String = "res://assets/dialogue/ronen_portrait.png" if state.dialogue_kind == "ronen" else ("res://assets/dialogue/hers_portrait.png" if state.dialogue_kind == "hers" else "res://assets/dialogue/isha_portrait.png")
+		var counterpart_path: String = "res://assets/dialogue/ronen_portrait.png" if state.dialogue_kind == "ronen" else ("res://assets/dialogue/hers_portrait.png" if state.dialogue_kind == "hers" else "res://assets/dialogue/isha_portrait.tres")
 		portraits[1].texture = load(counterpart_path) if ResourceLoader.exists(counterpart_path) else null
 	for i in portraits.size():
 		portraits[i].modulate = Color.WHITE if (i == 1) == (node.speaker != "艾洛") else Color(0.6, 0.6, 0.6)

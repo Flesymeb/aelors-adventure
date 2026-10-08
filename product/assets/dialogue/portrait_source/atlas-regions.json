@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "texture": "aelor-dialogue-portraits-v2.png",
+  "texture_size": [
+    1254,
+    1254
+  ],
+  "regions": {
+    "aelor": [
+      0,
+      0,
+      627,
+      627
+    ],
+    "isha": [
+      627,
+      0,
+      627,
+      627
+    ],
+    "hers": [
+      0,
+      627,
+      627,
+      627
+    ],
+    "ronen": [
+      627,
+      627,
+      627,
+      627
+    ]
+  },
+  "intended_binding": "Developer-owned AtlasTexture resources with filter_clip=true; inspect identity and edges before adoption.",
+  "runtime_acceptance": "unverified"
+}

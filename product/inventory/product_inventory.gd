@@ -109,3 +109,13 @@ func use_item(id: String) -> bool:
 
 func _mcp_state() -> Dictionary:
 	return {"contents":snapshot(), "bag_items":bag.get_item_count(), "equipped":equipment.get_item().get_title() if equipment.get_item() else "空", "quick_item":state.quick_item}
+
+# Branch supplies settle against the same health/ammunition authority as items.
+# This is called only by DialogueState's eligible, unclaimed interaction.
+func settle_bridge_supply() -> Dictionary:
+	var before_health: float = state.health
+	var before_arrows: int = state.arrows
+	state.health = minf(100, state.health + 30)
+	if state.bow_owned: state.arrows = mini(12, state.arrows + 4)
+	changed.emit()
+	return {"health":state.health - before_health, "arrows":state.arrows - before_arrows}

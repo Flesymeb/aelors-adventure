@@ -33,6 +33,7 @@ var bow_training: Node3D
 var lamp_training: Node3D
 var element_abilities: Node3D
 var bridge_encounter: Node3D
+var bridge_actions: Node3D
 var inventory_panel: Control
 var skill_panel: Control
 var initial_skill_prompted = false
@@ -122,6 +123,10 @@ func _ready() -> void:
 	bridge_encounter.name = "BridgeEncounter"
 	add_child(bridge_encounter)
 	bridge_encounter.configure(self)
+	bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
+	bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(bridge_actions)
+	bridge_actions.configure(self)
 	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
@@ -307,6 +312,7 @@ func _load_opening(slot: int) -> void:
 		return
 	player.arm.rotation.y = restored.yaw
 	training.restore_history()
+	if bridge_actions: bridge_actions.restore_history()
 	gameplay_hud.restore_view()
 	restoring_interface = false
 	restored_position = restored
@@ -460,6 +466,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bridge_actions and bridge_actions.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bow_training and bow_training.interact():
 				return true
@@ -753,6 +760,7 @@ func _new_adventure() -> void:
 		return
 	training.commit_retry = false
 	training.restore_history()
+	if bridge_actions: bridge_actions.restore_history()
 	restored_position = {}
 	player.arm.rotation = Vector3.ZERO
 	_finish_recovery()

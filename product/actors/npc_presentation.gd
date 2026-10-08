@@ -2,6 +2,7 @@ extends Node3D
 ## Presentation-only extraction of the selected village rig and calibrated mounts.
 ## No InputMap, player input, camera, traversal, projectile or save ownership.
 @export var appearance: Resource
+@export var model_scene: PackedScene
 const MODEL_PATH = "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
 const ANIMATION_PATH = "res://Characters/QuaterniusAnimations/UAL1_Standard.glb"
 const SWORD_ANIMATION_PATH = "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
@@ -50,7 +51,7 @@ func _ready() -> void:
 	visual = Node3D.new()
 	visual.name = "Visual"
 	add_child(visual)
-	character_model = load(MODEL_PATH).instantiate()
+	character_model = (model_scene if model_scene else load(MODEL_PATH)).instantiate()
 	visual.add_child(character_model)
 	skeleton = character_model.get_node("Armature/Skeleton3D")
 	head_components.append(character_model.find_child("Male_Ranger_Head_Hood", true, false))

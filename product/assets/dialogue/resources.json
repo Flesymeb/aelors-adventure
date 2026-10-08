@@ -40,7 +40,7 @@
     "license": "CC0-1.0",
     "reading_surface": "assets/dialogue/borders/PNG/Default/Panel/panel-013.png",
     "choice_frame": "assets/dialogue/borders/PNG/Default/Panel/panel-003.png",
-    "notes": "Retained CC0 nine-slice borders and bundled serif fonts. Focus follows choices at large text scales. Illustrated parchment and portrait art remain unqualified."
+    "notes": "Retained CC0 nine-slice borders and bundled serif fonts. Focus follows choices at large text scales. Corrected portrait atlas bound directly through native AtlasTexture resources."
   },
   "audio": {
     "source": "https://kenney.nl/assets/interface-sounds",
@@ -49,20 +49,28 @@
     "confirm": "assets/dialogue/sounds/Audio/confirmation_001.ogg"
   },
   "portraits": {
-    "status": "missing_qualified_resources",
-    "required": [
-      "assets/dialogue/aelor_portrait.png",
-      "assets/dialogue/isha_portrait.png"
-    ],
-    "identity_contract": [
-      "retained complete green-hooded brown-haired Ranger",
-      "grey dress and bonnet source Isha; mature proportions"
-    ],
-    "reason": "Current bounded asset searches returned unrelated UI/characters, head-only generic art or pixel women; identity-matched half-body pair remains unqualified. Registered generation doctor reports submission_readiness=not_configured, paid_call_available=false and no host staging root. No substitute portraits bound.",
-    "acquisition_failure": {
-      "source": "https://oicaroh.itch.io/medieval-fantasy-character-portraits",
-      "operation": "agent.download --format zip --extract",
-      "result": "provider_unavailable: Quaternius itch.io file resolution failed; no art staged"
-    }
+    "status": "bound_pending_independent_review",
+    "source": "https://openai.com/policies/terms-of-use/",
+    "license": "OpenAI generated output under applicable service terms; not CC0 or MIT",
+    "provenance": "portrait_source/SOURCE.md; operator-declared generation, registered materialization receipt",
+    "receipt": "assets/dialogue/portrait_source/agent_asset_receipt.json",
+    "atlas": "assets/dialogue/portrait_source/aelor-dialogue-portraits-v2.png",
+    "aelor": "assets/dialogue/aelor_portrait.tres",
+    "isha": "assets/dialogue/isha_portrait.tres",
+    "regions": {
+      "aelor": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "isha": [
+        627,
+        0,
+        627,
+        627
+      ]
+    },
+    "adaptation": "Native AtlasTexture regions with filter_clip=true; no pixel edits. Existing portrait slots and speaker emphasis retained."
   }
 }

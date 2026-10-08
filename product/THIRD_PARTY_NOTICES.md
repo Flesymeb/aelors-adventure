@@ -123,3 +123,14 @@ Individual titles, source links and licenses remain in
 The product shares these textures across prototype images, backpack tiles,
 pickups, ability choices and ownership-driven shortcuts. This artwork license
 is separate from the GLoot and loot-table MIT code licenses.
+
+
+Aelor/Isha dialogue portraits: corrected atlas v2. Original generated artwork under applicable OpenAI service terms, https://openai.com/policies/terms-of-use/ . Not CC0 or MIT. Operator-declared provenance and registered materialization are retained under assets/dialogue/portrait_source/. Native AtlasTexture regions bind the unchanged transparent image; no pixel modifications. Independent identity/framing review remains pending.
+
+Bridge resident and lamp: use the CC0 Quaternius Ranger packed by the registered asset provider into assets/bridge/resident.glb, with its buffer and six image dependencies embedded unchanged. Acquisition, dependency hashes and packing provenance are in assets/bridge/resident.glb.receipt.json. Source: https://quaternius.com/packs/modularcharacteroutfitsfantasy.html . Retain the base-head assembly, UAL1 rig/clips, Emaceart container prop and Poly Haven Lantern 01. Civilian clothing visibility and colour, interaction, supported return waypoints and native warm illumination are product adaptations. Permanent switches reuse the retained Nodragem units and license.
+
+The resident's scene explicitly binds actors/npc_presentation.tscn. Its model,
+animation-player reparenting and head assembly derive from the inspected
+examples/emaceart-village-demo/player_controller.gd and ranger_head_assembly.gd.
+Only the retained presentation is reused; the example's input, camera and
+traversal controller are not activated for this resident.

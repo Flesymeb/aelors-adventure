@@ -39,13 +39,18 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
 var lamp_reward_committed := false
 var element_practice_complete := false
 var bridge_briefing_acknowledged := false
+var bridge_resident_rescued := false
+var bridge_lamp_lit := false
+var bridge_first_action := ""
+var bridge_supply_claimed := false
+var bridge_later_supply_due := false
 var skills: Dictionary = {}
 var reward_history: Dictionary = {}
 var bag_history: Dictionary = {}
@@ -165,7 +170,7 @@ func begin() -> void:
 		if dialogue_kind == "isha" and bow_training_complete and remnant_collected:
 			logical_node = "L02" if lamp_owned else "L01"
 		if dialogue_kind == "isha" and bridge_briefing_available():
-			logical_node = "B05" if bridge_briefing_acknowledged else "B01"
+			logical_node = "B05" if bridge_briefing_acknowledged or bridge_first_action != "" else "B01"
 	reward_feedback = ""
 	conversation_active = true
 
@@ -299,8 +304,9 @@ func objective() -> String:
 	if not trace_investigated: return "旧灯线索 · 靠近显形路碑按 E 调查"
 	if skills.is_empty(): return "首次升级 · 按 K 选择火焰或雷电"
 	if not element_practice_complete: return "元素练习 · 罗恩草靶旁，4 火焰 / 5 雷电；可重复尝试"
+	if not bridge_resident_rescued or not bridge_lamp_lit: return bridge_objective()
 	if reward_history.size() < 2: return "追踪救援 · 从罗恩草靶左侧的木板入口过桥，清除对岸两名巡守"
-	return "桥边巡守已清除 · 继续寻找被带走的村民（后续旅程尚未开放）"
+	return bridge_objective()
 
 func _mcp_state() -> Dictionary:
 	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
@@ -424,8 +430,20 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var reading: Variant = config.get_value("reading", key, 1.0 if key == "scale" else 30.0)
 		if not (reading is int or reading is float) or not is_finite(float(reading)): return "存档设置无效"
 	if not config.get_value("reading", "instant", false) is bool: return "存档设置无效"
-	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete", "bridge_briefing_acknowledged"]:
+	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete", "bridge_briefing_acknowledged", "bridge_resident_rescued", "bridge_lamp_lit", "bridge_supply_claimed", "bridge_later_supply_due"]:
 		if not config.get_value("post_bow", key, false) is bool: return "存档旧灯进度无效"
+	var bridge_facts := {}
+	for key in ["bridge_resident_rescued", "bridge_lamp_lit", "bridge_first_action", "bridge_supply_claimed", "bridge_later_supply_due"]:
+		bridge_facts[key] = config.get_value("post_bow", key, POST_DEFAULTS[key])
+	if not valid_bridge_facts(bridge_facts): return "存档桥头行动无效"
+	if bridge_facts.bridge_first_action != "":
+		if not config.get_value("opening", "accepted", false): return "存档桥头行动无效"
+		for key in ["sword_owned", "remnant_collected", "bow_training_complete"]:
+			if not config.get_value("training", key, false): return "存档桥头行动无效"
+		for key in ["lamp_owned", "trace_investigated", "element_practice_complete"]:
+			if not config.get_value("post_bow", key, false): return "存档桥头行动无效"
+		var bridge_skills: Variant = config.get_value("post_bow", "skills", {})
+		if not bridge_skills is Dictionary or bridge_skills.is_empty(): return "存档桥头行动无效"
 	# New briefing nodes require actual preparation. Missing knowledge in an
 	# older history defaults to false, never to an automatically chosen answer.
 	if node in ["B01", "B02", "B03", "B04", "B05"] or config.get_value("post_bow", "bridge_briefing_acknowledged", false):
@@ -437,7 +455,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var briefing_skills: Variant = config.get_value("post_bow", "skills", {})
 		if not briefing_skills is Dictionary or briefing_skills.is_empty(): return "存档桥头信息无效"
 		if node in ["B01", "B02", "B03", "B04", "B05"] and config.get_value("training", "dialogue_kind", "isha") != "isha": return "存档桥头信息无效"
-		if node in ["B04", "B05"] and not config.get_value("post_bow", "bridge_briefing_acknowledged", false): return "存档桥头信息无效"
+		if (node == "B04" or (node == "B05" and bridge_facts.bridge_first_action == "")) and not config.get_value("post_bow", "bridge_briefing_acknowledged", false): return "存档桥头信息无效"
 	for key in ["skills", "reward_history", "bag_history"]:
 		if not config.get_value("post_bow", key, {}) is Dictionary: return "存档物品进度无效"
 	if not preload("res://inventory/product_inventory.gd").valid_history(config.get_value("post_bow", "bag_history", {})): return "存档背包无效"
@@ -540,9 +558,13 @@ func quest_entries() -> Array[Dictionary]:
 	if element_practice_complete:
 		var steps: Array[String] = []
 		if bridge_briefing_acknowledged: steps.append("听取伊莎的桥头信息：受困居民另有其人，四名被掳者仍待救援")
+		if bridge_resident_rescued: steps.append("桥边居民已救出 · 不是四名被掳者")
+		if bridge_lamp_lit: steps.append("桥灯已恢复 · 通路照明可见")
+		if bridge_supply_claimed: steps.append("桥头分支补给已领取")
+		if bridge_later_supply_due: steps.append("先救人 · 罗恩的前方安全点补给待交付")
 		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false,
-			"context":"伊莎提到桥灯熄灭、另有一名居民困在桥边；此人不是奥伦和另三名被掳村民。桥头救人、恢复照明与离村仍未完成。" if bridge_briefing_acknowledged else "伊莎看见四人被带过石桥。可回去听取桥头信息，也可先沿村路探索。",
-			"action":"从罗恩草靶左侧的木板入口接近石桥；对岸两名巡守仍在。更远旅程尚未开放。" if reward_history.size() < 2 else "桥边巡守已清除；桥头救援、照明与更远旅程尚未开放。", "steps":steps})
+			"context":bridge_response(),
+			"action":bridge_objective(), "steps":steps})
 	return rows
 
 func tracked_entry() -> Dictionary:
@@ -590,3 +612,52 @@ func unlock_element(id: String) -> bool:
 	skills[id] = 1
 	progression_changed.emit()
 	return true
+
+# Physical interactions own these commits; briefing and patrol rewards never do.
+func perform_bridge_action(action: String) -> bool:
+	if not bridge_briefing_available() or health <= 0 or lives <= 0 or recovery_pending: return false
+	if action not in ["rescue", "light"]: return false
+	if (action == "rescue" and bridge_resident_rescued) or (action == "light" and bridge_lamp_lit): return false
+	if bridge_first_action == "":
+		bridge_first_action = action
+		bridge_later_supply_due = action == "rescue"
+	if action == "rescue": bridge_resident_rescued = true
+	else: bridge_lamp_lit = true
+	tracked_quest = "bridge"
+	return true
+
+func bridge_supply_available() -> bool:
+	return bridge_first_action == "light" and bridge_lamp_lit and not bridge_supply_claimed
+
+func claim_bridge_supply() -> Dictionary:
+	if not bridge_supply_available() or health <= 0 or recovery_pending or inventory == null: return {}
+	bridge_supply_claimed = true
+	return inventory.settle_bridge_supply()
+
+static func valid_bridge_facts(facts: Dictionary) -> bool:
+	for key in ["bridge_resident_rescued", "bridge_lamp_lit", "bridge_supply_claimed", "bridge_later_supply_due"]:
+		if not facts.get(key, false) is bool: return false
+	var order: Variant = facts.get("bridge_first_action", "")
+	if not order is String or order not in ["", "rescue", "light"]: return false
+	var rescued: bool = facts.get("bridge_resident_rescued", false)
+	var lit: bool = facts.get("bridge_lamp_lit", false)
+	var claimed: bool = facts.get("bridge_supply_claimed", false)
+	var due: bool = facts.get("bridge_later_supply_due", false)
+	if order == "": return not rescued and not lit and not claimed and not due
+	if order == "rescue": return rescued and due and not claimed
+	return lit and not due
+
+func bridge_objective() -> String:
+	if not bridge_resident_rescued and not bridge_lamp_lit:
+		return "桥头选择 · 草靶左侧过桥救居民，或先恢复入口桥灯；暗处有巡守，先点灯可领桥头补给"
+	if not bridge_resident_rescued: return "桥灯已亮 · " + ("桥头补给可领取；" if bridge_supply_available() else "补给已交付；") + "过桥拉出受困居民"
+	if not bridge_lamp_lit: return "居民已救出 · 返回桥入口恢复照明；罗恩将在前方安全点交付补给"
+	if bridge_supply_available(): return "桥头两项已完成 · 回入口领取一次补给；通道守卫与离村交谈仍待完成"
+	return "桥头两项已完成 · 通道守卫、伊莎离村交谈与章节通道仍待完成；更远旅程尚未开放"
+
+func bridge_response() -> String:
+	if bridge_first_action == "rescue":
+		return "谢谢你先把桥边居民拉了出来。暗处的巡守很危险。" + ("桥灯也恢复了。" if bridge_lamp_lit else "请再恢复桥灯。") + "罗恩会在前方安全点、E02 前留下补给；尚未交付。父亲和另三名村民仍待救援。"
+	if bridge_first_action == "light":
+		return "你先点亮桥灯，照清了出口和巡守。" + ("居民感谢你回来拉他出来，也记得等待。" if bridge_resident_rescued else "居民还在等你过桥拉他出来。") + ("桥头补给已经交付。" if bridge_supply_claimed else "桥入口的一次补给留给你。") + "父亲和另三名村民仍待救援，离村准备还未完成。"
+	return "桥边居民不是四名被掳者。先救人要面对暗处巡守，罗恩随后在前方安全点留补给；先点灯能看清路线与巡守，立即可领桥头补给。两项都要完成，顺序由你决定。"
