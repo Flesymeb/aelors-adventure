@@ -30,8 +30,8 @@ func ground() -> void:
 	for enemy in enemies: enemy.home = enemy.global_position
 	restore_history()
 	# One terrain-derived region for both agents avoids overlapping region edges.
-	await enemies[0].build_navigation()
-	enemies[1].navigation_ready = enemies[0].navigation_ready
+	enemies[0].build_navigation()
+	enemies[1].share_navigation(enemies[0].navigation_region)
 	enemies[1]._choose_patrol_point()
 
 func registry() -> Dictionary:

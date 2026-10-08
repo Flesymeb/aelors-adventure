@@ -16,7 +16,7 @@ func _ready() -> void:
 
 func reset_encounter() -> void:
 	reset_unit(training.state.encounter_defeated, training.state.remnant_collected)
-	if not navigation_region and training.grounded: build_navigation()
+	if not is_instance_valid(navigation_region) and training.grounded: build_navigation()
 
 func begin_practice_replay() -> void:
 	reset_unit(false, false)

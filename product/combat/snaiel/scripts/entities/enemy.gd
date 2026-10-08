@@ -29,8 +29,14 @@ var patrol_wait = 0.0
 var patrol_point = Vector3.ZERO
 var previous_fist = Vector3.ZERO
 var navigation_region: NavigationRegion3D
+var owns_navigation_region = false
 var navigation_ready = false
 var navigation_clock = 0.0
+var navigation_check_clock = 0.0
+var navigation_iteration = 0
+var navigation_region_iteration = 0
+var navigation_probe_path = PackedVector3Array()
+var navigation_status = "unbuilt"
 var hurt_remaining = 0.0
 @onready var character: Node = $CharacterAnimations
 @onready var health_component: SnaielHealth = $HealthComponent
@@ -96,11 +102,15 @@ func _ready() -> void:
 	previous_fist = source.global_position
 
 func _exit_tree() -> void:
-	if is_instance_valid(navigation_region): navigation_region.queue_free()
+	if owns_navigation_region and is_instance_valid(navigation_region): navigation_region.queue_free()
 
 func build_navigation() -> void:
-	if navigation_region: navigation_region.queue_free()
+	if owns_navigation_region and is_instance_valid(navigation_region): navigation_region.queue_free()
 	navigation_ready = false
+	navigation_probe_path.clear()
+	navigation_status = "synchronizing"
+	navigation_check_clock = 0
+	navigation_clock = 0
 	# Navigation polygons sample only actual authored terrain and occupied volume.
 	# They are invisible navigation data, with no collision floor or substitute map.
 	var mesh = NavigationMesh.new()
@@ -133,13 +143,57 @@ func build_navigation() -> void:
 			if maxf(absf(vertices[a].y - vertices[c].y), absf(vertices[b].y - vertices[d].y)) > 0.65: continue
 			mesh.add_polygon(PackedInt32Array([a, d, c, b]))
 	navigation_region = NavigationRegion3D.new()
+	owns_navigation_region = true
 	navigation_region.navigation_mesh = mesh
 	get_parent().add_child(navigation_region)
 	navigation_region.global_transform = Transform3D.IDENTITY
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	navigation_ready = NavigationServer3D.map_get_iteration_id(navigation_agent.get_navigation_map()) > 0
+	navigation_region.set_navigation_map(navigation_agent.get_navigation_map())
 	_choose_patrol_point()
+
+func share_navigation(region: NavigationRegion3D) -> void:
+	# The region owner alone frees it. Each agent validates its own home/path.
+	navigation_region = region
+	owns_navigation_region = false
+	navigation_agent.set_navigation_map(region.get_navigation_map())
+	invalidate_navigation()
+
+func invalidate_navigation() -> void:
+	navigation_ready = false
+	navigation_check_clock = 0
+	navigation_clock = 0
+	navigation_probe_path.clear()
+	navigation_status = "synchronizing"
+	# Clear the pre-reset pursuit request; get_next_path_position updates the
+	# agent only when ordinary movement resumes on a synchronized region.
+	navigation_agent.target_position = global_position
+
+func _refresh_navigation() -> void:
+	navigation_ready = false
+	navigation_probe_path.clear()
+	if not is_instance_valid(navigation_region):
+		navigation_status = "unbuilt"
+		return
+	var map = navigation_agent.get_navigation_map()
+	var region = navigation_region.get_rid()
+	navigation_iteration = NavigationServer3D.map_get_iteration_id(map)
+	navigation_region_iteration = NavigationServer3D.region_get_iteration_id(region)
+	if navigation_iteration == 0 or navigation_region_iteration == 0:
+		navigation_status = "synchronizing"
+		return
+	if NavigationServer3D.region_get_map(region) != map or not NavigationServer3D.map_get_regions(map).has(region):
+		navigation_status = "map_mismatch"
+		return
+	var mesh = navigation_region.navigation_mesh
+	if not mesh or mesh.get_polygon_count() == 0:
+		navigation_status = "empty_terrain"
+		return
+	var projected = NavigationServer3D.map_get_closest_point(map, home)
+	if projected.distance_to(home) > 0.75:
+		navigation_status = "home_off_mesh"
+		return
+	navigation_probe_path = NavigationServer3D.map_get_path(map, home, patrol_point, true, navigation_agent.navigation_layers)
+	navigation_ready = navigation_probe_path.size() >= 2 and navigation_probe_path[-1].distance_to(patrol_point) <= 0.75
+	navigation_status = "ready" if navigation_ready else "disconnected_terrain"
 
 func reset_unit(defeated: bool, collected: bool) -> void:
 	practice_replay = false
@@ -152,6 +206,7 @@ func reset_unit(defeated: bool, collected: bool) -> void:
 	lost_time = 0
 	velocity = Vector3.ZERO
 	global_position = home
+	invalidate_navigation()
 	hitbox.reset_contacts()
 	hitbox.enabled = not defeated
 	behavior.enabled = not defeated
@@ -180,6 +235,13 @@ func line_clear(destination: Vector3) -> bool:
 	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 func _physics_process(delta: float) -> void:
+	# Retry a pending region at 5 Hz, including while the encounter is not yet
+	# earned. World pause stops this work with the rest of the enemy. Never use
+	# another region's map iteration as proof of our own usable terrain.
+	navigation_check_clock -= delta
+	if navigation_check_clock <= 0 and home != Vector3.ZERO:
+		_refresh_navigation()
+		navigation_check_clock = 0.2
 	if not target or not enabled_policy.is_valid() or not enabled_policy.call() or health <= 0: return
 	if home == Vector3.ZERO: return
 	navigation_clock -= delta
@@ -357,4 +419,11 @@ func receive_contact(damage_source: SnaielDamageSource, point: Vector3) -> Dicti
 	return hitbox.contact(damage_source, point)
 
 func _mcp_state() -> Dictionary:
-	return {"health": health, "max_health": health_component.max_health, "phase": phase, "phase_time": clock, "engaged": engaged, "home": home, "animation": character.current_clip(), "animation_position": character.current_position(), "pose": character._mcp_state(), "practice_replay": practice_replay, "attack_instance": source.instance, "damage_window": source.can_damage, "hand_position": source.global_position, "last_contact": hitbox.last_result, "behavior": behavior._mcp_state(), "navigation_ready": navigation_ready, "target_reachable": navigation_agent.is_target_reachable(), "path_points": navigation_agent.get_current_navigation_path().size()}
+	return {"health": health, "max_health": health_component.max_health, "phase": phase, "phase_time": clock, "engaged": engaged, "home": home, "animation": character.current_clip(), "animation_position": character.current_position(), "pose": character._mcp_state(), "practice_replay": practice_replay, "attack_instance": source.instance, "damage_window": source.can_damage, "hand_position": source.global_position, "last_contact": hitbox.last_result, "behavior": behavior._mcp_state(), "navigation_ready": navigation_ready, "navigation": navigation_state(), "target_reachable": navigation_agent.is_target_reachable(), "path_points": navigation_agent.get_current_navigation_path().size()}
+
+func navigation_state() -> Dictionary:
+	var map = navigation_agent.get_navigation_map()
+	var region_valid = is_instance_valid(navigation_region)
+	var region = navigation_region.get_rid() if region_valid else RID()
+	var mesh = navigation_region.navigation_mesh if region_valid else null
+	return {"status": navigation_status, "map": map.get_id(), "region": region.get_id(), "region_map": NavigationServer3D.region_get_map(region).get_id() if region_valid else 0, "iteration": navigation_iteration, "region_iteration": navigation_region_iteration, "vertices": mesh.vertices.size() if mesh else 0, "polygons": mesh.get_polygon_count() if mesh else 0, "probe_path": navigation_probe_path, "path": navigation_agent.get_current_navigation_path(), "target": navigation_agent.target_position, "owns_region": owns_navigation_region}
