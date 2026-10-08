@@ -48,14 +48,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity still fails because required portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
-| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | First sword ownership and notice identity passed; exact lifetime and complete presentation coverage remain unverified. |
+| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Sword acquisition notice lifetime, presentation variants and no-replay checks remain unverified. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
-| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Continue and repeated failure followed by successful same-slot Retry passed; remaining title recovery evidence is incomplete. |
+| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Slot-1 read-denied recovery passed, but corrupt-history and distinct-history entry-binding coverage remain incomplete. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | CLOSED | Independently verified resolved at loop 11. |
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
-| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:held-aim-controls-settings-release-fresh. Independent Host replay and complete pause/recovery coverage remain unverified. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | The selected settings closure candidate remains insufficiently evidenced despite a successful Master-volume comparison. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:held-aim-controls-settings-release-fresh. Qualified Host replay and complete intermediate pause/input observations remain unavailable. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent channel routing, persistence and layout checks progressed, but required heard audio comparisons remain unverified. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -74,7 +74,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
 | `practice_target_foreground_marker_overlap` | [#53](https://github.com/Flesymeb/aelors-adventure/issues/53) | OPEN | Adjacent presentation continuity fails: the foreground practice label overlaps the player. |
 | `vitals_pending_content_unobserved` | [#52](https://github.com/Flesymeb/aelors-adventure/issues/52) | OPEN | untitled issue |
-| `full_r01_acceptance_unassessed` | [#54](https://github.com/Flesymeb/aelors-adventure/issues/54) | OPEN | The verified CH01 training route does not establish the full three-map acceptance contract. |
+| `full_r01_acceptance_unassessed` | [#54](https://github.com/Flesymeb/aelors-adventure/issues/54) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -120,7 +120,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-16-4664dbf42379` | `development_snapshot:attempt-14c7eff6f9e41a8006659be3` | NEEDS VISUAL QA |
+| `loop-16-4664dbf42379` | `development_snapshot:attempt-14c7eff6f9e41a8006659be3` | BLOCKED |
 
 ### Project Planner
 
@@ -147,7 +147,20 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | BLOCKED |
+| Candidate | `loop-16-4664dbf42379` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 4 (2 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `settings_audio_listening_unverified` | MAJOR | INTERNAL | HIGH | Independent channel routing, persistence and layout checks progressed, but required heard audio comparisons remain unverified. |
+| `held_aim_replay_unverified` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:held-aim-controls-settings-release-fresh. Qualified Host replay and complete intermediate pause/input observations remain unavailable. |
+| `sword_notice_closeout_unverified` | MINOR | INTERNAL | MEDIUM | Sword acquisition notice lifetime, presentation variants and no-replay checks remain unverified. |
+| `title_recovery_closeout_unverified` | MINOR | INTERNAL | MEDIUM | Slot-1 read-denied recovery passed, but corrupt-history and distinct-history entry-binding coverage remain incomplete. |
 
 ---
 
@@ -916,5 +929,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-16-4664dbf42379`
 - Latest warm start: `loop-16-7ca4fd59bfd0`
 - Last published: `loop-16-4664dbf42379`
-- Best verified: `loop-15-7ca4fd59bfd0`
+- Best verified: `loop-16-4664dbf42379`
 - Generated by the HoH host from immutable run evidence.
