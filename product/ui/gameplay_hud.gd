@@ -234,6 +234,10 @@ func _process(delta: float) -> void:
 		life_icons[i].texture = life_textures[0 if i < state.lives else 1]
 		life_icons[i].custom_minimum_size = Vector2(28, 36) * minf(scale_now, 1.3)
 	var life_back: PanelContainer = life_row.get_parent()
+	# A smaller child minimum does not release a root-owned Control's size.
+	# Recompute from today's icon/theme minimum before dependent placement;
+	# subsequent frames also pick up any queued container/font layout.
+	life_back.reset_size()
 	life_back.position = Vector2(view.x - life_back.size.x - 20, 20)
 	tracker.position = Vector2(view.x - minf(430 * scale_now, view.x * 0.43) - 20, life_back.position.y + life_back.size.y + 12)
 	tracker.custom_minimum_size.x = minf(430 * scale_now, view.x * 0.43)
@@ -306,6 +310,9 @@ func _mcp_state() -> Dictionary:
 	var viewport_rect := get_viewport().get_visible_rect()
 	var rect := tracker.get_global_rect()
 	var minimum := tracker.get_combined_minimum_size()
+	var life_back: PanelContainer = life_row.get_parent()
+	var life_rect := life_back.get_global_rect()
+	var life_minimum := life_back.get_combined_minimum_size()
 	observation.merge({
 		"process_frame": Engine.get_process_frames(),
 		"physics_frame": Engine.get_physics_frames(),
@@ -319,6 +326,7 @@ func _mcp_state() -> Dictionary:
 		"tracker_title": tracker_title.text,
 		"objective_font_size": tracker_text.get_theme_font_size("font_size"),
 		"objective_line_count": tracker_text.get_line_count(),
+		"life_backplate_geometry": {"x": life_rect.position.x, "y": life_rect.position.y, "w": life_rect.size.x, "h": life_rect.size.y, "minimum_w": life_minimum.x, "minimum_h": life_minimum.y},
 		"tracker_geometry": {"x": rect.position.x, "y": rect.position.y, "w": rect.size.x, "h": rect.size.y, "minimum_w": minimum.x, "minimum_h": minimum.y, "custom_minimum_w": tracker.custom_minimum_size.x, "custom_minimum_h": tracker.custom_minimum_size.y}
 	})
 	return observation
