@@ -4,6 +4,9 @@ var training: Node3D
 var cues: Array[Dictionary] = []
 var sounds: Array[AudioStreamPlayer] = []
 var sparks: Array[CPUParticles3D] = []
+var cue_serial := 0
+var sword_readout_emissions := 0
+var last_sword_readout: Dictionary = {}
 
 func _ready() -> void:
 	layer = 7
@@ -47,7 +50,8 @@ func add_cue(text: String, position: Vector2, color: Color, lifetime = 1.0) -> D
 	label.position = position
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
-	var cue := {"label": label, "origin": position, "time": 0.0, "duration": lifetime}
+	cue_serial += 1
+	var cue := {"id": cue_serial, "label": label, "origin": position, "time": 0.0, "duration": lifetime}
 	cues.append(cue)
 	return cue
 
@@ -57,7 +61,7 @@ func reward(amount: int) -> void:
 	sound(preload("res://assets/dialogue/sounds/Audio/confirmation_001.ogg"), -15)
 	spark(training.player.global_position + Vector3.UP * 1.25, Color(1, 0.8, 0.2))
 
-func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit") -> void:
+func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit", contact: Dictionary = {}) -> void:
 	# Outcome and material choose the cue; misses never enter this boundary.
 	var color = Color(1, 0.72, 0.43)
 	var stream: AudioStream = preload("res://assets/training/soft_impact.ogg")
@@ -94,6 +98,17 @@ func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit") -> vo
 			cue["world_point"] = point
 			cue["hp_loss"] = hp_loss
 			cue["kind"] = kind
+			# Copy the resolved Snaiel contact, never infer a hit from the current
+			# weapon or attack. Arrow and sword contacts share this presentation.
+			cue["source_id"] = contact.get("source_id", 0)
+			cue["attack_instance"] = contact.get("attack_instance", 0)
+			cue["receiver"] = contact.get("receiver", "")
+			cue["hp_before"] = contact.get("hp_before", 0.0)
+			cue["hp_after"] = contact.get("hp_after", 0.0)
+			cue["sword_hit"] = hp_loss > 0 and training.sword_source != null and cue.source_id == training.sword_source.get_instance_id()
+			if cue.sword_hit:
+				sword_readout_emissions += 1
+				last_sword_readout = _contact_observation(cue)
 			cue.label.position = impact_position(cue, 0)
 	sound(stream, volume, pitch)
 	spark(point, color)
@@ -169,8 +184,23 @@ func _process(delta: float) -> void:
 			cue.label.queue_free()
 			cues.erase(cue)
 
+func _contact_observation(cue: Dictionary) -> Dictionary:
+	return {"id": cue.id, "source_id": cue.get("source_id", 0), "attack_instance": cue.get("attack_instance", 0), "receiver": cue.get("receiver", ""), "hp_before": cue.get("hp_before", 0.0), "hp_after": cue.get("hp_after", 0.0), "hp_loss": cue.get("hp_loss", 0.0)}
+
 func _mcp_state() -> Dictionary:
 	var readouts: Array[Dictionary] = []
+	var sword_cue: Dictionary = {}
 	for cue in cues:
-		readouts.append({"text": cue.label.text, "rect": str(cue.label.get_global_rect()), "visible": cue.label.visible, "age": cue.time, "duration": cue.duration, "hp_loss": cue.get("hp_loss", 0), "kind": cue.get("kind", "reward")})
-	return {"readouts": readouts}
+		var readout := _contact_observation(cue)
+		readout.merge({"text": cue.label.text, "rect": str(cue.label.get_global_rect()), "visible": cue.label.visible, "age": cue.time, "duration": cue.duration, "kind": cue.get("kind", "reward")})
+		readouts.append(readout)
+		# Track the latest emitted sword cue through expiry without selecting
+		# an older cue. Settlement history survives expiry and cleanup.
+		if cue.id == last_sword_readout.get("id", 0): sword_cue = cue
+	return {"readouts": readouts, "cue_emissions": cue_serial, "sword_readout_emissions": sword_readout_emissions,
+		"sword_cue_active": not sword_cue.is_empty(), "sword_cue_id": last_sword_readout.get("id", 0),
+		"sword_cue_age": sword_cue.get("time", 0.0), "sword_cue_duration": sword_cue.get("duration", 0.0),
+		"sword_cue_visible": sword_cue.label.visible if not sword_cue.is_empty() else false,
+		"sword_source_id": last_sword_readout.get("source_id", 0), "sword_attack_instance": last_sword_readout.get("attack_instance", 0),
+		"sword_receiver": last_sword_readout.get("receiver", ""), "sword_hp_before": last_sword_readout.get("hp_before", 0.0),
+		"sword_hp_after": last_sword_readout.get("hp_after", 0.0), "sword_hp_loss": last_sword_readout.get("hp_loss", 0.0)}

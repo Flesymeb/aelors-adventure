@@ -1,0 +1,2226 @@
+{
+  "schema_version": 1,
+  "journeys": [
+    {
+      "schema_version": 1,
+      "id": "sword-readout-controls-settings-expiry",
+      "requirement_ids": [
+        "R11"
+      ],
+      "budget": {
+        "gameplay_ms": 10000,
+        "wall_seconds": 180
+      },
+      "steps": [
+        {
+          "id": "earned_entry",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu",
+            "tree_paused",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "developer_ui",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "attack_before",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows",
+            "switch_timer",
+            "grounded",
+            "combat_locked",
+            "traversal_action",
+            "posture",
+            "recapture_guard",
+            "window_focused",
+            "controls_open"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "owns_sword",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "equipment",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "equals",
+              "value": "idle"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "switch_timer",
+              "value_type": "number",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "grounded",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "combat_locked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "traversal_action",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "posture",
+              "value_type": "string",
+              "op": "equals",
+              "value": "standing"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "recapture_guard",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "window_focused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "controls_open",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "feedback_before",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ]
+        },
+        {
+          "id": "target_before",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "equals",
+              "value": 24
+            }
+          ]
+        },
+        {
+          "id": "ordinary_sword_press",
+          "kind": "input",
+          "duration_ms": 400,
+          "inputs": [
+            {
+              "mouse_button": "left",
+              "duration_ms": 80,
+              "start_ms": 0
+            }
+          ]
+        },
+        {
+          "id": "live_sword",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_visible",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_receiver",
+              "value_type": "string",
+              "op": "equals",
+              "value": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_loss",
+              "value_type": "number",
+              "op": "range",
+              "min": 0.1,
+              "max": 24,
+              "tolerance": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "delta",
+              "baseline": "feedback_before",
+              "delta": 1
+            }
+          ]
+        },
+        {
+          "id": "attack_live",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "delta",
+              "baseline": "attack_before",
+              "delta": 1
+            }
+          ]
+        },
+        {
+          "id": "target_hit",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "delta",
+              "baseline": "target_before",
+              "delta": -12
+            }
+          ]
+        },
+        {
+          "id": "parent_pause",
+          "kind": "input",
+          "duration_ms": 120,
+          "inputs": [
+            {
+              "key": "Escape",
+              "duration_ms": 80,
+              "start_ms": 0
+            }
+          ]
+        },
+        {
+          "id": "parent_owner",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu",
+            "tree_paused",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "feedback_parent",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            }
+          ]
+        },
+        {
+          "id": "attack_parent",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ]
+        },
+        {
+          "id": "target_parent",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ]
+        },
+        {
+          "id": "capture_parent",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "process_frame",
+            "physics_frame"
+          ]
+        },
+        {
+          "id": "nested_settings",
+          "kind": "input",
+          "duration_ms": 600,
+          "inputs": [
+            {
+              "key": "Down",
+              "start_ms": 0,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 180,
+              "duration_ms": 80
+            },
+            {
+              "key": "Enter",
+              "start_ms": 360,
+              "duration_ms": 80
+            }
+          ]
+        },
+        {
+          "id": "nested_time",
+          "kind": "game_time",
+          "duration_ms": 400
+        },
+        {
+          "id": "nested_owner",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu",
+            "tree_paused",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": "TitleSettings"
+            }
+          ]
+        },
+        {
+          "id": "feedback_nested",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "cue_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_age",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_duration",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_source_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_receiver",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_before",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_after",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_loss",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            }
+          ]
+        },
+        {
+          "id": "attack_nested",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase_time",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_timer",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "shots_fired",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "arrows",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            }
+          ]
+        },
+        {
+          "id": "target_nested",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "phase",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "phase_time",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            }
+          ]
+        },
+        {
+          "id": "capture_nested",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "process_frame",
+            "physics_frame"
+          ]
+        },
+        {
+          "id": "nested_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        },
+        {
+          "id": "child_exit",
+          "kind": "input",
+          "duration_ms": 200,
+          "inputs": [
+            {
+              "key": "Escape",
+              "duration_ms": 80,
+              "start_ms": 0
+            }
+          ]
+        },
+        {
+          "id": "child_time",
+          "kind": "game_time",
+          "duration_ms": 400
+        },
+        {
+          "id": "child_owner",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu",
+            "tree_paused",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_pause_owned",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "controls_submenu",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "feedback_child",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "cue_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_age",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_duration",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_source_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_receiver",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_before",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_after",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_loss",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "feedback_parent"
+            }
+          ]
+        },
+        {
+          "id": "attack_child",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase_time",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_timer",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "shots_fired",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "arrows",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_parent"
+            }
+          ]
+        },
+        {
+          "id": "target_child",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "phase",
+              "value_type": "string",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "phase_time",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_parent"
+            }
+          ]
+        },
+        {
+          "id": "capture_child",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "process_frame",
+            "physics_frame"
+          ]
+        },
+        {
+          "id": "final_exit",
+          "kind": "input",
+          "duration_ms": 120,
+          "inputs": [
+            {
+              "key": "Escape",
+              "duration_ms": 80,
+              "start_ms": 0
+            }
+          ]
+        },
+        {
+          "id": "resumed_owner",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_pause_owned",
+            "controls_visible",
+            "controls_submenu",
+            "tree_paused",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "feedback_resumed",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            }
+          ]
+        },
+        {
+          "id": "attack_resumed",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_live"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "target_resumed",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_hit"
+            }
+          ]
+        },
+        {
+          "id": "ordinary_expiry",
+          "kind": "game_time",
+          "duration_ms": 1300
+        },
+        {
+          "id": "feedback_expired",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/RewardFeedback"
+          ],
+          "fields": [
+            "cue_emissions",
+            "sword_readout_emissions",
+            "sword_cue_active",
+            "sword_cue_id",
+            "sword_cue_age",
+            "sword_cue_duration",
+            "sword_cue_visible",
+            "sword_source_id",
+            "sword_attack_instance",
+            "sword_receiver",
+            "sword_hp_before",
+            "sword_hp_after",
+            "sword_hp_loss"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_active",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_cue_id",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_readout_emissions",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/RewardFeedback",
+              "field": "sword_hp_loss",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "live_sword"
+            }
+          ]
+        },
+        {
+          "id": "attack_expired",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "owns_sword",
+            "equipment",
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "shots_fired",
+            "arrows"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "attack_live"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "equals",
+              "value": "idle"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "target_expired",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/SwordTraining/TrainingMonster"
+          ],
+          "fields": [
+            "health",
+            "phase",
+            "phase_time",
+            "engaged"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/SwordTraining/TrainingMonster",
+              "field": "health",
+              "value_type": "number",
+              "op": "unchanged",
+              "baseline": "target_hit"
+            }
+          ]
+        },
+        {
+          "id": "capture_expired",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/GameplayHUD"
+          ],
+          "fields": [
+            "process_frame",
+            "physics_frame"
+          ]
+        },
+        {
+          "id": "resumed_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        }
+      ],
+      "tags": [
+        "pause-measurement",
+        "requires-earned-sword",
+        "requires-visible-training-monster-in-sword-range",
+        "not-full-r11-acceptance"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "id": "held-attack-controls-settings-release-fresh",
+      "requirement_ids": [
+        "R11"
+      ],
+      "budget": {
+        "gameplay_ms": 5000,
+        "wall_seconds": 90
+      },
+      "steps": [
+        {
+          "id": "entry_world",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_visible",
+            "controls_submenu",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "input_before",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "aim_requested",
+            "bow_state",
+            "bow_charge",
+            "shots_fired",
+            "arrows",
+            "equipment",
+            "owns_sword",
+            "owns_bow",
+            "switch_timer",
+            "grounded",
+            "combat_locked",
+            "traversal_action",
+            "posture",
+            "recapture_guard",
+            "window_focused",
+            "controls_open"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "switch_timer",
+              "value_type": "number",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "grounded",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "combat_locked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "traversal_action",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "posture",
+              "value_type": "string",
+              "op": "equals",
+              "value": "standing"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "recapture_guard",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "window_focused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "controls_open",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "equipment",
+              "value_type": "string",
+              "op": "equals",
+              "value": "sword"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "owns_sword",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "equals",
+              "value": "idle"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "held_attack_nested_transition",
+          "kind": "input",
+          "duration_ms": 4300,
+          "inputs": [
+            {
+              "mouse_button": "left",
+              "start_ms": 0,
+              "duration_ms": 3200
+            },
+            {
+              "key": "Escape",
+              "start_ms": 300,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 700,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 900,
+              "duration_ms": 80
+            },
+            {
+              "key": "Enter",
+              "start_ms": 1100,
+              "duration_ms": 80
+            },
+            {
+              "key": "Escape",
+              "start_ms": 1800,
+              "duration_ms": 80
+            },
+            {
+              "key": "Escape",
+              "start_ms": 2400,
+              "duration_ms": 80
+            },
+            {
+              "mouse_button": "left",
+              "start_ms": 3650,
+              "duration_ms": 80
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/Player",
+                "fields": [
+                  "attack_instance",
+                  "attack_phase",
+                  "attack_phase_time",
+                  "attack_buffered",
+                  "attack_timer",
+                  "attack_button_held",
+                  "attack_button_blocked",
+                  "aim_button_held",
+                  "aim_button_blocked",
+                  "aim_requested",
+                  "bow_state",
+                  "bow_charge",
+                  "shots_fired",
+                  "arrows",
+                  "controls_open"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/RewardFeedback",
+                "fields": [
+                  "cue_emissions",
+                  "sword_readout_emissions"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "process_frame",
+                  "physics_frame"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "input_after",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "aim_requested",
+            "bow_state",
+            "bow_charge",
+            "shots_fired",
+            "arrows",
+            "equipment",
+            "owns_sword",
+            "owns_bow",
+            "switch_timer",
+            "grounded",
+            "combat_locked",
+            "traversal_action",
+            "posture",
+            "recapture_guard",
+            "window_focused",
+            "controls_open"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "controls_open",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "delta",
+              "baseline": "input_before",
+              "delta": 2
+            }
+          ]
+        },
+        {
+          "id": "world_after",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_visible",
+            "controls_submenu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "after_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        }
+      ],
+      "tags": [
+        "pause-measurement",
+        "requires-earned-sword",
+        "requires-safe-idle-boundary",
+        "not-full-r11-acceptance"
+      ]
+    },
+    {
+      "schema_version": 1,
+      "id": "held-aim-controls-settings-release-fresh",
+      "requirement_ids": [
+        "R11"
+      ],
+      "budget": {
+        "gameplay_ms": 5000,
+        "wall_seconds": 90
+      },
+      "steps": [
+        {
+          "id": "entry_world",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_visible",
+            "controls_submenu",
+            "developer_ui"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "input_before",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "aim_requested",
+            "bow_state",
+            "bow_charge",
+            "shots_fired",
+            "arrows",
+            "equipment",
+            "owns_sword",
+            "owns_bow",
+            "switch_timer",
+            "grounded",
+            "combat_locked",
+            "traversal_action",
+            "posture",
+            "recapture_guard",
+            "window_focused",
+            "controls_open"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "switch_timer",
+              "value_type": "number",
+              "op": "equals",
+              "value": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "grounded",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "combat_locked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "traversal_action",
+              "value_type": "string",
+              "op": "equals",
+              "value": ""
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "posture",
+              "value_type": "string",
+              "op": "equals",
+              "value": "standing"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "recapture_guard",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "window_focused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "controls_open",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "equipment",
+              "value_type": "string",
+              "op": "equals",
+              "value": "bow"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "owns_bow",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_phase",
+              "value_type": "string",
+              "op": "equals",
+              "value": "idle"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "arrows",
+              "value_type": "integer",
+              "op": "range",
+              "min": 1,
+              "max": 12,
+              "tolerance": 0
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "bow_state",
+              "value_type": "string",
+              "op": "equals",
+              "value": "idle"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_requested",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "held_aim_nested_transition",
+          "kind": "input",
+          "duration_ms": 4300,
+          "inputs": [
+            {
+              "mouse_button": "right",
+              "start_ms": 0,
+              "duration_ms": 3200
+            },
+            {
+              "key": "Escape",
+              "start_ms": 300,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 700,
+              "duration_ms": 80
+            },
+            {
+              "key": "Down",
+              "start_ms": 900,
+              "duration_ms": 80
+            },
+            {
+              "key": "Enter",
+              "start_ms": 1100,
+              "duration_ms": 80
+            },
+            {
+              "key": "Escape",
+              "start_ms": 1800,
+              "duration_ms": 80
+            },
+            {
+              "key": "Escape",
+              "start_ms": 2400,
+              "duration_ms": 80
+            },
+            {
+              "mouse_button": "right",
+              "start_ms": 3650,
+              "duration_ms": 550
+            }
+          ],
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure",
+                "fields": [
+                  "product_paused",
+                  "pause_owner_count",
+                  "controls_pause_owned",
+                  "controls_submenu"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/Player",
+                "fields": [
+                  "attack_instance",
+                  "attack_phase",
+                  "attack_phase_time",
+                  "attack_buffered",
+                  "attack_timer",
+                  "attack_button_held",
+                  "attack_button_blocked",
+                  "aim_button_held",
+                  "aim_button_blocked",
+                  "aim_requested",
+                  "bow_state",
+                  "bow_charge",
+                  "shots_fired",
+                  "arrows",
+                  "controls_open"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/RewardFeedback",
+                "fields": [
+                  "cue_emissions",
+                  "sword_readout_emissions"
+                ]
+              },
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "process_frame",
+                  "physics_frame"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "input_after",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure/Player"
+          ],
+          "fields": [
+            "attack_instance",
+            "attack_phase",
+            "attack_phase_time",
+            "attack_buffered",
+            "attack_timer",
+            "attack_button_held",
+            "attack_button_blocked",
+            "aim_button_held",
+            "aim_button_blocked",
+            "aim_requested",
+            "bow_state",
+            "bow_charge",
+            "shots_fired",
+            "arrows",
+            "equipment",
+            "owns_sword",
+            "owns_bow",
+            "switch_timer",
+            "grounded",
+            "combat_locked",
+            "traversal_action",
+            "posture",
+            "recapture_guard",
+            "window_focused",
+            "controls_open"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_held",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_button_blocked",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "controls_open",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_buffered",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "attack_instance",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "input_before"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "shots_fired",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "input_before"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "arrows",
+              "value_type": "integer",
+              "op": "unchanged",
+              "baseline": "input_before"
+            },
+            {
+              "path": "/root/GameEntry/Adventure/Player",
+              "field": "aim_requested",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            }
+          ]
+        },
+        {
+          "id": "world_after",
+          "kind": "state",
+          "paths": [
+            "/root/GameEntry/Adventure"
+          ],
+          "fields": [
+            "product_paused",
+            "pause_owner_count",
+            "controls_visible",
+            "controls_submenu"
+          ],
+          "assertions": [
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "product_paused",
+              "value_type": "boolean",
+              "op": "equals",
+              "value": false
+            },
+            {
+              "path": "/root/GameEntry/Adventure",
+              "field": "pause_owner_count",
+              "value_type": "integer",
+              "op": "equals",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "after_frame",
+          "kind": "screenshot",
+          "max_width": 1280
+        }
+      ],
+      "tags": [
+        "pause-measurement",
+        "requires-earned-bow",
+        "requires-safe-idle-boundary",
+        "not-full-r11-acceptance"
+      ]
+    }
+  ]
+}

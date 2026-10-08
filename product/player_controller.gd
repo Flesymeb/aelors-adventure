@@ -867,7 +867,24 @@ func respawn() -> void:
 	step_distance = 0.0
 
 func _mcp_state() -> Dictionary:
-	return {"traversal": traversal.observation() if traversal else {}, "camera_yaw": arm.rotation.y, "camera_pitch": arm.rotation.x, "camera_target": free_camera_distance, "camera_requested_length": arm.spring_length, "camera_collision_length": arm.get_hit_length(), "mouse_sensitivity": _mouse_sensitivity(), "controls_open": controls_open, "window_focused": window_focused, "bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+	var observation := {"traversal": traversal.observation() if traversal else {}, "camera_yaw": arm.rotation.y, "camera_pitch": arm.rotation.x, "camera_target": free_camera_distance, "camera_requested_length": arm.spring_length, "camera_collision_length": arm.get_hit_length(), "mouse_sensitivity": _mouse_sensitivity(), "controls_open": controls_open, "window_focused": window_focused, "bow_state": bow_state, "bow_charge": bow_charge, "aim_requested": aim_requested, "arrows": archery.state.arrows if archery else 0, "shots_fired": shots_fired, "bow_clip": bow_pose.clip if bow_pose else "", "bow_clip_time": bow_pose.clip_time if bow_pose else 0, "equipment": weapon_mode, "owns_sword": owns_sword, "owns_bow": owns_bow, "animation": animation_player.current_animation if animation_player else "", "animation_position": animation_player.current_animation_position if animation_player else 0, "sword_in_hand": sword_holder.visible if sword_holder else false, "sword_on_back": sword_back_holder.visible if sword_back_holder else false, "combat": combat.player_snapshot() if combat else {}}
+
+	# Scalar aliases retain the combat owner's authority and expose modal
+	# suppression separately from physically held buttons. No input dispatch.
+	var combat_state: Dictionary = observation.combat
+	observation.merge({"attack_instance": combat_state.get("attack_instance", 0),
+		"switch_timer": switch_timer, "grounded": is_on_floor(),
+		"combat_locked": combat.player_locked() if combat else false,
+		"traversal_action": traversal.action if traversal else "", "posture": traversal.posture if traversal else "standing",
+		"recapture_guard": recapture_guard,
+		"attack_phase": combat_state.get("phase", ""), "attack_phase_time": combat_state.get("phase_time", 0.0),
+		"attack_timer": attack_timer, "attack_buffered": combat_state.get("buffered", false),
+		"blocking": combat_state.get("blocking", false),
+		"attack_button_held": Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),
+		"aim_button_held": Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),
+		"attack_button_blocked": blocked_mouse.has(MOUSE_BUTTON_LEFT),
+		"aim_button_blocked": blocked_mouse.has(MOUSE_BUTTON_RIGHT)})
+	return observation
 
 
 func _mouse_sensitivity() -> float:

@@ -84,6 +84,7 @@ func configure(owner_world: Node3D) -> void:
 	hud.training = self
 	world.add_child(hud)
 	feedback = preload("res://reward_feedback.gd").new()
+	feedback.name = "RewardFeedback"
 	feedback.training = self
 	world.add_child(feedback)
 	ground_module.call_deferred()
@@ -166,7 +167,7 @@ func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dict
 
 func resolved_enemy_contact(result: Dictionary) -> void:
 	var defeated: bool = result.outcome == "defeat"
-	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit")
+	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit", result)
 	if result.source_id == sword_source.get_instance_id() and combo == 2: stop_on_contact(0.045)
 
 func ground_module() -> void:
