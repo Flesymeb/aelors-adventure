@@ -38,12 +38,13 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
 var lamp_reward_committed := false
 var element_practice_complete := false
+var bridge_briefing_acknowledged := false
 var skills: Dictionary = {}
 var reward_history: Dictionary = {}
 var bag_history: Dictionary = {}
@@ -162,8 +163,13 @@ func begin() -> void:
 		logical_node = ronen_node if dialogue_kind == "ronen" else (hers_node if dialogue_kind == "hers" else ("D02" if q01_accepted else "D01"))
 		if dialogue_kind == "isha" and bow_training_complete and remnant_collected:
 			logical_node = "L02" if lamp_owned else "L01"
+		if dialogue_kind == "isha" and bridge_briefing_available():
+			logical_node = "B05" if bridge_briefing_acknowledged else "B01"
 	reward_feedback = ""
 	conversation_active = true
+
+func bridge_briefing_available() -> bool:
+	return q01_accepted and sword_owned and remnant_collected and bow_training_complete and lamp_owned and trace_investigated and not skills.is_empty() and element_practice_complete
 
 func choose(index: int) -> bool:
 	var node: Dictionary = current_nodes().get(logical_node, {})
@@ -171,6 +177,11 @@ func choose(index: int) -> bool:
 	if index < 0 or index >= choices.size():
 		return false
 	var choice: Dictionary = choices[index]
+	if choice.get("acknowledge_bridge", false):
+		if dialogue_kind != "isha" or not bridge_briefing_available(): return false
+		bridge_briefing_acknowledged = true
+		if "bridge_briefing" not in confirmed_choices: confirmed_choices.append("bridge_briefing")
+		tracked_quest = "bridge"
 	if choice.get("grant_sword", false) and dialogue_kind == "hers" and q01_accepted:
 		sword_granted.emit()
 	if choice.get("grant_bow", false) and dialogue_kind == "ronen":
@@ -406,8 +417,20 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var reading: Variant = config.get_value("reading", key, 1.0 if key == "scale" else 30.0)
 		if not (reading is int or reading is float) or not is_finite(float(reading)): return "存档设置无效"
 	if not config.get_value("reading", "instant", false) is bool: return "存档设置无效"
-	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete"]:
+	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete", "bridge_briefing_acknowledged"]:
 		if not config.get_value("post_bow", key, false) is bool: return "存档旧灯进度无效"
+	# New briefing nodes require actual preparation. Missing knowledge in an
+	# older history defaults to false, never to an automatically chosen answer.
+	if node in ["B01", "B02", "B03", "B04", "B05"] or config.get_value("post_bow", "bridge_briefing_acknowledged", false):
+		if not config.get_value("opening", "accepted", false): return "存档桥头信息无效"
+		for key in ["sword_owned", "remnant_collected", "bow_training_complete"]:
+			if not config.get_value("training", key, false): return "存档桥头信息无效"
+		for key in ["lamp_owned", "trace_investigated", "element_practice_complete"]:
+			if not config.get_value("post_bow", key, false): return "存档桥头信息无效"
+		var briefing_skills: Variant = config.get_value("post_bow", "skills", {})
+		if not briefing_skills is Dictionary or briefing_skills.is_empty(): return "存档桥头信息无效"
+		if node in ["B01", "B02", "B03", "B04", "B05"] and config.get_value("training", "dialogue_kind", "isha") != "isha": return "存档桥头信息无效"
+		if node in ["B04", "B05"] and not config.get_value("post_bow", "bridge_briefing_acknowledged", false): return "存档桥头信息无效"
 	for key in ["skills", "reward_history", "bag_history"]:
 		if not config.get_value("post_bow", key, {}) is Dictionary: return "存档物品进度无效"
 	if not preload("res://inventory/product_inventory.gd").valid_history(config.get_value("post_bow", "bag_history", {})): return "存档背包无效"
@@ -509,7 +532,11 @@ func quest_entries() -> Array[Dictionary]:
 		if element_practice_complete: steps.append("实际命中元素练习目标 · Q02 完成")
 		rows.append({"id":"lamp", "title":"奥伦的旧灯", "complete":element_practice_complete, "context":"旧灯能显形隐藏的痕迹；显形与调查是两个步骤。元素练习可反复尝试。", "action":objective(), "steps":steps})
 	if element_practice_complete:
-		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false, "context":"伊莎看见四人被带过石桥。先清除对岸的两名巡守；更远的救援仍未完成。", "action":objective(), "steps":[]})
+		var steps: Array[String] = []
+		if bridge_briefing_acknowledged: steps.append("听取伊莎的桥头信息：受困居民另有其人，四名被掳者仍待救援")
+		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false,
+			"context":"伊莎提到桥灯熄灭、另有一名居民困在桥边；此人不是奥伦和另三名被掳村民。桥头救人、恢复照明与离村仍未完成。" if bridge_briefing_acknowledged else "伊莎看见四人被带过石桥。可回去听取桥头信息，也可先沿村路探索。",
+			"action":"从罗恩草靶左侧的木板入口接近石桥；对岸两名巡守仍在。更远旅程尚未开放。" if reward_history.size() < 2 else "桥边巡守已清除；桥头救援、照明与更远旅程尚未开放。", "steps":steps})
 	return rows
 
 func tracked_entry() -> Dictionary:
