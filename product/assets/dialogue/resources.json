@@ -52,25 +52,41 @@
     "status": "bound_pending_independent_review",
     "source": "https://openai.com/policies/terms-of-use/",
     "license": "OpenAI generated output under applicable service terms; not CC0 or MIT",
-    "provenance": "portrait_source/SOURCE.md; operator-declared generation, registered materialization receipt",
-    "receipt": "assets/dialogue/portrait_source/agent_asset_receipt.json",
-    "atlas": "assets/dialogue/portrait_source/aelor-dialogue-portraits-v2.png",
+    "provenance": "portrait_source/v3/SOURCE.md; operator-declared generation, registered unchanged materialization",
+    "receipt": "assets/dialogue/portrait_source/v3/agent_asset_receipt.json",
+    "atlas": "assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png",
     "aelor": "assets/dialogue/aelor_portrait.tres",
     "isha": "assets/dialogue/isha_portrait.tres",
     "regions": {
       "aelor": [
         0,
         0,
-        627,
-        627
+        768,
+        1024
       ],
       "isha": [
-        627,
+        768,
         0,
-        627,
-        627
+        768,
+        1024
       ]
     },
-    "adaptation": "Native AtlasTexture regions with filter_clip=true; no pixel edits. Existing portrait slots and speaker emphasis retained."
+    "adaptation": "Native transparent RGBA, independent tall AtlasTexture regions with filter_clip=true. Full arms, hands and waist in reserved side columns; aspect preserved. Active speaker remains bright, listener subdued. V2 is retained as source history only; neither live Aelor/Isha resource selects it.",
+    "semantic_families": {
+      "dialogue.aelor_halfbody": {
+        "source_variants": 1,
+        "runtime_variants": 1,
+        "maximum_source_share": 1.0,
+        "justification": "Identity-specific Aelor portrait singleton"
+      },
+      "dialogue.isha_halfbody": {
+        "source_variants": 1,
+        "runtime_variants": 1,
+        "maximum_source_share": 1.0,
+        "justification": "Identity-specific Isha portrait singleton"
+      }
+    },
+    "background_mode": "native_transparent_rgba",
+    "qualification": "Developer inspected anatomy, identity wardrobe/palette, native alpha, source rights and imported intended-size preview; independent runtime acceptance pending"
   }
 }

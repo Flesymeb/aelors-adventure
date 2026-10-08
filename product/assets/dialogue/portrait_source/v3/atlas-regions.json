@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "image": "aelor-isha-halfbody-v3.png",
+  "canvas": [
+    1536,
+    1024
+  ],
+  "regions": {
+    "aelor": [
+      0,
+      0,
+      768,
+      1024
+    ],
+    "isha": [
+      768,
+      0,
+      768,
+      1024
+    ]
+  },
+  "intended_resource_type": "AtlasTexture",
+  "filter_clip": true,
+  "qualification": "candidate_pending_prd_and_runtime_review"
+}
+

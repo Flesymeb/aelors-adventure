@@ -56,7 +56,7 @@ func _build() -> void:
 	speaker = Label.new()
 	speaker.name = "Speaker"
 	speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	panel_content.add_child(speaker)
+	panel.add_child(speaker)
 	body = RichTextLabel.new()
 	body.name = "DialogueBody"
 	body.fit_content = true
@@ -112,9 +112,10 @@ func _layout() -> void:
 	var font_size := int(24 * state.text_scale)
 	var large: bool = state.text_scale >= 1.5
 	var height := size.y * (0.79 if large else 0.58)
-	panel.position = Vector2(size.x * 0.16, size.y - height - 18)
-	panel.size = Vector2(size.x * 0.68, height)
-	reading_scroll.position = Vector2(24, 20)
+	# Reserve independent side columns for the complete waist-up silhouettes.
+	# Text scale changes the reading height, never crops or stretches the art.
+	panel.position = Vector2(size.x * 0.245, size.y - height - 18)
+	panel.size = Vector2(size.x * 0.51, height)
 	panel_content.add_theme_font_size_override("font_size", font_size)
 	speaker.add_theme_font_size_override("font_size", font_size + 3)
 	body.add_theme_font_size_override("normal_font_size", font_size)
@@ -125,15 +126,28 @@ func _layout() -> void:
 	advance_button.add_theme_font_size_override("font_size", font_size)
 	footer.add_theme_font_size_override("font_size", int(16 * state.text_scale))
 	# Keep advance/return hints outside the scrolling story and choices.
-	var footer_height := float(int(16 * state.text_scale) * 2 + 12)
-	footer.position = Vector2(24, panel.size.y - footer_height - 20)
-	footer.size = Vector2(panel.size.x - 48, footer_height)
-	reading_scroll.size = panel.size - Vector2(48, 52 + footer_height)
+	footer.text = "E 补全 / 继续 · ↑↓ 选择\nEnter 确认 · Esc 离开\nF10 设置 · F5 存档" if large else "E 补全 / 继续 · ↑↓ 选择 · Enter 确认\nEsc 离开 · F10 设置 · F5 存档"
+	_layout_reading()
 	if focused_choice >= 0 and focused_choice < choice_buttons.size():
 		reading_scroll.ensure_control_visible.call_deferred(choice_buttons[focused_choice])
 	for i in portraits.size():
-		portraits[i].position = Vector2(0 if i == 0 else size.x * 0.84, size.y * 0.25)
-		portraits[i].size = Vector2(size.x * 0.16, size.y * 0.73)
+		var portrait_width := minf(size.x * 0.235, size.y * 0.48)
+		var portrait_size := Vector2(portrait_width, portrait_width * 4.0 / 3.0)
+		portraits[i].position = Vector2(8 if i == 0 else size.x - portrait_width - 8, size.y - portrait_size.y - 12)
+		portraits[i].size = portrait_size
+
+func _layout_reading() -> void:
+	# Font metrics include the bundled Chinese serif's actual ascent/descent.
+	# Keep the speaker and hints fixed while long text/choices scroll between.
+	var width := panel.size.x - 48
+	var speaker_height := speaker.get_theme_font("font").get_height(speaker.get_theme_font_size("font_size")) + 8
+	var footer_height := footer.get_theme_font("font").get_multiline_string_size(footer.text, HORIZONTAL_ALIGNMENT_CENTER, width, footer.get_theme_font_size("font_size")).y + 16
+	speaker.position = Vector2(24, 16)
+	speaker.size = Vector2(width, speaker_height)
+	footer.position = Vector2(24, panel.size.y - footer_height - 20)
+	footer.size = Vector2(width, footer_height)
+	reading_scroll.position = Vector2(24, 24 + speaker_height)
+	reading_scroll.size = Vector2(width, maxf(60, footer.position.y - reading_scroll.position.y - 12))
 
 func open_dialogue(restored := false) -> void:
 	opened = true

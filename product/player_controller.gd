@@ -608,6 +608,42 @@ func _update_archery(delta: float) -> void:
 		bow_ik.influence = pose_weight if bow_state != "release" else 0.0
 
 
+func prepare_restored_camera(yaw: float) -> void:
+	# Saved histories retain yaw, not transient aim/perspective/camera shake.
+	# Grounding can immediately be followed by dialogue pause, before this
+	# native SpringArm has ever processed. Initialize only its collision sweep;
+	# never thaw the tree or tick player/combat/ability/animation controllers.
+	cancel_aim()
+	first_person = false
+	perspective_blend = 0.0
+	aim_blend = 0.0
+	shoulder_blend = shoulder_side
+	smooth_camera_distance = free_camera_distance
+	camera_height = 1.65
+	arm.rotation = Vector3(-0.2, yaw, 0)
+	var pivot := global_position + Vector3(0, 1.45, 0)
+	var offset := Basis(Vector3.UP, yaw) * Vector3(0.30 * shoulder_side, 0, 0)
+	var query := PhysicsRayQueryParameters3D.create(pivot, pivot + offset)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit:
+		offset = (hit.position - pivot) * 0.75
+	arm.position = pivot - global_position + offset
+	arm.spring_length = free_camera_distance
+	arm.force_update_transform()
+	camera.fov = 70.0
+	camera.near = 0.1
+	shake_remaining = 0.0
+	camera.h_offset = 0.0
+	camera.v_offset = 0.0
+	_update_head_visibility()
+	# Godot 4.7's native notification performs the same camera-shape sweep as
+	# ordinary SpringArm processing, including its mask, margin and player RID
+	# exclusion. A whole physics frame here would advance unrelated gameplay.
+	arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+	reset_physics_interpolation()
+
+
 func _update_head_visibility() -> void:
 	# Face, eyes, eyebrows and hood remain shadow casters in first person.
 	for component in head_components:

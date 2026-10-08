@@ -175,7 +175,7 @@ func _place_player() -> void:
 		return
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	player.set_meta("spawn_position", player.global_position)
-	if restored_position.has("yaw"): player.arm.rotation.y = restored_position.yaw
+	player.prepare_restored_camera(float(restored_position.get("yaw", player.arm.rotation.y)))
 	if dialogue_state.persistence_error != "":
 		_recovery_error(dialogue_state.persistence_error)
 		return
@@ -283,6 +283,7 @@ func _save_opening(slot: int) -> void:
 		controls_feedback.text = dialogue_state.save_feedback + (" · 槽位 %d" % slot if slot > 0 else "")
 	if dialogue.opened:
 		dialogue.footer.text = (dialogue_state.reward_feedback + " · " if dialogue_state.reward_feedback != "" else "") + dialogue_state.save_feedback + " · F10 设置与存档 · Esc 离开"
+		dialogue._layout_reading()
 
 
 func _load_opening(slot: int) -> void:
@@ -310,7 +311,7 @@ func _load_opening(slot: int) -> void:
 		restoring_interface = false
 		_recovery_error("保存恢复进度失败 · 冒险仍暂停，请重试。")
 		return
-	player.arm.rotation.y = restored.yaw
+	player.prepare_restored_camera(float(restored.yaw))
 	training.restore_history()
 	if bridge_actions: bridge_actions.restore_history()
 	gameplay_hud.restore_view()
