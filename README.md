@@ -24,8 +24,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 | Field | Value |
 | --- | --- |
 | Open | 32 |
-| Closed | 19 |
-| All | 51 |
+| Closed | 20 |
+| All | 52 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -34,10 +34,10 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 | Field | Value |
 | --- | --- |
 | Active | 15 |
-| Verified closed | 11 |
+| Verified closed | 12 |
 | Policy invalidated | 3 |
 | Waived | 0 |
-| All in this run | 29 |
+| All in this run | 30 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -54,7 +54,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | CLOSED | Independently verified resolved at loop 11. |
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
-| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Live fire pause correlation is observed, but the complete pause and manual-slot recovery matrix remains unverified. |
 | `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings scale and positive audio observations do not close the required effect-comparison matrix. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -63,7 +63,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
 | `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening playback is observed; the selected opening acceptance matrix remains incomplete. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
-| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | The known vitals card geometry defect remains visible after returning text scale to 100%. |
+| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
@@ -72,6 +72,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
 | `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | untitled issue |
 | `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
+| `vitals_pending_content_unobserved` | [#52](https://github.com/Flesymeb/aelors-adventure/issues/52) | OPEN | The pending-point vitals variant remains unobserved despite successful rollback at both resolutions. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -79,7 +80,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 32 | 19 | 51 |
+| GitHub HoH namespace | 32 | 20 | 52 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -117,7 +118,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-13-3efff51ad5c9` | `development_snapshot:attempt-b2862ebf2e28c906c1cd1dc7` | DEVELOPER REPORT READY |
+| `loop-13-3efff51ad5c9` | `development_snapshot:attempt-b2862ebf2e28c906c1cd1dc7` | BLOCKED |
 
 ### Project Planner
 
@@ -144,7 +145,18 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | BLOCKED |
+| Candidate | `loop-13-3efff51ad5c9` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 2 (1 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `vitals_pending_content_unobserved` | MINOR | INTERNAL | MEDIUM | The pending-point vitals variant remains unobserved despite successful rollback at both resolutions. |
+| `active_pause_matrix_incomplete` | MAJOR | INTERNAL | HIGH | Live fire pause correlation is observed, but the complete pause and manual-slot recovery matrix remains unverified. |
 
 ---
 
@@ -762,5 +774,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-13-3efff51ad5c9`
 - Latest warm start: `loop-13-44c465f64d48`
 - Last published: `loop-13-3efff51ad5c9`
-- Best verified: `loop-12-44c465f64d48`
+- Best verified: `loop-13-3efff51ad5c9`
 - Generated by the HoH host from immutable run evidence.
