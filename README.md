@@ -46,7 +46,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_adjacent_hud_checkpoint_text` | [#23](https://github.com/Flesymeb/aelors-adventure/issues/23) | OPEN | Adjacent HUD continuity fails: checkpoint code/name and textual life count remain permanently visible. |
 | `title_entry_empty_load_focus_clipped` | [#25](https://github.com/Flesymeb/aelors-adventure/issues/25) | CLOSED | Independently verified resolved at loop 2. |
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
-| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | BLOCKED | Required dialogue portraits remain absent in the live Isha conversation. |
+| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Required Aelor and Isha portraits remain absent in the ordinary bridge briefing. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | CLOSED | Independently verified resolved at loop 17. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
@@ -68,14 +68,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
 | `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
-| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Complete milestone acceptance remains unestablished despite successful local title-recovery checks. |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Local briefing success does not establish complete milestone acceptance or older-history compatibility. |
 | `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
 | `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | untitled issue |
 | `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
 | `practice_target_foreground_marker_overlap` | [#53](https://github.com/Flesymeb/aelors-adventure/issues/53) | OPEN | Adjacent presentation continuity fails: the foreground practice label overlaps the player. |
 | `vitals_pending_content_unobserved` | [#52](https://github.com/Flesymeb/aelors-adventure/issues/52) | OPEN | untitled issue |
 | `full_r01_acceptance_unassessed` | [#54](https://github.com/Flesymeb/aelors-adventure/issues/54) | OPEN | untitled issue |
-| `continued_dialogue_camera_inside_player` | [#55](https://github.com/Flesymeb/aelors-adventure/issues/55) | OPEN | Continue into saved dialogue freezes the camera inside the player until dialogue is exited. |
+| `continued_dialogue_camera_inside_player` | [#55](https://github.com/Flesymeb/aelors-adventure/issues/55) | OPEN | Adjacent continuity fails: Continue still freezes the dialogue camera inside the player. |
 | `fps.runtime.candidate-error-0d66533e4786` | [#56](https://github.com/Flesymeb/aelors-adventure/issues/56) | OPEN | Godot reported a candidate-owned runtime error: ConfigFile parse error at user://isha_slot_1.cfg:0: Unexpected EOF while parsing simple tag. |
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 
@@ -123,7 +123,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-19-3b28a5ebfd91` | `development_snapshot:attempt-ad75b361a7f063d4078b0237` | DEVELOPER REPORT READY |
+| `loop-19-3b28a5ebfd91` | `development_snapshot:attempt-ad75b361a7f063d4078b0237` | BLOCKED |
 
 ### Project Planner
 
@@ -150,7 +150,20 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-19-3b28a5ebfd91` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 4 (3 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `dialogue_portraits_absent` | MAJOR | USER BLOCKING | HIGH | Required Aelor and Isha portraits remain absent in the ordinary bridge briefing. |
+| `r15_audio_listening_unverified` | MAJOR | INTERNAL | HIGH | Heard Music/Effects acceptance remains blocked by unsupported reviewer audio input. |
+| `milestone_05_closeout_unassessed` | MAJOR | INTERNAL | HIGH | Local briefing success does not establish complete milestone acceptance or older-history compatibility. |
+| `continued_dialogue_camera_inside_player` | MINOR | DEGRADED | MEDIUM | Adjacent continuity fails: Continue still freezes the dialogue camera inside the player. |
 
 ---
 
@@ -1069,5 +1082,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-19-3b28a5ebfd91`
 - Latest warm start: `loop-19-f204bbc48250`
 - Last published: `loop-19-3b28a5ebfd91`
-- Best verified: `loop-18-f204bbc48250`
+- Best verified: `loop-19-3b28a5ebfd91`
 - Generated by the HoH host from immutable run evidence.
