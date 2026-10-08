@@ -23,8 +23,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 33 |
-| Closed | 18 |
+| Open | 32 |
+| Closed | 19 |
 | All | 51 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
@@ -33,8 +33,8 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 16 |
-| Verified closed | 10 |
+| Active | 15 |
+| Verified closed | 11 |
 | Policy invalidated | 3 |
 | Waived | 0 |
 | All in this run | 29 |
@@ -62,16 +62,16 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
 | `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening playback is observed; the selected opening acceptance matrix remains incomplete. |
-| `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | OPEN | Early equipment states still collapse shortcut instructions into excessive wrapping. |
-| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | Vitals retain enlarged width and blank height after text scale returns to 100%. |
+| `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
+| `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | OPEN | The known vitals card geometry defect remains visible after returning text scale to 100%. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
 | `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
-| `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | Attack/contact audio output and causality were captured; perceptual audio quality remains unverified. |
-| `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | Task condition 0 remains blocked: grounded pursuit works, but clearance around a reachable existing solid obstacle lacks independent evidence. |
-| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | untitled issue |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Chapter-two implementation availability and complete acceptance evidence remain unresolved; the local HUD repair does not close the milestone. |
 | `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
+| `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | untitled issue |
+| `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -79,7 +79,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 33 | 18 | 51 |
+| GitHub HoH namespace | 32 | 19 | 51 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -117,7 +117,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-12-44c465f64d48` | `development_snapshot:attempt-d07ccc5da930257e8cab2213` | NEEDS VISUAL QA |
+| `loop-12-44c465f64d48` | `development_snapshot:attempt-d07ccc5da930257e8cab2213` | BLOCKED |
 
 ### Project Planner
 
@@ -144,7 +144,18 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | BLOCKED |
+| Candidate | `loop-12-44c465f64d48` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 2 (1 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `milestone_closeout_unavailable` | MAJOR | USER BLOCKING | HIGH | Chapter-two implementation availability and complete acceptance evidence remain unresolved; the local HUD repair does not close the milestone. |
+| `vitals_scale_rollback_retains_geometry` | MINOR | DEGRADED | MEDIUM | The known vitals card geometry defect remains visible after returning text scale to 100%. |
 
 ---
 
@@ -714,5 +725,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-12-44c465f64d48`
 - Latest warm start: `loop-12-059b740c684a`
 - Last published: `loop-12-44c465f64d48`
-- Best verified: `loop-11-059b740c684a`
+- Best verified: `loop-12-44c465f64d48`
 - Generated by the HoH host from immutable run evidence.
