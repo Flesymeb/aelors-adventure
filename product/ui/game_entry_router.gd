@@ -219,4 +219,9 @@ func return_to_title() -> void:
 
 func _mcp_state() -> Dictionary:
 	var focus := get_viewport().gui_get_focus_owner()
-	return {"route": route, "entry_kind": entry_kind, "selected_slot": selected_slot, "resource_status": loader.status, "resource_progress": loader.progress, "initialized": initialized, "player_ready": player_ready, "entry_error": entry_error, "world_present": is_instance_valid(world), "world_processing": world.is_processing() if is_instance_valid(world) else false, "tree_paused": get_tree().paused, "mouse_mode": Input.mouse_mode, "focus": str(focus.get_path()) if focus else "", "adventure": state._mcp_state()}
+	var observation := {"route": route, "entry_kind": entry_kind, "selected_slot": selected_slot, "resource_status": loader.status, "resource_progress": loader.progress, "initialized": initialized, "player_ready": player_ready, "entry_error": entry_error, "world_present": is_instance_valid(world), "world_processing": world.is_processing() if is_instance_valid(world) else false, "loading_present": is_instance_valid(loading), "tree_paused": get_tree().paused, "mouse_mode": Input.mouse_mode, "focus": str(focus.get_path()) if focus else "", "adventure": state._mcp_state()}
+	# The entry owner already retains the rollback snapshot. Expose only facts
+	# needed to compare it with AdventureState; do not create another history.
+	for key in ["opening_completed", "logical_node", "q01_accepted", "experience", "sword_owned", "bow_owned", "lamp_owned", "lives", "arrows", "selected_equipment"]:
+		observation["previous_" + key] = previous_history.get(key)
+	return observation

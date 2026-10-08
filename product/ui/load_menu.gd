@@ -103,4 +103,14 @@ func close() -> void:
 	hide()
 
 func _mcp_state() -> Dictionary:
-	return {"slots": slots, "visible": visible, "pending_slot": pending_slot, "confirmation": slot_confirmation != null}
+	var observation := {"slots": slots, "visible": visible, "pending_slot": pending_slot, "confirmation": slot_confirmation != null}
+	# Project the displayed previews and actual buttons, without rereading files
+	# or restoring a history. Unknown facts stay null for an unavailable slot.
+	for facts in slots:
+		var slot: int = facts.slot
+		var prefix := "slot%d_" % slot
+		var item := page.find_child("LoadSlot%d" % slot, true, false) as Button
+		observation[prefix + "available"] = not item.disabled if item else null
+		for key in ["reason", "experience", "lives", "arrows", "progress", "chapter", "checkpoint", "time"]:
+			observation[prefix + key] = facts.get(key)
+	return observation

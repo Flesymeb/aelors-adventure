@@ -290,6 +290,12 @@ func objective() -> String:
 
 func _mcp_state() -> Dictionary:
 	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
+	# Retain the nested observation while exposing its existing scalar history
+	# facts to bounded selectors. Never use adventure_snapshot(): it updates bag_history.
+	for key in TRAINING_KEYS + POST_DEFAULTS.keys():
+		var fact: Variant = get(key)
+		if typeof(fact) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
+			observation[key] = fact
 	observation.merge(audio_observation())
 	return observation
 

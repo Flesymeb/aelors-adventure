@@ -288,7 +288,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _mcp_state() -> Dictionary:
 	var buttons := []
 	for item in actions: buttons.append({"text": item.text, "disabled": item.disabled, "rect": str(item.get_global_rect())})
-	return {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "preferences": state.preference_snapshot(), "caller": "cinematic" if cinematic else ("pause" if pause_world else "title"), "actions": buttons}
+	var observation := {"visible": visible, "submenu": str(sub_menu.name) if sub_menu else "", "confirmation": confirmation != null, "text_scale": state.text_scale, "preferences": state.preference_snapshot(), "caller": "cinematic" if cinematic else ("pause" if pause_world else "title"), "actions": buttons}
+	# Scalar selectors cannot index the existing action array. Read the controls
+	# already built for this page; do not refresh previews or change focus here.
+	for item in actions:
+		var prefix: String = str(item.name).trim_suffix("Button").to_snake_case() + "_"
+		observation[prefix + "available"] = not item.disabled
+		observation[prefix + "reason"] = item.tooltip_text
+	return observation
 
 func _build_cinematic(column: BoxContainer, resume: Button, settings: Button, unused: Button, quit_button: Button) -> void:
 	for item in [resume, settings, unused, quit_button]:
