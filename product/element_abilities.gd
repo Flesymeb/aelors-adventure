@@ -247,7 +247,40 @@ func remove_projectile(projectile: Dictionary) -> void:
 	projectile.source.queue_free()
 
 func _mcp_state() -> Dictionary:
-	return {"phase":phase,"cast":cast,"clock":clock,"cooldowns":cooldowns,"projectiles":projectiles.size(),"burns":burns.size(),"practice_hits":practice_hits,"grounded":grounded}
+	# Observation only: never step, settle, prune or refresh live entities here.
+	# Native identities distinguish motion/tick suspension from unchanged counts.
+	var projectile_states: Array[Dictionary] = []
+	for projectile in projectiles:
+		if not is_instance_valid(projectile.node): continue
+		var position: Vector3 = projectile.node.global_position
+		var direction: Vector3 = projectile.direction
+		projectile_states.append({
+			"instance_id": projectile.node.get_instance_id(),
+			"path": str(projectile.node.get_path()),
+			"position": [position.x, position.y, position.z],
+			"direction": [direction.x, direction.y, direction.z],
+			"distance": projectile.distance,
+			"speed": 14.0, "max_distance": 18.0,
+			"remaining_flight_seconds": maxf(0, (18.0 - projectile.distance) / 14.0),
+			"queued_for_deletion": projectile.node.is_queued_for_deletion()
+		})
+	var burn_states: Array[Dictionary] = []
+	for status in burns:
+		if not is_instance_valid(status.target): continue
+		var position: Vector3 = status.target.global_position
+		burn_states.append({
+			"target_instance_id": status.target.get_instance_id(),
+			"target_path": str(status.target.get_path()),
+			"target_position": [position.x, position.y, position.z],
+			"target_health": status.target.health,
+			"remaining": status.remaining, "tick": status.tick,
+			"tick_interval": 1.0, "next_tick_seconds": maxf(0, 1.0 - status.tick),
+			"target_queued_for_deletion": status.target.is_queued_for_deletion()
+		})
+	return {"phase":phase,"cast":cast,"clock":clock,"cooldowns":cooldowns.duplicate(),"projectiles":projectiles.size(),"burns":burns.size(),"practice_hits":practice_hits.duplicate(),"grounded":grounded,
+		"projectile_states":projectile_states,"burn_states":burn_states,
+		"process_frame":Engine.get_process_frames(),"physics_frame":Engine.get_physics_frames(),
+		"tree_paused":get_tree().paused,"pause_owners":world.pause_owners.keys()}
 
 func lightning_beam(origin: Vector3, destination: Vector3) -> void:
 	var beam = MeshInstance3D.new()

@@ -239,6 +239,10 @@ func _process(delta: float) -> void:
 	xp_text.add_theme_font_size_override("font_size", int(15 * scale_now))
 	hp.value = state.health
 	xp.value = state.xp_progress()
+	# The plain root Control does not resize this card when its minima shrink.
+	# Release both retained dimensions after current text/font/content updates;
+	# following frames pick up queued container layout without replacing it.
+	vitals.reset_size()
 	for i in 5:
 		life_icons[i].texture = life_textures[0 if i < state.lives else 1]
 		life_icons[i].custom_minimum_size = Vector2(28, 36) * minf(scale_now, 1.3)
@@ -328,6 +332,13 @@ func _mcp_state() -> Dictionary:
 	var viewport_rect := get_viewport().get_visible_rect()
 	var rect := tracker.get_global_rect()
 	var minimum := tracker.get_combined_minimum_size()
+	var vitals_rect := vitals.get_global_rect()
+	var vitals_minimum := vitals.get_combined_minimum_size()
+	var vitals_children: Array[Dictionary] = []
+	for child in vitals.get_child(0).get_children():
+		var child_rect: Rect2 = child.get_global_rect()
+		var child_minimum: Vector2 = child.get_combined_minimum_size()
+		vitals_children.append({"path": str(child.get_path()), "x": child_rect.position.x, "y": child_rect.position.y, "w": child_rect.size.x, "h": child_rect.size.y, "minimum_w": child_minimum.x, "minimum_h": child_minimum.y, "visible": child.is_visible_in_tree()})
 	var life_back: PanelContainer = life_row.get_parent()
 	var life_rect := life_back.get_global_rect()
 	var life_minimum := life_back.get_combined_minimum_size()
@@ -341,6 +352,10 @@ func _mcp_state() -> Dictionary:
 		"viewport_rect": {"x": viewport_rect.position.x, "y": viewport_rect.position.y, "w": viewport_rect.size.x, "h": viewport_rect.size.y},
 		"window_size": [get_window().size.x, get_window().size.y],
 		"text_scale": state.text_scale,
+		"vitals_geometry": {"x": vitals_rect.position.x, "y": vitals_rect.position.y, "w": vitals_rect.size.x, "h": vitals_rect.size.y, "minimum_w": vitals_minimum.x, "minimum_h": vitals_minimum.y, "custom_minimum_w": vitals.custom_minimum_size.x, "custom_minimum_h": vitals.custom_minimum_size.y},
+		"vitals_children": vitals_children,
+		"vitals_health_text": health_text.text,
+		"vitals_xp_text": xp_text.text,
 		"tracker_visible": tracker.visible,
 		"tracker_visible_in_tree": tracker.is_visible_in_tree(),
 		"objective_visible": tracker_text.visible,
