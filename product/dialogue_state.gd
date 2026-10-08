@@ -29,6 +29,8 @@ var graphics_quality := "normal"
 var camera_shake := 0.5
 var damage_numbers := true
 var preference_error := ""
+var preference_load_error: int = ERR_FILE_NOT_FOUND
+var preference_save_error: Variant = null
 var tracked_quest := "rescue"
 var tracker_collapsed := false
 var reveal_speed := 30.0
@@ -117,6 +119,42 @@ func preference_snapshot() -> Dictionary:
 	var result := {}
 	for key in PREFERENCE_DEFAULTS: result[key] = get(key)
 	result["persistence_error"] = preference_error
+	return result
+
+func audio_observation() -> Dictionary:
+	# Read the live output configuration, not the requested values or playback flags.
+	# No application, signals, file I/O or gameplay mutation belongs in this projection.
+	var result := {"master_volume": master_volume, "music_volume": music_volume,
+		"effects_volume": effects_volume, "muted_sound": muted_sound,
+		"preference_error": preference_error, "preference_load_error": preference_load_error,
+		"preference_save_error": preference_save_error}
+	for bus in ["Master", "Music", "Effects"]:
+		var prefix: String = bus.to_lower() + "_"
+		var index := AudioServer.get_bus_index(bus)
+		result[prefix + "bus_present"] = index >= 0
+		for field in ["gain_db", "gain_enabled", "bus_muted", "bus_bypassed", "bus_volume_db", "bus_send", "effective_gain"]:
+			result[prefix + field] = null
+		result[prefix + "gain_present"] = false
+		if index < 0: continue
+		var bypassed := AudioServer.is_bus_bypassing_effects(index)
+		var muted := AudioServer.is_bus_mute(index)
+		var fader := AudioServer.get_bus_volume_db(index)
+		var effect_gain := 1.0
+		for effect_index in AudioServer.get_bus_effect_count(index):
+			var effect := AudioServer.get_bus_effect(index, effect_index)
+			if effect is AudioEffectAmplify and effect.resource_name == "AdventureOutputGain":
+				var enabled := AudioServer.is_bus_effect_enabled(index, effect_index)
+				result[prefix + "gain_present"] = true
+				result[prefix + "gain_db"] = effect.volume_db
+				result[prefix + "gain_enabled"] = enabled
+				if enabled and not bypassed: effect_gain *= db_to_linear(effect.volume_db)
+		result[prefix + "bus_muted"] = muted
+		result[prefix + "bus_bypassed"] = bypassed
+		result[prefix + "bus_volume_db"] = fader
+		result[prefix + "bus_send"] = str(AudioServer.get_bus_send(index))
+		# Linear gain at this bus stage, including mute/fader/bypass. This is
+		# configuration evidence only; captured and heard sound remains necessary.
+		result[prefix + "effective_gain"] = 0.0 if muted else db_to_linear(fader) * effect_gain
 	return result
 
 func begin() -> void:
@@ -251,7 +289,9 @@ func objective() -> String:
 	return "桥边巡守已清除 · 继续寻找被带走的村民（后续旅程尚未开放）"
 
 func _mcp_state() -> Dictionary:
-	return {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
+	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
+	observation.merge(audio_observation())
+	return observation
 
 func training_snapshot() -> Dictionary:
 	var facts := {}
@@ -388,12 +428,14 @@ func save_preferences() -> Error:
 	for key in PREFERENCE_DEFAULTS: config.set_value("settings", key, get(key))
 	var error := config.save("user://adventure_preferences.cfg.tmp")
 	if error == OK: error = DirAccess.rename_absolute("user://adventure_preferences.cfg.tmp", "user://adventure_preferences.cfg")
+	preference_save_error = error
 	preference_error = "" if error == OK else "设置仅本次生效 · 保存失败，请重试"
 	return error
 
 func load_preferences() -> void:
 	var config := ConfigFile.new()
-	if config.load("user://adventure_preferences.cfg") == OK:
+	preference_load_error = config.load("user://adventure_preferences.cfg")
+	if preference_load_error == OK:
 		for key in PREFERENCE_DEFAULTS:
 			var value: Variant = config.get_value("settings", key, get(key))
 			if PREFERENCE_DEFAULTS[key] is bool:

@@ -192,4 +192,6 @@ func _mcp_state() -> Dictionary:
 	var focus := get_viewport().gui_get_focus_owner()
 	var row: Control = focus.get_meta("focus_row", focus) if focus else null
 	var scroll: ScrollContainer = page.find_child("PageScroll", true, false)
-	return {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible, "focus_rect": str(row.get_global_rect()) if row else "", "viewport_rect": str(scroll.get_global_rect()), "feedback": feedback.text, "feedback_rect": str(feedback.get_global_rect()), "scroll": scroll.scroll_vertical}
+	var observation := {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible, "focus_rect": str(row.get_global_rect()) if row else "", "viewport_rect": str(scroll.get_global_rect()), "feedback": feedback.text, "feedback_rect": str(feedback.get_global_rect()), "scroll": scroll.scroll_vertical}
+	observation.merge(host.state.audio_observation())
+	return observation
