@@ -24,7 +24,6 @@ var shown_xp := 0.0
 var previous: Dictionary = {}
 var notifications: Array[Dictionary] = []
 var equipment_back: PanelContainer
-var equipment_row: Label
 var shortcut_row: HBoxContainer
 var shortcut_slots: Dictionary = {}
 var journal: Control
@@ -100,32 +99,42 @@ func _ready() -> void:
 	retry.pressed.connect(func(): world._save_opening(failed_slot))
 	notice_rows.add_child(retry)
 	equipment_back = PanelContainer.new()
+	equipment_back.name = "BottomShortcuts"
 	equipment_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(equipment_back)
-	var shortcut_column = VBoxContainer.new()
-	equipment_back.add_child(shortcut_column)
 	shortcut_row = HBoxContainer.new()
+	shortcut_row.name = "ShortcutIcons"
+	shortcut_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	shortcut_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	shortcut_column.add_child(shortcut_row)
-	for pair in [["sword","sword"],["bow","bow"],["lamp","lantern"],["fire","fire"],["lightning","lightning"],["item","potion"]]:
+	equipment_back.add_child(shortcut_row)
+	for pair in [["sword","sword"],["bow","bow"],["lamp","lantern"],["fire","fire"],["lightning","lightning"],["item","potion"],["bag","backpack"],["ability","ability"],["journal","journal"]]:
 		var slot = PanelContainer.new()
+		slot.name = str(pair[0]).capitalize() + "Shortcut"
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var frame: StyleBox = root.theme.get_stylebox("panel", "PanelContainer").duplicate()
+		frame.set_content_margin(SIDE_LEFT, 8)
+		frame.set_content_margin(SIDE_RIGHT, 8)
+		frame.set_content_margin(SIDE_TOP, 6)
+		frame.set_content_margin(SIDE_BOTTOM, 6)
+		slot.add_theme_stylebox_override("panel", frame)
 		shortcut_row.add_child(slot)
 		var column = VBoxContainer.new()
+		column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(column)
 		var icon = TextureRect.new()
 		icon.texture = load("res://assets/ui/icons/%s.png" % pair[1])
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(44,44)
+		icon.custom_minimum_size = Vector2(36,36)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon.modulate = Color(1,0.84,0.48)
 		column.add_child(icon)
 		var key = label(column)
 		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		shortcut_slots[pair[0]] = {"panel":slot,"icon":icon,"key":key}
-	equipment_row = label(shortcut_column)
-	equipment_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	equipment_row.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	shortcut_slots.bag.key.text = "I 背包"
+	shortcut_slots.ability.key.text = "K 能力"
+	shortcut_slots.journal.key.text = "J 日志"
 	restore_view()
 	state.save_finished.connect(_save_finished)
 	journal = preload("res://ui/quest_journal.tscn").instantiate()
@@ -257,7 +266,10 @@ func _process(delta: float) -> void:
 		if hint == "" and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
 	for pair in [["1","sword","巡路剑",state.sword_owned],["2","bow","巡路弓",state.bow_owned],["3","lamp","旧灯",state.lamp_owned]]:
 		var slot: Dictionary = shortcut_slots[pair[1]]
-		slot.panel.visible = pair[3] and state.inventory.count(pair[1]) > 0
+		# Acquisition facts also drive the actual hand/back mounts. The bag's
+		# compatibility mirror can settle on its next open/load; it must not
+		# suppress a weapon that the player has just genuinely earned.
+		slot.panel.visible = pair[3]
 		slot.key.text = pair[0] + (" ◆" if world.player.weapon_mode == pair[1] else "")
 		slot.panel.tooltip_text = pair[2]
 		slot.icon.modulate = Color(1,0.85,0.4) if world.player.weapon_mode == pair[1] else Color(0.72,0.67,0.53)
@@ -273,23 +285,29 @@ func _process(delta: float) -> void:
 	item_slot.panel.visible = item_count > 0
 	item_slot.icon.texture = load(state.inventory.PROTOSET.data[state.quick_item].image)
 	item_slot.key.text = "6 · %d" % item_count
-	equipment_row.text = "I 背包 · K 能力 · J 日志"
-	equipment_row.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
-	for slot in shortcut_slots.values(): slot.key.add_theme_font_size_override("font_size",int(14 * minf(scale_now,1.5)))
-	equipment_back.custom_minimum_size.x = 0
-	equipment_back.size = Vector2.ZERO
-	equipment_back.position = Vector2((view.x - equipment_back.get_combined_minimum_size().x) * 0.5,view.y - equipment_back.get_combined_minimum_size().y - 12)
+	for slot in shortcut_slots.values():
+		slot.key.add_theme_font_size_override("font_size",int(14 * scale_now))
+		slot.icon.custom_minimum_size = Vector2(36,36) * minf(scale_now,1.25)
+	# Width belongs to this root-owned panel, not to the number of earned slots.
+	# Retain it while releasing height after a scale/ownership change. No wrapped
+	# instruction label participates in its minimum-size calculation.
+	equipment_back.custom_minimum_size.x = minf(310 * scale_now, view.x - 40)
+	var shortcut_minimum := equipment_back.get_combined_minimum_size()
+	equipment_back.size = Vector2(maxf(equipment_back.custom_minimum_size.x, shortcut_minimum.x), shortcut_minimum.y)
+	equipment_back.position = Vector2((view.x - equipment_back.size.x) * 0.5,view.y - equipment_back.size.y - 12)
 	prompt.text = hint
 	prompt.visible = hint != ""
-	var ammo_top := equipment_back.position.y - 36 * scale_now
+	var ammo_top := equipment_back.position.y - 12
 	var prompt_height := maxf(prompt.get_minimum_size().y, 28 * scale_now)
 	prompt.size = Vector2(view.x * 0.6, prompt_height)
 	# Control may retain a larger minimum while the new font layout settles.
 	# Position by its actual clamped size, including during a scale change.
 	prompt.position = Vector2(view.x * 0.2, ammo_top - prompt.size.y - 18)
-	notices.size.x = view.x * 0.5
-	notice_text.custom_minimum_size.x = view.x * 0.5 - 32
-	notices.position = Vector2(view.x * 0.25, prompt.position.y - maxf(notices.size.y, notices.get_combined_minimum_size().y) - 18)
+	# Notifications use the left edge, leaving the central actor/aim lane free.
+	var notice_width := minf(380 * scale_now, view.x * 0.32)
+	notice_text.custom_minimum_size.x = notice_width - 32
+	notices.size = Vector2(notice_width, 0)
+	notices.position = Vector2(20, prompt.position.y - maxf(notices.size.y, notices.get_combined_minimum_size().y) - 12)
 
 func short_action(text: String) -> String:
 	return {"rescue": "与广场边的伊莎交谈" if not state.q01_accepted else _next_action(), "sword": _next_action(), "bow": "返回伊莎处" if state.bow_training_complete else ("找草地边的罗恩" if not state.bow_owned else "瞄准草靶 · 蓄力后松开")}.get(state.tracked_quest, text)
@@ -314,6 +332,10 @@ func _mcp_state() -> Dictionary:
 	var life_rect := life_back.get_global_rect()
 	var life_minimum := life_back.get_combined_minimum_size()
 	observation.merge({
+		"shortcut_rect": str(equipment_back.get_global_rect()),
+		"shortcut_minimum": str(equipment_back.get_combined_minimum_size()),
+		"prompt_rect": str(prompt.get_global_rect()),
+		"notice_rect": str(notices.get_global_rect()),
 		"process_frame": Engine.get_process_frames(),
 		"physics_frame": Engine.get_physics_frames(),
 		"viewport_rect": {"x": viewport_rect.position.x, "y": viewport_rect.position.y, "w": viewport_rect.size.x, "h": viewport_rect.size.y},
@@ -329,4 +351,9 @@ func _mcp_state() -> Dictionary:
 		"life_backplate_geometry": {"x": life_rect.position.x, "y": life_rect.position.y, "w": life_rect.size.x, "h": life_rect.size.y, "minimum_w": life_minimum.x, "minimum_h": life_minimum.y},
 		"tracker_geometry": {"x": rect.position.x, "y": rect.position.y, "w": rect.size.x, "h": rect.size.y, "minimum_w": minimum.x, "minimum_h": minimum.y, "custom_minimum_w": tracker.custom_minimum_size.x, "custom_minimum_h": tracker.custom_minimum_size.y}
 	})
+	var slots: Dictionary = {}
+	for id in shortcut_slots:
+		var slot: Dictionary = shortcut_slots[id]
+		slots[id] = {"visible": slot.panel.is_visible_in_tree(), "key": slot.key.text, "rect": str(slot.panel.get_global_rect())}
+	observation["shortcuts"] = slots
 	return observation

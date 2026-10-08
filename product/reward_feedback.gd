@@ -36,7 +36,7 @@ func swing() -> void:
 	# Existing qualified Kenney stem; no template WAV licensing assumed.
 	sound(preload("res://assets/dialogue/sounds/Audio/pluck_002.ogg"), -24, 0.55)
 
-func add_cue(text: String, position: Vector2, color: Color, lifetime = 1.0) -> void:
+func add_cue(text: String, position: Vector2, color: Color, lifetime = 1.0) -> Dictionary:
 	var label = Label.new()
 	label.text = text
 	label.theme = preload("res://dialogue_theme.tres")
@@ -47,7 +47,9 @@ func add_cue(text: String, position: Vector2, color: Color, lifetime = 1.0) -> v
 	label.position = position
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
-	cues.append({"label": label, "origin": position, "time": 0.0, "duration": lifetime})
+	var cue := {"label": label, "origin": position, "time": 0.0, "duration": lifetime}
+	cues.append(cue)
+	return cue
 
 func reward(amount: int) -> void:
 	var size = get_viewport().get_visible_rect().size
@@ -85,11 +87,34 @@ func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit") -> vo
 			pitch = 0.72
 	var camera: Camera3D = training.player.camera
 	if not camera.is_position_behind(point):
-		var text = outcome if hp_loss <= 0 or not training.state.damage_numbers else (outcome + " −%s" % snappedf(hp_loss, 0.1))
-		add_cue(text, camera.unproject_position(point) + Vector2(-25, -45), color)
+		var loss_text := str(int(hp_loss)) if is_equal_approx(hp_loss, roundf(hp_loss)) else str(snappedf(hp_loss, 0.1))
+		var text = outcome if hp_loss <= 0 or not training.state.damage_numbers else (outcome + " −" + loss_text).strip_edges()
+		if text != "":
+			var cue := add_cue(text, Vector2.ZERO, color)
+			cue["world_point"] = point
+			cue["hp_loss"] = hp_loss
+			cue["kind"] = kind
+			cue.label.position = impact_position(cue, 0)
 	sound(stream, volume, pitch)
 	spark(point, color)
 	if kind in ["hurt", "hit", "parry", "defeat"]: training.player.start_camera_shake()
+
+func impact_position(cue: Dictionary, drift: float) -> Vector2:
+	var view := get_viewport().get_visible_rect().size
+	var anchor: Vector2 = training.player.camera.unproject_position(cue.world_point)
+	var extent: Vector2 = cue.label.get_minimum_size()
+	# Beside the contact, clear of the face, hands and central aim/loot marker.
+	var pos := anchor + Vector2(72, -30 - drift)
+	if pos.x + extent.x > view.x - 16: pos.x = anchor.x - 72 - extent.x
+	var obstacles: Array[Rect2] = training.hud.readout_obstacles()
+	for other in cues:
+		if other != cue and other.label.visible:
+			obstacles.append(other.label.get_global_rect().grow(8))
+	for obstacle in obstacles:
+		if Rect2(pos, extent).intersects(obstacle): pos.y = obstacle.end.y + 8
+	pos.x = clampf(pos.x, 16, maxf(16, view.x - extent.x - 16))
+	pos.y = clampf(pos.y, 16, maxf(16, view.y - extent.y - 16))
+	return pos
 
 func spark(point: Vector3, color: Color) -> void:
 	if training.state.reduced_motion: return
@@ -131,7 +156,21 @@ func _process(delta: float) -> void:
 		cue.time += delta
 		var fraction: float = cue.time / cue.duration
 		cue.label.modulate.a = clampf(1.0 - fraction, 0, 1)
-		if not training.state.reduced_motion: cue.label.position = cue.origin + Vector2(0, -44 * fraction)
+		cue.label.add_theme_font_size_override("font_size", int(26 * training.state.text_scale))
+		cue.label.reset_size()
+		var drift := 0.0 if training.state.reduced_motion else 44 * fraction
+		if cue.has("world_point"):
+			var camera: Camera3D = training.player.camera
+			cue.label.visible = not camera.is_position_behind(cue.world_point) and Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size).has_point(camera.unproject_position(cue.world_point))
+			if cue.label.visible: cue.label.position = impact_position(cue, drift)
+		else:
+			cue.label.position = cue.origin + Vector2(0, -drift)
 		if fraction >= 1:
 			cue.label.queue_free()
 			cues.erase(cue)
+
+func _mcp_state() -> Dictionary:
+	var readouts: Array[Dictionary] = []
+	for cue in cues:
+		readouts.append({"text": cue.label.text, "rect": str(cue.label.get_global_rect()), "visible": cue.label.visible, "age": cue.time, "duration": cue.duration, "hp_loss": cue.get("hp_loss", 0), "kind": cue.get("kind", "reward")})
+	return {"readouts": readouts}

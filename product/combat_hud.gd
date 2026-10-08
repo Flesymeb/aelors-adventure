@@ -95,4 +95,12 @@ func _process(_delta: float) -> void:
 	if training.notice_time > 0: status.add_theme_color_override("font_color", Color(1, 0.91, 0.64))
 
 func _mcp_state() -> Dictionary:
-	return {"health": training.state.health, "experience_target": training.state.experience, "enemy_bar_visible": enemy.visible, "enemy_hp": enemy_hp.value, "status": status.text}
+	return {"health": training.state.health, "experience_target": training.state.experience, "enemy_bar_visible": enemy.visible, "enemy_hp": enemy_hp.value, "enemy_bar_rect": str(enemy.get_global_rect()), "status": status.text}
+
+func readout_obstacles() -> Array[Rect2]:
+	# This owner supplies geometry only; HP still comes from health_component.
+	var rects: Array[Rect2] = []
+	if enemy.is_visible_in_tree(): rects.append(enemy.get_global_rect().grow(12))
+	for entry in bridge_bars.values():
+		if entry.rows.is_visible_in_tree(): rects.append(entry.rows.get_global_rect().grow(12))
+	return rects
