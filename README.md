@@ -23,8 +23,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 34 |
-| Closed | 20 |
+| Open | 32 |
+| Closed | 22 |
 | All | 54 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
@@ -33,8 +33,8 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 17 |
-| Verified closed | 12 |
+| Active | 15 |
+| Verified closed | 14 |
 | Policy invalidated | 3 |
 | Waived | 0 |
 | All in this run | 32 |
@@ -48,14 +48,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity still fails because required portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
-| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Sword acquisition notice lifetime, presentation variants and no-replay checks remain unverified. |
+| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | CLOSED | Independently verified resolved at loop 17. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
-| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Slot-1 read-denied recovery passed, but corrupt-history and distinct-history entry-binding coverage remain incomplete. |
+| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Continue no-replay passed, but corrupt-history and distinct-history title recovery remain unverified. |
 | `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | CLOSED | Independently verified resolved at loop 11. |
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
-| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:held-aim-controls-settings-release-fresh. Qualified Host replay and complete intermediate pause/input observations remain unavailable. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent channel routing, persistence and layout checks progressed, but required heard audio comparisons remain unverified. |
+| `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Required heard Music/Effects comparisons remain unavailable; captured metrics cannot close audio acceptance. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -82,7 +82,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 34 | 20 | 54 |
+| GitHub HoH namespace | 32 | 22 | 54 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -120,7 +120,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-17-9f390098914e` | `development_snapshot:attempt-ffcd5ecd5db16191cf82635f` | NEEDS VISUAL QA |
+| `loop-17-9f390098914e` | `development_snapshot:attempt-ffcd5ecd5db16191cf82635f` | BLOCKED |
 
 ### Project Planner
 
@@ -147,7 +147,18 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-17-9f390098914e` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 2 (1 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `r15_audio_listening_unverified` | MAJOR | INTERNAL | HIGH | Required heard Music/Effects comparisons remain unavailable; captured metrics cannot close audio acceptance. |
+| `r15_title_recovery_unverified` | MINOR | INTERNAL | MEDIUM | Continue no-replay passed, but corrupt-history and distinct-history title recovery remain unverified. |
 
 ---
 
@@ -966,5 +977,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-17-9f390098914e`
 - Latest warm start: `loop-17-4664dbf42379`
 - Last published: `loop-17-9f390098914e`
-- Best verified: `loop-16-4664dbf42379`
+- Best verified: `loop-17-9f390098914e`
 - Generated by the HoH host from immutable run evidence.
