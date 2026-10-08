@@ -175,7 +175,11 @@ func ground_module() -> void:
 		await get_tree().physics_frame
 		grounded = place_on_ground(hers, HERS_XZ) and place_on_ground(target, PRACTICE_XZ) and place_on_ground(monster, ENCOUNTER_XZ)
 		if grounded: break
-	monster.home = monster.global_position
+	if grounded:
+		monster.home = monster.global_position
+		# Home, terrain-derived navigation and the reset destination share one anchor.
+		# Rebuild only a previously bound region; initial reset creates it otherwise.
+		if is_instance_valid(monster.navigation_region): monster.build_navigation()
 	if not grounded:
 		push_error("Sword module placement lacks authored village ground")
 	restore_history()
@@ -276,7 +280,7 @@ func grant_sword() -> void:
 	player.request_weapon("sword")
 	hers.demonstrate()
 	commit()
-	tell("已取得巡路剑 · 先击中右侧草靶；弓和旧灯尚未取得", 5)
+	tell("取得巡路剑 · 1 拔剑 · 试击草靶", 5)
 
 func player_locked() -> bool:
 	return state.lives <= 0 or phase == "death" or hurt_time > 0
@@ -562,6 +566,9 @@ func show_remnant() -> void:
 	remnant.name = "ExperienceRemnant"
 	add_child(remnant)
 	var xz = Vector2(state.remnant_position.x, state.remnant_position.z)
+	# A pre-layout unclaimed reward still belongs to the same encounter. Keep its
+	# committed history, but display it within the revised reachable training yard.
+	if xz.distance_to(ENCOUNTER_XZ) > 6.0: xz = ENCOUNTER_XZ
 	if xz == Vector2.ZERO: xz = ENCOUNTER_XZ
 	if not place_on_ground(remnant, xz) and not place_on_ground(remnant, ENCOUNTER_XZ):
 		remnant.queue_free()

@@ -3,9 +3,11 @@ extends RefCounted
 const MAP_ID := "forest-885de576-v1"
 const SPAWN := Vector2(116.5, 97.25)
 const ISHA := Vector2(116.5, 94.5)
-const HERS := Vector2(112, 102)
-const PRACTICE := Vector2(115, 102)
-const ENCOUNTER := Vector2(108, 118)
+# The dirt path beside the western timber house is the safe practice yard.
+# The lower branch introduces the live challenge, beyond Hers' withdrawal stance.
+const HERS := Vector2(110, 106)
+const PRACTICE := Vector2(113, 105)
+const ENCOUNTER := Vector2(116, 112)
 const RONEN := Vector2(123, 103)
 const BOW_TARGET := Vector2(123, 109)
 const COVER := Vector2(125, 106)

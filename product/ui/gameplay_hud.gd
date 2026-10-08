@@ -317,10 +317,10 @@ func short_action(text: String) -> String:
 	return {"rescue": "与广场边的伊莎交谈" if not state.q01_accepted else _next_action(), "sword": _next_action(), "bow": "返回伊莎处" if state.bow_training_complete else ("找草地边的罗恩" if not state.bow_owned else "瞄准草靶 · 蓄力后松开")}.get(state.tracked_quest, text)
 
 func _next_action() -> String:
-	if not state.sword_owned: return "找村口的赫斯"
+	if not state.sword_owned: return "转身沿土路 · 木屋旁找赫斯"
 	if not state.practice_hit: return "用剑击中赫斯旁的草靶"
 	if not state.practice_defense: return "靠近赫斯 · 挡住或躲开模拟攻击"
-	if not state.encounter_defeated: return "沿路前往训练怪"
+	if not state.encounter_defeated: return "土路河边 · 退回赫斯可脱离"
 	if not state.remnant_collected: return "靠近金色残响"
 	if not state.bow_owned: return "找草地边的罗恩"
 	return "瞄准罗恩前方草靶" if not state.bow_training_complete else state.objective()

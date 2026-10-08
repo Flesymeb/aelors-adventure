@@ -235,10 +235,10 @@ func restore_config(config: ConfigFile) -> Dictionary:
 
 func objective() -> String:
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
-	if not sword_owned: return "出发前的训练 · 找村口的赫斯"
+	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
 	if not practice_defense: return "防御练习 · 靠近赫斯，挡住或躲开模拟攻击"
-	if not encounter_defeated: return "初场实战 · 沿路前往训练怪；危险区外可退回"
+	if not encounter_defeated: return "初场实战 · 沿土路到河边；退回赫斯处可脱离"
 	if not remnant_collected: return "初战获胜 · 靠近金色残响自动拾取经验"
 	if not bow_owned: return "巡路弓 · 找草地边的罗恩"
 	if not bow_training_complete: return "弓练习 · 瞄准罗恩前方草靶，蓄力后松开；罗恩处免费补箭"
@@ -435,14 +435,14 @@ func quest_entries() -> Array[Dictionary]:
 		"action": objective(), "steps": ["答应伊莎的求援"] if q01_accepted else []})
 	if q01_accepted:
 		var steps: Array[String] = []
-		if sword_owned: steps.append("从村口的赫斯处取得巡路剑")
+		if sword_owned: steps.append("从木屋旁的赫斯处取得巡路剑")
 		if practice_hit: steps.append("用剑击中草靶")
 		if practice_defense: steps.append("挡住或躲开模拟攻击")
 		if practice_parry: steps.append("成功振刀")
 		if encounter_defeated: steps.append("击败路边的训练怪")
 		if remnant_collected: steps.append("拾取初战残响")
 		rows.append({"id": "sword", "title": "出发前的训练", "complete": remnant_collected,
-			"context": "老战士赫斯在村口教授巡路剑。先练习，再到道路旁验证所学。",
+			"context": "从灯台转身沿土路，到木屋旁向赫斯学剑。先练草靶，再沿土路到河边挑战训练怪；退回赫斯处可脱离。",
 			"action": "剑训练已完成" if remnant_collected else objective(), "steps": steps})
 	if remnant_collected or bow_owned:
 		var steps: Array[String] = []
