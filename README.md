@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 32 |
-| Closed | 17 |
-| All | 49 |
+| Open | 33 |
+| Closed | 18 |
+| All | 51 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 15 |
-| Verified closed | 9 |
+| Active | 16 |
+| Verified closed | 10 |
 | Policy invalidated | 3 |
 | Waived | 0 |
-| All in this run | 27 |
+| All in this run | 29 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -51,7 +51,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Earned progression supplies additional HUD observations, but does not complete the selected first-event evidence issue. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
 | `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Continue preservation is observed, but the selected title closeout issue still lacks its remaining boundary evidence. |
-| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The first live enemy cannot pursue the player because navigation remains unready; the encounter behaves as a stationary damage target. |
+| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | CLOSED | Independently verified resolved at loop 11. |
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
@@ -68,8 +68,10 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
 | `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
-| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | The local tracker repair passes, but the full milestone and compound R04/R22 acceptance remain incompletely assessed. |
-| `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | The immediately next chapter-entry boundary has insufficient independent evidence. |
+| `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | Attack/contact audio output and causality were captured; perceptual audio quality remains unverified. |
+| `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | Task condition 0 remains blocked: grounded pursuit works, but clearance around a reachable existing solid obstacle lacks independent evidence. |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | untitled issue |
+| `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -77,7 +79,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 32 | 17 | 49 |
+| GitHub HoH namespace | 33 | 18 | 51 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -115,7 +117,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-11-059b740c684a` | `development_snapshot:attempt-c34446e580c9c5659a0ca64a` | NEEDS VISUAL QA |
+| `loop-11-059b740c684a` | `development_snapshot:attempt-c34446e580c9c5659a0ca64a` | BLOCKED |
 
 ### Project Planner
 
@@ -142,7 +144,18 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-11-059b740c684a` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 2 (1 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `initial_enemy_obstacle_clearance_unverified` | MAJOR | INTERNAL | HIGH | Task condition 0 remains blocked: grounded pursuit works, but clearance around a reachable existing solid obstacle lacks independent evidence. |
+| `initial_encounter_audio_quality_unverified` | MINOR | INTERNAL | MEDIUM | Attack/contact audio output and causality were captured; perceptual audio quality remains unverified. |
 
 ---
 
@@ -664,5 +677,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-11-059b740c684a`
 - Latest warm start: `loop-11-4273fba4ff63`
 - Last published: `loop-11-059b740c684a`
-- Best verified: `loop-10-4273fba4ff63`
+- Best verified: `loop-11-059b740c684a`
 - Generated by the HoH host from immutable run evidence.
