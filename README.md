@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 31 |
+| Open | 33 |
 | Closed | 16 |
-| All | 47 |
+| All | 49 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 14 |
+| Active | 16 |
 | Verified closed | 8 |
 | Policy invalidated | 3 |
 | Waived | 0 |
-| All in this run | 25 |
+| All in this run | 27 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -48,11 +48,11 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
 | `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Adjacent dialogue continuity still fails because required portraits are absent. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
-| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Selected HUD first-event evidence remains incomplete; the existing save does not supply the required notice states. |
+| `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | OPEN | Earned progression supplies additional HUD observations, but does not complete the selected first-event evidence issue. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
-| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Saved five-life restoration is observed; remaining title closeout histories and boundaries remain unverified. |
-| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The existing save supplies an idle enemy, leaving obstacle/contact and perceptual actor evidence incomplete. |
-| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | Tracker height recovers, but its vertical position does not; the complete frozen matrix remains unfinished. |
+| `title_entry_closeout_evidence_missing` | [#24](https://github.com/Flesymeb/aelors-adventure/issues/24) | OPEN | Continue preservation is observed, but the selected title closeout issue still lacks its remaining boundary evidence. |
+| `actor_foundation_evidence_remaining` | [#31](https://github.com/Flesymeb/aelors-adventure/issues/31) | OPEN | The first live enemy cannot pursue the player because navigation remains unready; the encounter behaves as a stationary damage target. |
+| `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | OPEN | The tracker geometry repair passes the complete short/wrapped matrix; hud_tracker_retained_height is verified. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | OPEN | Nested pause timing is partially verified; active-world, held-input and manual-slot fault coverage remains incomplete. |
 | `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Settings scale and positive audio observations do not close the required effect-comparison matrix. |
@@ -67,7 +67,9 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
-| `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | The authored step crossing and settled support are demonstrated, but uninterrupted support and complete R02 acceptance remain unverified. |
+| `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | The local tracker repair passes, but the full milestone and compound R04/R22 acceptance remain incompletely assessed. |
+| `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | The immediately next chapter-entry boundary has insufficient independent evidence. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -75,7 +77,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 31 | 16 | 47 |
+| GitHub HoH namespace | 33 | 16 | 49 |
 | Outside this run's table | 17 | 5 | 22 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -113,7 +115,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-10-4273fba4ff63` | `development_snapshot:attempt-fc4dfcc399e690f881f04171` | DEVELOPER REPORT READY |
+| `loop-10-4273fba4ff63` | `development_snapshot:attempt-fc4dfcc399e690f881f04171` | BLOCKED |
 
 ### Project Planner
 
@@ -140,7 +142,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-10-4273fba4ff63` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (2 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `tracker_geometry_recovery_verified` | NOTE | INTERNAL | LOW | The tracker geometry repair passes the complete short/wrapped matrix; hud_tracker_retained_height is verified. |
+| `enemy_pursuit_unavailable` | MAJOR | DEGRADED | HIGH | The first live enemy cannot pursue the player because navigation remains unready; the encounter behaves as a stationary damage target. |
+| `milestone_acceptance_evidence_missing` | MAJOR | INTERNAL | HIGH | The local tracker repair passes, but the full milestone and compound R04/R22 acceptance remain incompletely assessed. |
+| `title_closeout_still_unverified` | NOTE | INTERNAL | LOW | Continue preservation is observed, but the selected title closeout issue still lacks its remaining boundary evidence. |
+| `hud_first_event_coverage_incomplete` | NOTE | INTERNAL | LOW | Earned progression supplies additional HUD observations, but does not complete the selected first-event evidence issue. |
+| `next_chapter_boundary_unverified` | MINOR | INTERNAL | LOW | The immediately next chapter-entry boundary has insufficient independent evidence. |
 
 ---
 
@@ -610,5 +627,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-10-4273fba4ff63`
 - Latest warm start: `loop-10-cee6947a53ab`
 - Last published: `loop-10-4273fba4ff63`
-- Best verified: `loop-09-cee6947a53ab`
+- Best verified: `loop-10-4273fba4ff63`
 - Generated by the HoH host from immutable run evidence.
