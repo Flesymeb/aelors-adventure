@@ -24,8 +24,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 | Field | Value |
 | --- | --- |
 | Open | 38 |
-| Closed | 28 |
-| All | 66 |
+| Closed | 29 |
+| All | 67 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -34,10 +34,10 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 | Field | Value |
 | --- | --- |
 | Active | 21 |
-| Verified closed | 19 |
+| Verified closed | 20 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 45 |
+| All in this run | 46 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,20 +55,20 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Required independent Music/Effects listening acceptance remains unresolved. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Required independent Music/Effects listening remains unresolved. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening success does not close the remaining opening acceptance matrix. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Successful opening skip and pause do not close the remaining acceptance matrix. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
 | `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
-| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | BLOCKED | Required chapter progression remains impossible; the new guards extend an unfinished slice. |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Missing departure paintings and provenance make ordinary chapter travel unavailable. |
 | `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
 | `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | untitled issue |
 | `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
@@ -81,13 +81,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue continuity still lacks the counterpart portrait. |
-| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | The original absent-controls and pending-teardown observation boundaries remain unverified. |
+| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | The selected complete village is not adopted, and retained map/actor transfer declarations remain unauthenticated. |
 | `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | untitled issue |
 | `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | untitled issue |
-| `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | OPEN | Guard skip, victory and durable reward acceptance remain independently unverified. |
 | `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | OPEN | Retained texture dependencies still produce resource-load errors. |
+| `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | OPEN | Guard settlement and ordinary E01 acceptance remain independently unverified. |
+| `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | OPEN | The pillar approach camera becomes occluded by authored rock and hides the player. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -95,7 +96,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 38 | 28 | 66 |
+| GitHub HoH namespace | 38 | 29 | 67 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -132,7 +133,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-25-0718a4434195` | `development_snapshot:attempt-b01bb0e8360be7320ca7286d` | NEEDS VISUAL QA |
+| `loop-25-0718a4434195` | `development_snapshot:attempt-b01bb0e8360be7320ca7286d` | BLOCKED |
 
 ### Project Planner
 
@@ -159,7 +160,21 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-25-0718a4434195` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 5 (4 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `milestone_route_incomplete` | BLOCKER | USER BLOCKING | HIGH | Missing departure paintings and provenance make ordinary chapter travel unavailable. |
+| `guard_closeout_evidence_incomplete` | MAJOR | INTERNAL | HIGH | Guard settlement and ordinary E01 acceptance remain independently unverified. |
+| `opening_matrix_unverified` | MAJOR | INTERNAL | HIGH | Successful opening skip and pause do not close the remaining acceptance matrix. |
+| `settings_listening_unverified` | MAJOR | INTERNAL | HIGH | Required independent Music/Effects listening remains unresolved. |
+| `pillar_approach_camera_occluded` | MINOR | DEGRADED | MEDIUM | The pillar approach camera becomes occluded by authored rock and hides the player. |
 
 ---
 
@@ -1387,5 +1402,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-25-0718a4434195`
 - Latest warm start: `loop-25-c7062b95cb09`
 - Last published: `loop-25-0718a4434195`
-- Best verified: `loop-24-c7062b95cb09`
+- Best verified: `loop-25-0718a4434195`
 - Generated by the HoH host from immutable run evidence.
