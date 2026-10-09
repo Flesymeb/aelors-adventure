@@ -3,6 +3,20 @@ const STATE = preload("res://dialogue_state.gd")
 const BRIDGE_TEST = preload("res://tests/bridge_actions_test.gd")
 const ACTION = preload("res://combat/snaiel/ranged_action.gd")
 
+class PickupTraining extends Node:
+	var locked := false
+	func player_locked() -> bool: return locked
+	func commit() -> void: pass # Isolated adapter test never writes user saves.
+	func tell(_message: String, _seconds := 3) -> void: pass
+
+class PickupWorld extends Node3D:
+	var player: CharacterBody3D
+	var training: PickupTraining
+
+class PickupEnemy extends CharacterBody3D:
+	var stable_id := "channel_ranged"
+	func reset_encounter() -> void: pass
+
 static func prepared() -> Node:
 	var state: Node = BRIDGE_TEST.prepared()
 	state.perform_bridge_action("light")
@@ -69,4 +83,53 @@ static func run() -> Dictionary:
 	checks.interruption_no_late_release = releases == [1]
 	action.free()
 	board.free()
+	return checks
+
+static func pending_pickup_checks(parent: Node) -> Dictionary:
+	# Explicitly invoked component fixture, not an earned death/Continue journey.
+	# Exercise the inherited adapter and real GLoot insertion without touching
+	# the live adventure, terrain, audio preferences or any save file.
+	var state := prepared()
+	state.settle_guard("channel_ranged", Vector3(0,50,0), {"id":"healing","quantity":1})
+	var xp: int = state.experience
+	var stage := PickupWorld.new()
+	stage.process_mode = Node.PROCESS_MODE_DISABLED
+	parent.add_child(stage)
+	stage.player = CharacterBody3D.new()
+	stage.add_child(stage.player)
+	stage.player.position = Vector3(0,50,0)
+	stage.training = PickupTraining.new()
+	stage.add_child(stage.training)
+	state.inventory = preload("res://inventory/product_inventory.gd").new()
+	state.inventory.state = state
+	stage.add_child(state.inventory)
+	var encounter := preload("res://combat/bridge_encounter.gd").new()
+	stage.add_child(encounter)
+	encounter.world = stage
+	encounter.state = state
+	encounter.grounded = true
+	var enemy := PickupEnemy.new()
+	stage.add_child(enemy)
+	encounter.enemies.append(enemy)
+	encounter.restore_history()
+	var checks := {"pending_sprite_restored": encounter.pickups.has("channel_ranged") and encounter.pickups.channel_ranged.visible}
+	var point: Vector3 = encounter.pickups.channel_ranged.global_position
+	# Repeat restoration is idempotent and uses the saved position/drop.
+	encounter.restore_history()
+	checks.pending_identity_position = encounter.pickups.size() == 1 and encounter.pickups.channel_ranged.global_position == point and state.experience == xp
+	stage.training.locked = true
+	encounter._physics_process(1.0)
+	checks.locked_retains_pending = encounter.pickups.has("channel_ranged") and state.guard_ranged_reward_state == "pending"
+	stage.training.locked = false
+	state.inventory.accept("healing",9)
+	encounter._physics_process(1.0)
+	checks.failed_insertion_retains_pending = encounter.pickups.has("channel_ranged") and state.guard_ranged_reward_state == "pending" and state.experience == xp
+	state.health = 50
+	state.inventory.use_item("healing")
+	encounter._physics_process(1.1)
+	checks.collection_once = not encounter.pickups.has("channel_ranged") and state.guard_ranged_reward_state == "collected" and state.inventory.count("healing") == 9 and state.experience == xp
+	encounter.restore_history()
+	checks.collected_not_recreated = encounter.pickups.is_empty() and state.guard_ranged_xp == 10
+	stage.free()
+	state.free()
 	return checks

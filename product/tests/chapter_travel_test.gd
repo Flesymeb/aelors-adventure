@@ -92,3 +92,24 @@ static func collision_handoff_checks() -> Dictionary:
 	source.free()
 	router.free()
 	return checks
+
+static func departure_collision_checks(world: Node3D) -> Dictionary:
+	# Opt-in live physics query. No movement, progression or save writes.
+	var arch: Node3D = world.village.get_node("Terrain3D/Big rocks/Node3D")
+	var body := arch.get_node("StaticBody3D") as StaticBody3D
+	var extra := arch.get_node("MeshInstance3D6") as MeshInstance3D
+	var extra_body := extra.get_node("DepartureRockBody") as StaticBody3D
+	var checks := {
+		"arch_visible_to_camera": body.collision_layer & world.player.arm.collision_mask != 0,
+		"arch_solid_to_player": body.collision_layer & world.player.collision_mask != 0,
+		"authored_arch_shapes_retained": body.get_child_count() == 5,
+		"extra_native_triangles": extra_body.get_child(0).shape is ConcavePolygonShape3D,
+		"extra_matches_mesh": extra_body.global_transform.is_equal_approx(extra.global_transform),
+	}
+	# Before the repair these same body-height rays missed on the world mask,
+	# although querying layer 2 hit the authored small rock in the player stance.
+	for height in [11.4, 12.1]:
+		var ray := PhysicsRayQueryParameters3D.create(Vector3(131.8,13.38494,143.0043), Vector3(131.5,height,139.28), world.player.arm.collision_mask, [world.player.get_rid()])
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(ray)
+		checks["original_occluder_%s" % height] = not hit.is_empty() and hit.collider == body
+	return checks

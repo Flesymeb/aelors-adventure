@@ -60,6 +60,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	village = SOURCE_SCENE.instantiate()
 	village.name = "Forest"
+	GROUND.bind_departure_collision(village)
 	village.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(village)
 	var source_camera := village.get_node_or_null("Camera/Camera") as Camera3D

@@ -12,6 +12,27 @@ const RONEN := Vector2(123, 103)
 const BOW_TARGET := Vector2(123, 109)
 const COVER := Vector2(125, 106)
 
+static func bind_departure_collision(forest: Node3D) -> void:
+	# Forest's arch was authored on layer 2. In the product that layer belongs
+	# to enemies; terrain, foot support and the village SpringArm use layer 1.
+	# Retain the authored concave shapes and their transforms, including the
+	# opening, rather than using a convex hull that would seal the passage.
+	var arch := forest.get_node("Terrain3D/Big rocks/Node3D")
+	var body := arch.get_node("StaticBody3D") as StaticBody3D
+	body.collision_layer = 1
+	# This extra instance was added to world.tscn outside the arch prefab's
+	# five collision shapes. Bind its own triangles, without moving the rock.
+	var extra := arch.get_node("MeshInstance3D6") as MeshInstance3D
+	if extra.get_node_or_null("DepartureRockBody") == null:
+		var extra_body := StaticBody3D.new()
+		extra_body.name = "DepartureRockBody"
+		extra_body.collision_layer = 1
+		extra_body.collision_mask = 0
+		var shape := CollisionShape3D.new()
+		shape.shape = extra.mesh.create_trimesh_shape()
+		extra_body.add_child(shape)
+		extra.add_child(extra_body)
+
 static func in_bounds(xz: Vector2) -> bool:
 	return xz.is_finite() and xz.x >= 2 and xz.y >= 2 and xz.x <= 253 and xz.y <= 253
 
