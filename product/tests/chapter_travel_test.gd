@@ -38,7 +38,8 @@ static func run() -> Dictionary:
 	checks.return_both_directions = restored.commit_arrival(s.GROUND.MAP_ID) and restored.commit_arrival(s.MAP02) and restored.lives == s.lives
 	restored.restore_config(source)
 	checks.interrupted_source = restored.current_map == s.GROUND.MAP_ID and not restored.cp02_claimed and restored.lives == first_lives and restored.departure_confirmed
-	checks.resource_gate_boolean = preload("res://ui/chapter_transition.gd").available() is bool
+	checks.merge(resource_checks())
+	checks.merge(collision_handoff_checks())
 	destination.set_value("post_bow", "cp02_claimed", false)
 	checks.reject_unsafe_map = s.config_unavailable_reason(destination) != ""
 	s.free()
@@ -47,4 +48,47 @@ static func run() -> Dictionary:
 	unearned.logical_node = "G04"
 	checks.no_unearned_consent = not unearned.choose(0) and not unearned.departure_confirmed
 	unearned.free()
+	return checks
+
+static func resource_checks() -> Dictionary:
+	var transition = preload("res://ui/chapter_transition.gd")
+	var checks := {"departure_media_available": transition.available()}
+	var storyboard: Variant = JSON.parse_string(FileAccess.get_file_as_string(transition.ART + "storyboard.json"))
+	var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(transition.ART + "SOURCE.json"))
+	checks.provenance = source is Dictionary and source.get("origin") == "generated" and source.get("usage_terms", "") != "" and source.get("files", []).size() == 3
+	var referenced: Array = []
+	var duration := 0.0
+	if storyboard is Dictionary:
+		for slide in storyboard.get("slides", []):
+			referenced.append(slide.image)
+			duration += float(slide.duration_seconds)
+	checks.three_distinct_beats = referenced == ["farewell.png", "passage.png", "arrival.png"]
+	checks.provenance_references = source is Dictionary and source.get("files", []).map(func(record): return record.get("file", "")) == referenced
+	checks.bounded_playback = duration >= 3.0 and duration <= 6.0
+	for file in ["farewell.png", "passage.png", "arrival.png"]:
+		var texture := load(transition.ART + file) as Texture2D
+		checks[file + "_imported"] = texture != null and texture.get_size() == Vector2(1672, 941)
+	return checks
+
+static func collision_handoff_checks() -> Dictionary:
+	var router := preload("res://ui/game_entry_router.gd").new()
+	var source := preload("res://preview_controller.gd").new()
+	# A minimal fixture with the real forest's exposed physics properties.
+	var village := Node3D.new()
+	var terrain := StaticBody3D.new()
+	terrain.name = "Terrain3D"
+	village.add_child(terrain)
+	source.add_child(village)
+	source.village = village
+	var actor := StaticBody3D.new()
+	actor.collision_layer = 5
+	actor.collision_mask = 3
+	source.add_child(actor)
+	router.source_world = source
+	router._suspend_source_collision()
+	var checks := {"source_collision_suspended":actor.collision_layer == 0 and actor.collision_mask == 0 and terrain.collision_layer == 0}
+	router._restore_source_collision()
+	checks.source_collision_restored = actor.collision_layer == 5 and actor.collision_mask == 3 and terrain.collision_layer == 1 and router.source_collision_state.is_empty()
+	source.free()
+	router.free()
 	return checks

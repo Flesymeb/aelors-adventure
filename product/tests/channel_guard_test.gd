@@ -19,6 +19,7 @@ static func run() -> Dictionary:
 	var checks := {}
 	var state := prepared()
 	var starting: int = state.experience
+	checks.unsettled_projection = state.guard_melee_a_reward_state == "unsettled" and state.guard_melee_a_xp == 0
 	checks.distinct_ids = state.GUARD_IDS.size() == 3 and not state.GUARD_IDS.has("bridge_patrol_a")
 	for id in state.GUARD_IDS:
 		checks[id+"_settles"] = state.settle_guard(id,Vector3(133,11,142),{"id":"healing","quantity":1})
@@ -32,6 +33,12 @@ static func run() -> Dictionary:
 	restored.restore_config(config)
 	checks.restore_no_award = restored.guards_defeated() and restored.experience == state.experience and not restored.settle_guard("channel_ranged",Vector3.ZERO,{})
 	checks.pending_pickup_retained = not restored.reward_history.channel_ranged.collected
+	checks.pending_projection = restored.guard_melee_a_reward_state == "pending" and restored.guard_melee_b_reward_state == "pending" and restored.guard_ranged_reward_state == "pending" and restored.guard_melee_a_xp == 10 and restored.guard_melee_b_xp == 10 and restored.guard_ranged_xp == 10
+	checks.scalar_selector_shape = restored._mcp_state().guard_ranged_reward_state == "pending" and restored._mcp_state().guard_ranged_xp == 10
+	# Isolated projection test; not a claim of ordinary pickup collection.
+	var before_projection := restored.adventure_snapshot()
+	var observed: String = restored.guard_ranged_reward_state
+	checks.observation_read_only = observed == "pending" and restored.adventure_snapshot() == before_projection
 	config.set_value("post_bow","guard_briefing_acknowledged",false)
 	checks.reject_unearned = restored.config_unavailable_reason(config) != ""
 	config.set_value("post_bow","guard_briefing_acknowledged",true)

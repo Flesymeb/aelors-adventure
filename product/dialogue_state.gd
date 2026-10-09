@@ -190,6 +190,25 @@ func bridge_briefing_available() -> bool:
 
 const GUARD_IDS := ["channel_melee_a", "channel_melee_b", "channel_ranged"]
 
+# Read-only scalar views of the durable reward owner for external observation.
+# These never settle, collect, restore, or save a reward.
+var guard_melee_a_reward_state: String:
+	get: return guard_reward_state("channel_melee_a")
+var guard_melee_b_reward_state: String:
+	get: return guard_reward_state("channel_melee_b")
+var guard_ranged_reward_state: String:
+	get: return guard_reward_state("channel_ranged")
+var guard_melee_a_xp: int:
+	get: return int(reward_history.get("channel_melee_a", {}).get("xp", 0))
+var guard_melee_b_xp: int:
+	get: return int(reward_history.get("channel_melee_b", {}).get("xp", 0))
+var guard_ranged_xp: int:
+	get: return int(reward_history.get("channel_ranged", {}).get("xp", 0))
+
+func guard_reward_state(id: String) -> String:
+	if not reward_history.has(id): return "unsettled"
+	return "collected" if reward_history[id].get("collected", false) else "pending"
+
 func guard_briefing_available() -> bool:
 	return bridge_briefing_available() and bridge_resident_rescued and bridge_lamp_lit
 
@@ -396,6 +415,8 @@ func _mcp_state() -> Dictionary:
 		var fact: Variant = get(key)
 		if typeof(fact) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
 			observation[key] = fact
+	for key in ["guard_melee_a_reward_state", "guard_melee_b_reward_state", "guard_ranged_reward_state", "guard_melee_a_xp", "guard_melee_b_xp", "guard_ranged_xp"]:
+		observation[key] = get(key)
 	observation.merge(audio_observation())
 	return observation
 

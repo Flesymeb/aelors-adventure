@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "origin": "generated",
+  "generator_tool_id": "image_gen",
+  "generator_tool": "image_gen.imagegen",
+  "execution_mode": "built-in",
+  "backend_model_identifier": null,
+  "backend_model_identifier_status": "not exposed in actual tool result",
+  "usage_terms": "Generated using configured built-in service; applicable provider service terms govern. No CC0/MIT or other asset-specific public licence grant observed.",
+  "visual_constraints": [
+    "Raised green hood, brown hair, crossed leather straps and ranger equipment retained for Aelor",
+    "Isha bonnet, gray-brown dress/cream sleeves and burgundy shawl retained",
+    "Four abductees absent, no reunion/rescue claim",
+    "No text, captions, UI, watermarks, firearms or duplicate NPCs",
+    "Runtime chapter labels, fades, subtitles and Reduced Motion owned by Developer"
+  ],
+  "limitations": [
+    "Storyboard illustrations do not prove exact MAP02 scene layout, terrain safety, player behavior or any progression fact",
+    "Generated model identifier, billed usage and provider-specific grant were not exposed by tool",
+    "Aelor/Isha identity matched by visual inspection, not automated identity metric"
+  ],
+  "image_editing": "none; original generated PNG files copied byte-for-byte; Pillow only decoded to inspect metadata",
+  "visual_review": {
+    "farewell": "Copied output explicitly inspected with view_image; two correct identities and worried farewell, no four abductees/text/guns",
+    "passage": "Generated output visually inspected; same equipped hooded hero grounded between blue-lit stone pillars, no enemy or other person",
+    "arrival": "Generated output visually inspected; same hero at clear safe meadow path, far roadblock and spatial separation; authored runtime terrain correspondence unproven"
+  },
+  "qualification_status": "Original generated PNG bytes decoded and visually inspected; Developer integration and independent in-game acceptance pending.",
+  "acceptance_authority": false,
+  "files": [
+    {
+      "file": "farewell.png",
+      "sha256": "5da6c03bae8dde1bfd215c896c3908379851abc186736a6aed5380976b92e6b4",
+      "bytes": 2910697,
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "opaque": true,
+      "same_bytes_as_generated_output": true,
+      "tool": "image_gen.imagegen",
+      "model_identifier": "not exposed by built-in tool"
+    },
+    {
+      "file": "passage.png",
+      "sha256": "27b2fcd01a8f0c7ebe544775a96d3f115638dde810cbef17666ec9756ee9c9c7",
+      "bytes": 2866864,
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "opaque": true,
+      "same_bytes_as_generated_output": true,
+      "tool": "image_gen.imagegen",
+      "model_identifier": "not exposed by built-in tool"
+    },
+    {
+      "file": "arrival.png",
+      "sha256": "0f325fb307af94546702d4809cef1e862d22d0ab5f7ad271bb3be05b879ed983",
+      "bytes": 2978028,
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "opaque": true,
+      "same_bytes_as_generated_output": true,
+      "tool": "image_gen.imagegen",
+      "model_identifier": "not exposed by built-in tool"
+    }
+  ],
+  "references": [
+    {
+      "path": "assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png",
+      "sha256": "64d9bc2e9070d5ac18e00989d15be57bc269343e00d72386cee502a4ca4ab434",
+      "role": "inspected character identity and medieval palette/style reference"
+    },
+    {
+      "path": "assets/cinematics/guard_approach/guard_01.png",
+      "sha256": "b35aaf1e9c7374bc13634c55d631bae5130e802e756b64655402acd372b8fa23",
+      "role": "inspected character identity and medieval palette/style reference"
+    },
+    {
+      "path": "assets/cinematics/guard_approach/guard_02.png",
+      "sha256": "e331c76785e07d6e339f0ae32336c3041f9d4715db8d9b7573961228176dc72e",
+      "role": "inspected character identity and medieval palette/style reference"
+    }
+  ]
+}

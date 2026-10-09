@@ -180,6 +180,18 @@ maps those unchanged source paintings to guard_01/02/03.png. Earlier root-level
 receipts describe the superseded paintings. Independent style and ordinary-route
 acceptance remain pending.
 
+## CH01 departure illustrations
+
+`assets/cinematics/departure/farewell.png`, `passage.png` and `arrival.png`
+are unchanged generated paintings acquired from the registered Aelor Departure
+Three Paintings and Provenance Bundle. Applicable provider service terms govern;
+no CC0, MIT or other asset-specific public licence grant was observed. The
+generation backend model identifier was not exposed. `SOURCE.json` preserves
+the generated-file provenance and limitations; adjacent acquisition receipts
+record the registered transfers. Native captions and the existing storyboard
+remain product-owned. These illustrations do not establish playable terrain or
+quest completion.
+
 ## Chapter overlay/tween adapter
 
 `ui/chapter_transition.gd` adapts the overlay and awaited tween mechanism from Pandita Studio scene-switcher, revision aa88ab647143f8d0448c4deaa8805b97027852ea, MIT. Original license: `ui/scene_switcher_LICENSE.txt`. Source: https://github.com/Pandita-Studio/scene-switcher-godot-addon . Product chapter state, rollback and input ownership remain in the entry router.

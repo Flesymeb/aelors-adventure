@@ -24,6 +24,7 @@ var travel_resource := ""
 var travel_started_ms := 0
 var travel_finishing := false
 var source_ui_visibility: Array[Dictionary] = []
+var source_collision_state: Array[Dictionary] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -309,6 +310,7 @@ func _poll_travel() -> void:
 				item.hide()
 	source_world.hide()
 	source_world.process_mode = Node.PROCESS_MODE_DISABLED
+	_suspend_source_collision()
 	world = scene.instantiate()
 	world.name = "MeadowAdventure" if destination_map == state.MAP02 else "VillageAdventure"
 	world.dialogue_state = state
@@ -341,6 +343,7 @@ func _finish_travel() -> void:
 	world._set_pause_owner("entry", false)
 	source_world.process_mode = Node.PROCESS_MODE_DISABLED
 	source_world.queue_free()
+	source_collision_state.clear()
 	source_world = null
 	transition.world = null
 	transition.queue_free()
@@ -355,6 +358,7 @@ func _travel_failed(message: String) -> void:
 		world.process_mode = Node.PROCESS_MODE_DISABLED
 		world.queue_free()
 	state.restore_adventure(travel_history)
+	_restore_source_collision()
 	world = source_world
 	if is_instance_valid(transition):
 		transition._release_world()
@@ -367,10 +371,29 @@ func _travel_failed(message: String) -> void:
 		source_ui_visibility.clear()
 		source_world.process_mode = Node.PROCESS_MODE_ALWAYS
 		source_world._set_pause_owner("chapter_travel", false)
+		player_ready = true
 		if message != "": source_world.training.tell(message, 5)
 	source_world = null
 	travel_finishing = false
 	route = "world"
+
+# Processing/visibility do not remove physics bodies. During the overlapping
+# scene handoff the source NPCs otherwise obstruct the destination's ground
+# rays and standing volumes. Keep exact masks for a failed-travel rollback.
+func _suspend_source_collision() -> void:
+	source_collision_state.clear()
+	for node in source_world.find_children("*", "", true, false):
+		if node is CollisionObject3D or node == source_world.village.get_node("Terrain3D"):
+			source_collision_state.append({"node":node,"layer":node.collision_layer,"mask":node.collision_mask})
+			node.collision_layer = 0
+			node.collision_mask = 0
+
+func _restore_source_collision() -> void:
+	for record in source_collision_state:
+		if is_instance_valid(record.node):
+			record.node.collision_layer = record.layer
+			record.node.collision_mask = record.mask
+	source_collision_state.clear()
 
 func begin_new_adventure_from_world() -> void:
 	await return_to_title()
