@@ -24,8 +24,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 | Field | Value |
 | --- | --- |
 | Open | 36 |
-| Closed | 27 |
-| All | 63 |
+| Closed | 28 |
+| All | 64 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -34,10 +34,10 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 | Field | Value |
 | --- | --- |
 | Active | 19 |
-| Verified closed | 18 |
+| Verified closed | 19 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 42 |
+| All in this run | 43 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Music/Effects listening acceptance remains unresolved without an audio-capable independent reviewer. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Music/Effects listening acceptance remains unresolved; gains and waveform presence do not establish the required perceptual comparison. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | The pre-existing complete opening acceptance evidence debt remains unresolved. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening and pause behavior passed locally, but the complete opening acceptance evidence debt remains. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,11 +80,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | Local dialogue acceptance does not establish full R10, milestone or product acceptance. |
 | `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue still lacks its counterpart portrait. |
-| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | An initialization-time observation callback can break the game by accessing an absent controls panel. |
-| `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | OPEN | Ordinary movement can trap the player beside Ronen's practice obstruction until a saved game is loaded. |
+| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | The null-safe callback repair is supported by inspection and startup smoke, but its original absent-controls boundary remains unverified. |
+| `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Declared village actor/map source access and complete adoption remain unauthenticated. |
+| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | The CH01 encounter works in the observed route, but its complete safety, feedback and recovery acceptance remains unverified. |
+| `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -92,7 +93,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 36 | 27 | 63 |
+| GitHub HoH namespace | 36 | 28 | 64 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -129,7 +130,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-23-4d3b0e1f9e4d` | `development_snapshot:attempt-6558fcd909da09e81348d68d` | DEVELOPER REPORT READY |
+| `loop-23-4d3b0e1f9e4d` | `development_snapshot:attempt-6558fcd909da09e81348d68d` | BLOCKED |
 
 ### Project Planner
 
@@ -156,7 +157,20 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-23-4d3b0e1f9e4d` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 4 (4 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `dynamic_encounter_matrix_incomplete` | MAJOR | INTERNAL | HIGH | The CH01 encounter works in the observed route, but its complete safety, feedback and recovery acceptance remains unverified. |
+| `independent_listening_missing` | MAJOR | INTERNAL | HIGH | Music/Effects listening acceptance remains unresolved; gains and waveform presence do not establish the required perceptual comparison. |
+| `opening_matrix_incomplete` | MAJOR | INTERNAL | HIGH | Normal opening and pause behavior passed locally, but the complete opening acceptance evidence debt remains. |
+| `entry_lifecycle_sampling_incomplete` | MAJOR | INTERNAL | HIGH | The null-safe callback repair is supported by inspection and startup smoke, but its original absent-controls boundary remains unverified. |
 
 ---
 
@@ -1280,5 +1294,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-23-4d3b0e1f9e4d`
 - Latest warm start: `loop-23-4c75da9ff70c`
 - Last published: `loop-23-4d3b0e1f9e4d`
-- Best verified: `loop-22-4c75da9ff70c`
+- Best verified: `loop-23-4d3b0e1f9e4d`
 - Generated by the HoH host from immutable run evidence.
