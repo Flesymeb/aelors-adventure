@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 34 |
-| Closed | 25 |
-| All | 59 |
+| Open | 36 |
+| Closed | 27 |
+| All | 63 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 17 |
-| Verified closed | 16 |
+| Active | 19 |
+| Verified closed | 18 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 38 |
+| All in this run | 42 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -46,7 +46,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `title_entry_adjacent_hud_checkpoint_text` | [#23](https://github.com/Flesymeb/aelors-adventure/issues/23) | OPEN | Adjacent HUD continuity fails: checkpoint code/name and textual life count remain permanently visible. |
 | `title_entry_empty_load_focus_clipped` | [#25](https://github.com/Flesymeb/aelors-adventure/issues/25) | CLOSED | Independently verified resolved at loop 2. |
 | `title_entry_mute_leaks_world_audio` | [#26](https://github.com/Flesymeb/aelors-adventure/issues/26) | CLOSED | Independently verified resolved at loop 2. |
-| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | OPEN | Portrait delivery improved, but required half-body presentation is still absent. |
+| `dialogue_portraits_absent` | [#27](https://github.com/Flesymeb/aelors-adventure/issues/27) | CLOSED | Independently verified resolved at loop 22. |
 | `hud_h_binding_conflict` | [#28](https://github.com/Flesymeb/aelors-adventure/issues/28) | CLOSED | Independently verified resolved at loop 3. |
 | `hud_legacy_feedback_integration` | [#29](https://github.com/Flesymeb/aelors-adventure/issues/29) | CLOSED | Independently verified resolved at loop 17. |
 | `player_mcp_npc_parent_error` | [#30](https://github.com/Flesymeb/aelors-adventure/issues/30) | CLOSED | Independently verified resolved at loop 3. |
@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent Music/Effects listening remains incomplete. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Music/Effects listening acceptance remains unresolved without an audio-capable independent reviewer. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | The broader opening acceptance matrix remains unobserved. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | The pre-existing complete opening acceptance evidence debt remains unresolved. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -78,9 +78,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `continued_dialogue_camera_inside_player` | [#55](https://github.com/Flesymeb/aelors-adventure/issues/55) | OPEN | Restored unfinished dialogue still freezes the camera inside the player. |
 | `fps.runtime.candidate-error-0d66533e4786` | [#56](https://github.com/Flesymeb/aelors-adventure/issues/56) | CLOSED | Independently verified resolved at loop 20. |
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Required actor/reference source-transfer claims remain declared-only in the frozen Host audit. |
-| `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | OPEN | Restored unfinished briefing holds the camera inside the player model while dialogue is paused. |
+| `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | Local dialogue acceptance does not establish full R10, milestone or product acceptance. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue still lacks its counterpart portrait. |
+| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | An initialization-time observation callback can break the game by accessing an absent controls panel. |
+| `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | OPEN | Ordinary movement can trap the player beside Ronen's practice obstruction until a saved game is loaded. |
+| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Declared village actor/map source access and complete adoption remain unauthenticated. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -88,7 +92,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 34 | 25 | 59 |
+| GitHub HoH namespace | 36 | 27 | 63 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -125,7 +129,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-22-4c75da9ff70c` | `development_snapshot:attempt-d988cfafd48a7e2e2e3ec352` | NEEDS VISUAL QA |
+| `loop-22-4c75da9ff70c` | `development_snapshot:attempt-d988cfafd48a7e2e2e3ec352` | BLOCKED |
 
 ### Project Planner
 
@@ -152,7 +156,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-22-4c75da9ff70c` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `practice_obstruction_movement_trap` | MAJOR | DEGRADED | HIGH | Ordinary movement can trap the player beside Ronen's practice obstruction until a saved game is loaded. |
+| `reference_authentication_incomplete` | MAJOR | INTERNAL | HIGH | Declared village actor/map source access and complete adoption remain unauthenticated. |
+| `independent_listening_missing` | MAJOR | INTERNAL | HIGH | Music/Effects listening acceptance remains unresolved without an audio-capable independent reviewer. |
+| `opening_matrix_incomplete` | MAJOR | INTERNAL | HIGH | The pre-existing complete opening acceptance evidence debt remains unresolved. |
+| `full_acceptance_closeout_missing` | MAJOR | INTERNAL | HIGH | Local dialogue acceptance does not establish full R10, milestone or product acceptance. |
+| `initialization_observation_nil_access` | MINOR | INTERNAL | MEDIUM | An initialization-time observation callback can break the game by accessing an absent controls panel. |
+| `hers_portrait_continuity_missing` | MINOR | USER BLOCKING | MEDIUM | Adjacent Hers dialogue still lacks its counterpart portrait. |
 
 ---
 
@@ -1223,5 +1243,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-22-4c75da9ff70c`
 - Latest warm start: `loop-22-bf5ee2a58e64`
 - Last published: `loop-22-4c75da9ff70c`
-- Best verified: `loop-21-bf5ee2a58e64`
+- Best verified: `loop-22-4c75da9ff70c`
 - Generated by the HoH host from immutable run evidence.
