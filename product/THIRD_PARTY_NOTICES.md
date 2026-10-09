@@ -134,3 +134,48 @@ animation-player reparenting and head assembly derive from the inspected
 examples/emaceart-village-demo/player_controller.gd and ranger_head_assembly.gd.
 Only the retained presentation is reused; the example's input, camera and
 traversal controller are not activated for this resident.
+
+## Retained world and channel guards (loop 24)
+
+The live `Preview.tscn` / `preview_controller.gd` instantiates `world.tscn`
+once, under `Forest`. This is the retained Forest-Godot4 environment, revision
+`885de5769b2d0cf7ea0808752e44d680abecfd5b`,
+https://github.com/Lakshman-YT/Forest-Godot4. It is not a new transfer in this
+iteration and is not the complete Emaceart village scene. The retained village
+building prefabs, Ranger, complete head, animation libraries and medieval
+equipment keep their original notices and local-use restrictions. The world
+uses the retained Terrain3D data and collision; no replacement ground is added.
+
+Forest has no blanket MIT license. Terrain3D and Sky3D code licenses apply to
+those plugins; models, vegetation, textures, sky images and audio retain their
+individual rights. Source credits are in `forest_source/!Credits-README!.txt`.
+Unconfirmed asset redistribution rights remain unresolved. The inherited
+`Objects/Grass_Texture.psd` / empty Texture2D import findings are also unresolved;
+the successful gameplay boot does not establish a repair or complete clean import.
+
+Channel melee guards reuse `assets/training/Orc.gltf` (Quaternius CC0).
+The ranged guard binds the newly provider-packed `assets/guards/ranged_guard.glb`
+(Quaternius Modular Character Outfits - Fantasy, CC0); the adjacent acquisition
+receipt records unchanged embedded geometry, buffer and texture dependencies.
+Its complete head, UAL1/UAL2 libraries, KayKit ranged clips, bow and arrow are
+retained dependencies. `combat/channel_ranged_adapter.gd` uses
+`actors/npc_presentation.tscn`, not a second player controller. The action
+adapter derives from the inspected Snaiel NonMeleeComponent and
+EnemyNonMeleeComponent lifecycle; MIT attribution remains in
+`combat/snaiel/LICENSES.txt`. Projectile contact uses the product's retained
+tip sweep instead of the upstream unswept projectile. Cat sensing was inspected
+as a mechanism comparison and no Cat code was copied.
+
+## CH01 guard approach illustrations
+
+Three generated paintings are bound in assets/cinematics/guard_approach.
+They use image_gen.imagegen provider service terms, not CC0 or MIT.
+SOURCE.json preserves original source hashes and source-to-runtime filenames;
+adjacent provider receipts retain acquisition records. Source paintings remain
+unchanged. Engine captions and the presentation adapter are product code.
+The selected character-identity-v2 bundle depicts the green-hood Ranger and
+Isha's red shawl and white bonnet. Its original provenance, generation prompts,
+storyboard and acquisition receipts are retained in `identity_v2/`; SOURCE.json
+maps those unchanged source paintings to guard_01/02/03.png. Earlier root-level
+receipts describe the superseded paintings. Independent style and ordinary-route
+acceptance remain pending.

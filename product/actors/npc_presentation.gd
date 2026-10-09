@@ -58,6 +58,7 @@ func _ready() -> void:
 	head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton))
 	var source = load(ANIMATION_PATH).instantiate()
 	animation_player = source.get_node("AnimationPlayer")
+	animation_player.owner = null
 	source.remove_child(animation_player)
 	character_model.add_child(animation_player)
 	source.free()

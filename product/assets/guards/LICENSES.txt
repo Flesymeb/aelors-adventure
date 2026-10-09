@@ -1,0 +1,11 @@
+Ranged guard: Quaternius Modular Character Outfits - Fantasy, CC0-1.0.
+Source: https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+Original Ranger geometry/buffer/textures packed unchanged by game-asset-provider.
+The actual acquisition and packing record is ranged_guard.glb.receipt.json.
+Complete head and equipment dependencies retain their existing Characters/ and
+Weapons/ licenses. UAL1/UAL2 and KayKit animation notices are unchanged.
+Melee guards: retained Quaternius Ultimate Monsters Orc (CC0), see
+assets/training/LICENSES.txt and License.txt.
+RangedAction adapts Snaiel NonMeleeComponent/EnemyNonMeleeComponent interfaces;
+Snaiel MIT notice remains at combat/snaiel/LICENSES.txt.
+No generated illustrations are supplied by this asset bundle.

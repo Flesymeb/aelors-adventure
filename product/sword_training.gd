@@ -163,7 +163,7 @@ func resolve_practice_contact(_source: SnaielDamageSource, point: Vector3) -> Di
 
 func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dictionary:
 	var before: float = state.health
-	var outcome = receive_attack(source.entity.attack_origin, source.entity.locked_direction, source.damage_attributes.health)
+	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false))
 	if outcome == "parry": source.get_parried()
 	return {"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_before": before, "hp_after": state.health, "hp_loss": before - state.health}
 
@@ -225,11 +225,12 @@ func restore_history() -> void:
 		phase = "idle"
 	if world.lamp_training: world.lamp_training.restore_history()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
+	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
-	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
+	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
 func commit() -> bool:
 	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
@@ -329,6 +330,7 @@ func recovery_duration() -> float:
 
 func interrupt(_reason: String) -> void:
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
+	if world.channel_guards and _reason in ["death", "load", "recovery"]: world.channel_guards.interrupt()
 	if world.bridge_encounter and _reason in ["death", "load", "recovery"]: world.bridge_encounter.interrupt()
 	if world.dynamic_encounters and _reason in ["death", "load", "recovery"]: world.dynamic_encounters.interrupt()
 	player.reset_archery()
@@ -404,6 +406,7 @@ func advance_player(delta: float) -> void:
 		sword_source.global_position = player.global_position
 		var registry = {target: target_hitbox, monster: monster.hitbox}
 		if world.bridge_encounter: registry.merge(world.bridge_encounter.registry())
+		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
 		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
@@ -416,7 +419,7 @@ func stop_on_contact(seconds: float) -> void:
 	player.animation_player.speed_scale = 0
 	sword_events.timeline.speed_scale = 0
 
-func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false) -> String:
+func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false) -> String:
 	last_hp_loss = 0
 	if player_locked(): return "unavailable"
 	if protection > 0: return "protected"
@@ -430,7 +433,9 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 	var forward: Vector3 = player.visual.global_basis.z.normalized()
 	var front: bool = toward.normalized().dot(forward) >= 0.5
 	var on_line: bool = direction.dot((player.global_position - origin).normalized()) > 0.5
-	var in_range: bool = player.global_position.distance_to(origin) < 2.15 and on_line
+	# RangedContact is supplied only after the arrow's first physical tip sweep
+	# resolves against this player. Melee retains its scoped proximity gate.
+	var in_range: bool = projectile_contact or (player.global_position.distance_to(origin) < 2.15 and on_line)
 	if dodging:
 		if in_range or (simulated and player.global_position.distance_to(origin) < 3.5):
 			last_outcome = "dodge"
@@ -499,6 +504,7 @@ func recover_at_checkpoint() -> void:
 		return
 	monster.reset_encounter()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
+	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	sim_phase = "idle"
 	hers.idle()

@@ -52,13 +52,14 @@ func interrupt() -> void:
 		if is_instance_valid(enemy): enemy.interrupt_action()
 
 func protected_player() -> bool:
+	if world.channel_guards and world.channel_guards.protected_player(): return true
 	var xz := Vector2(world.player.global_position.x, world.player.global_position.z)
 	for anchor in [GROUND.SPAWN, GROUND.ISHA, GROUND.HERS, GROUND.RONEN, Vector2(124,116), Vector2(130,130)]:
 		if xz.distance_to(anchor) < 4.0: return true
 	return false
 
 func combat_allowed() -> bool:
-	return initialized and state.element_practice_complete and not state.conversation_active and state.lives > 0 and world.pause_owners.is_empty() and not state.recovery_pending and recovery_hold <= 0 and not protected_player() and not world.training.monster.engaged and world.training.sim_phase == "idle" and world.bridge_encounter.can_save()
+	return initialized and state.element_practice_complete and not state.conversation_active and state.lives > 0 and world.pause_owners.is_empty() and not state.recovery_pending and recovery_hold <= 0 and not protected_player() and not world.training.monster.engaged and world.training.sim_phase == "idle" and world.bridge_encounter.can_save() and (world.channel_guards == null or world.channel_guards.can_save())
 
 func spawn_reason() -> String:
 	if not initialized or not world.training.grounded or not world.bow_training.grounded: return "terrain_initializing"
@@ -67,7 +68,7 @@ func spawn_reason() -> String:
 	if recovery_hold > 0 or state.recovery_pending or world.training.protection > 0: return "checkpoint_return"
 	if state.lives <= 0 or world.training.player_locked(): return "player_unavailable"
 	if protected_player(): return "protected_interaction"
-	if world.training.monster.engaged or world.training.sim_phase != "idle" or not world.bridge_encounter.can_save(): return "fixed_combat"
+	if world.training.monster.engaged or world.training.sim_phase != "idle" or not world.bridge_encounter.can_save() or (world.channel_guards and not world.channel_guards.can_save()): return "fixed_combat"
 	if not world.element_abilities.can_save() or world.training.phase != "idle" or world.bow_training.pending_demo: return "active_action"
 	if not staged.is_empty() or not registry().is_empty(): return "density"
 	if not pickups.is_empty(): return "pending_pickup"

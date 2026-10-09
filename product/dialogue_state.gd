@@ -39,13 +39,15 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
 var lamp_reward_committed := false
 var element_practice_complete := false
 var bridge_briefing_acknowledged := false
+var guard_briefing_acknowledged := false
+var guard_interlude_seen := false
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
 var bridge_first_action := ""
@@ -174,11 +176,40 @@ func begin() -> void:
 			logical_node = "L02" if lamp_owned else "L01"
 		if dialogue_kind == "isha" and bridge_briefing_available():
 			logical_node = "B05" if bridge_briefing_acknowledged or bridge_first_action != "" else "B01"
+		if dialogue_kind == "isha" and guard_briefing_available():
+			logical_node = "G04" if guards_defeated() else "G01"
 	reward_feedback = ""
 	conversation_active = true
 
 func bridge_briefing_available() -> bool:
 	return q01_accepted and sword_owned and remnant_collected and bow_training_complete and lamp_owned and trace_investigated and not skills.is_empty() and element_practice_complete
+
+const GUARD_IDS := ["channel_melee_a", "channel_melee_b", "channel_ranged"]
+
+func guard_briefing_available() -> bool:
+	return bridge_briefing_available() and bridge_resident_rescued and bridge_lamp_lit
+
+func guards_defeated() -> bool:
+	for id in GUARD_IDS:
+		if not reward_history.has(id): return false
+	return true
+
+func passage_missing_conditions() -> Array[String]:
+	var missing: Array[String] = []
+	if not bridge_briefing_available(): missing.append("完成剑、弓、旧灯与元素训练")
+	if not bridge_resident_rescued: missing.append("救出桥边居民")
+	if not bridge_lamp_lit: missing.append("恢复桥灯")
+	if not guard_briefing_acknowledged: missing.append("听取伊莎的通道守卫信息")
+	if not guards_defeated(): missing.append("击败柱群两名近战守卫与一名弓守")
+	missing.append("完成离村交谈与目的地准备")
+	return missing
+
+func settle_guard(id: String, point: Vector3, drop: Dictionary) -> bool:
+	if id not in GUARD_IDS or reward_history.has(id) or not guard_briefing_available() or not guard_briefing_acknowledged: return false
+	reward_history[id] = {"xp":10,"drop":drop,"position":point,"collected":drop.is_empty()}
+	experience += 10
+	progression_changed.emit()
+	return true
 
 func choose(index: int) -> bool:
 	var node: Dictionary = current_nodes().get(logical_node, {})
@@ -186,6 +217,11 @@ func choose(index: int) -> bool:
 	if index < 0 or index >= choices.size():
 		return false
 	var choice: Dictionary = choices[index]
+	if choice.get("acknowledge_guards", false):
+		if dialogue_kind != "isha" or not guard_briefing_available(): return false
+		guard_briefing_acknowledged = true
+		if "guard_briefing" not in confirmed_choices: confirmed_choices.append("guard_briefing")
+		tracked_quest = "guards"
 	if choice.get("acknowledge_bridge", false):
 		if dialogue_kind != "isha" or not bridge_briefing_available(): return false
 		bridge_briefing_acknowledged = true
@@ -308,8 +344,13 @@ func objective() -> String:
 	if skills.is_empty(): return "首次升级 · 按 K 选择火焰或雷电"
 	if not element_practice_complete: return "元素练习 · 罗恩草靶旁，4 火焰 / 5 雷电；可重复尝试"
 	if not bridge_resident_rescued or not bridge_lamp_lit: return bridge_objective()
-	if reward_history.size() < 2: return "追踪救援 · 从罗恩草靶左侧的木板入口过桥，清除对岸两名巡守"
-	return bridge_objective()
+	if not reward_history.has("bridge_patrol_a") or not reward_history.has("bridge_patrol_b"): return "追踪救援 · 从罗恩草靶左侧的木板入口过桥，清除对岸两名巡守"
+	return guard_objective()
+
+func guard_objective() -> String:
+	if not guard_briefing_acknowledged: return "桥头已恢复 · 返回伊莎处听取柱群守卫信息"
+	if not guards_defeated(): return "通道守卫 · 过石桥沿对岸林路到蓝色柱群；两名近战、一名弓守，可用岩石挡箭"
+	return "通道守卫已击败 · 返回伊莎处；离村准备与目的地仍未完成"
 
 func _mcp_state() -> Dictionary:
 	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
@@ -433,7 +474,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var reading: Variant = config.get_value("reading", key, 1.0 if key == "scale" else 30.0)
 		if not (reading is int or reading is float) or not is_finite(float(reading)): return "存档设置无效"
 	if not config.get_value("reading", "instant", false) is bool: return "存档设置无效"
-	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete", "bridge_briefing_acknowledged", "bridge_resident_rescued", "bridge_lamp_lit", "bridge_supply_claimed", "bridge_later_supply_due"]:
+	for key in ["lamp_owned", "trace_revealed", "trace_investigated", "lamp_reward_committed", "element_practice_complete", "bridge_briefing_acknowledged", "guard_briefing_acknowledged", "guard_interlude_seen", "bridge_resident_rescued", "bridge_lamp_lit", "bridge_supply_claimed", "bridge_later_supply_due"]:
 		if not config.get_value("post_bow", key, false) is bool: return "存档旧灯进度无效"
 	var bridge_facts := {}
 	for key in ["bridge_resident_rescued", "bridge_lamp_lit", "bridge_first_action", "bridge_supply_claimed", "bridge_later_supply_due"]:
@@ -468,7 +509,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b"] or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -476,6 +517,16 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var drop: Variant = reward.get("drop",{})
 		if not drop is Dictionary: return "存档掉落物品无效"
 		if not drop.is_empty() and (drop.get("id","") not in ["healing","lifeflame"] or drop.get("quantity",0) != 1): return "存档掉落物品无效"
+	var guard_started: bool = config.get_value("post_bow", "guard_briefing_acknowledged", false)
+	var guard_seen: bool = config.get_value("post_bow", "guard_interlude_seen", false)
+	if guard_seen and not guard_started: return "存档守卫演出无效"
+	if str(node).begins_with("G") or guard_started or GUARD_IDS.any(func(id): return rewards.has(id)):
+		if not bridge_facts.bridge_resident_rescued or not bridge_facts.bridge_lamp_lit: return "存档守卫前置无效"
+		if not config.get_value("post_bow", "element_practice_complete", false): return "存档守卫前置无效"
+		if str(node).begins_with("G") and config.get_value("training", "dialogue_kind", "isha") != "isha": return "存档守卫对话无效"
+		if (node == "G03" or GUARD_IDS.any(func(id): return rewards.has(id))) and not guard_started: return "存档守卫信息无效"
+		if node == "G04" and not GUARD_IDS.all(func(id): return rewards.has(id)): return "存档守卫结果无效"
+	if xp < rewards.size() * 10: return "存档固定奖励无效"
 	if not valid_dynamic_facts(config.get_value("post_bow", "dynamic_serial", 0), config.get_value("post_bow", "dynamic_remaining", 120.0), config.get_value("post_bow", "dynamic_instances", {})): return "存档动态遭遇无效"
 	if config.get_value("post_bow", "dynamic_serial", 0) > 0 and not config.get_value("post_bow", "element_practice_complete", false): return "存档动态遭遇前置无效"
 	var collected_xp := 0
@@ -574,6 +625,12 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false,
 			"context":bridge_response(),
 			"action":bridge_objective(), "steps":steps})
+	if guard_briefing_available():
+		var steps: Array[String] = []
+		if guard_briefing_acknowledged: steps.append("伊莎交代：奥伦与三位村民仍被掳，蓝色通道尚未开放")
+		for id in GUARD_IDS:
+			if reward_history.has(id): steps.append("弓守已击败" if id == "channel_ranged" else "柱群近战守卫已击败")
+		rows.append({"id":"guards", "title":"柱群守卫", "complete":guards_defeated(), "context":"两名近战守卫掩护一名弓守。岩石能挡箭；可退回桥头整顿。胜利只解除守卫条件，四名被掳者仍待救援。", "action":guard_objective(), "steps":steps})
 	return rows
 
 func tracked_entry() -> Dictionary:

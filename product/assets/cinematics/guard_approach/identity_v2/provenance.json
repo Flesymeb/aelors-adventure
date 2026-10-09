@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "title": "Aelor CH01 bridge guard illustrations - character identity v2",
+  "origin": "generated",
+  "generator_tool": "image_gen.imagegen",
+  "execution_mode": "built-in",
+  "backend_model_identifier": "not exposed by the built-in tool",
+  "license": "AI-generated; provider service terms apply, not CC0 or MIT",
+  "qualification_status": "source_inspected_and_decoded; candidate_runtime_identity_acceptance_pending",
+  "acceptance_authority": false,
+  "already_integrated": false,
+  "files": [
+    {
+      "file": "bridge_restored.png",
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "sha256": "b35aaf1e9c7374bc13634c55d631bae5130e802e756b64655402acd372b8fa23",
+      "bytes": 2554490,
+      "opaque": true,
+      "derived_from_source_sha256": "a9419aa6e494fe8e03ae0889ebccf80048158b89fad67df9eda4d2e095e3d439"
+    },
+    {
+      "file": "isha_remembers.png",
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "sha256": "e331c76785e07d6e339f0ae32336c3041f9d4715db8d9b7573961228176dc72e",
+      "bytes": 2227966,
+      "opaque": true,
+      "derived_from_source_sha256": "5f8b38a6fcaf0ea392044e5cfbcbdef5df9502551f3cc5eec39d495296dc14cf"
+    },
+    {
+      "file": "channel_guards.png",
+      "width": 1672,
+      "height": 941,
+      "mode": "RGB",
+      "sha256": "5b9d55829e378824ccbd85718edcb114c6232df767edd25d983c26ad4ec11e4d",
+      "bytes": 2465730,
+      "opaque": true,
+      "derived_from_source_sha256": "4819f53363d346692b4e60ef6b5760e116f8e449c53296219de7491b99e1ca8b"
+    }
+  ],
+  "continuity": "Bridge resident is distinct from four abductees; father Auren and three villagers remain missing; exactly two Orc melee guards and one human Ranger; blue/yellow pillars dormant; no victory/rescue/teleport awarded",
+  "identity_corrections": [
+    "Aelor wears green raised hood/ranger clothing, leather cross straps and asymmetric shoulder guard matching observed game silhouette",
+    "Isha wears muted burgundy-red wool shawl, gray-brown dress/cream linen sleeves and off-white bonnet; youthful brown-haired facial identity retained"
+  ],
+  "references": [
+    {
+      "role": "face_and_hero_wardrobe",
+      "candidate_relative_path": "assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png",
+      "sha256": "64d9bc2e9070d5ac18e00989d15be57bc269343e00d72386cee502a4ca4ab434"
+    },
+    {
+      "role": "observed_live_hero_silhouette",
+      "source": "existing Native Developer ordinary final-view capture; no Root live runtime mutation",
+      "sha256": "6296699493ca8f34acd4a6d882890f3fe7aadce10ceb6f12268ff3b2207a2d3e"
+    }
+  ],
+  "source_variants": 3,
+  "runtime_uses_planned": 3,
+  "maximum_source_share": 0.3333333333333333
+}

@@ -32,6 +32,8 @@ var restored_position: Dictionary = {}
 var bow_training: Node3D
 var lamp_training: Node3D
 var element_abilities: Node3D
+var channel_guards: Node3D
+var chapter_pillar: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
 var bridge_actions: Node3D
@@ -128,6 +130,14 @@ func _ready() -> void:
 	bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(bridge_actions)
 	bridge_actions.configure(self)
+	channel_guards = preload("res://combat/ChannelGuardEncounter.tscn").instantiate()
+	channel_guards.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(channel_guards)
+	channel_guards.configure(self)
+	chapter_pillar = preload("res://world/ChapterPillar.tscn").instantiate()
+	chapter_pillar.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(chapter_pillar)
+	chapter_pillar.configure(self)
 	dynamic_encounters = preload("res://combat/dynamic_encounters.gd").new()
 	dynamic_encounters.name = "DynamicEncounters"
 	dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -214,6 +224,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	# Continue may restore a committed briefing before its presentation completed.
+	# Wait for the ordinary grounded, safe world boundary; never replay seen art.
+	if player and player.has_meta("spawn_position") and dialogue_state.persistence_error == "" and not dialogue_state.conversation_active and training and training.can_save() and bow_training and bow_training.can_save():
+		_try_guard_interlude()
 	if skill_panel and not initial_skill_prompted and dialogue_state.lamp_owned and dialogue_state.pending_points() > 0 and dialogue_state.skills.is_empty() and pause_owners.is_empty() and not training.player_locked() and player.attack_timer <= 0 and player.switch_timer <= 0:
 		initial_skill_prompted = true
 		skill_panel.open_panel()
@@ -272,10 +286,18 @@ func _open_controls() -> void:
 func _dialogue_closed() -> void:
 	_save_opening(0)
 	_set_pause_owner("dialogue", false)
+	_try_guard_interlude()
+
+func _try_guard_interlude() -> void:
+	if pause_owners.is_empty() and get_node_or_null("GuardInterlude") == null and preload("res://ui/guard_interlude.gd").eligible(dialogue_state):
+		var interlude = preload("res://ui/guard_interlude.tscn").instantiate()
+		interlude.name = "GuardInterlude"
+		interlude.world = self
+		add_child(interlude)
 
 
 func _save_opening(slot: int) -> void:
-	if dialogue_state.lives <= 0 or (training and (not training.can_save() or (bow_training and not bow_training.can_save()))):
+	if pause_owners.has("guard_interlude") or dialogue_state.lives <= 0 or (training and (not training.can_save() or (bow_training and not bow_training.can_save()))):
 		dialogue_state.save_feedback = "当前不能保存 · 请先退回安全处或恢复冒险"
 		if controls_feedback: controls_feedback.text = dialogue_state.save_feedback
 		return
@@ -320,6 +342,7 @@ func _load_opening(slot: int) -> void:
 	player.prepare_restored_camera(float(restored.yaw))
 	training.restore_history()
 	if bridge_actions: bridge_actions.restore_history()
+	if channel_guards: channel_guards.restore_history()
 	gameplay_hud.restore_view()
 	restoring_interface = false
 	restored_position = restored
@@ -422,6 +445,10 @@ func _close_controls() -> void:
 # Called at the start of the player's _input, before mouse attacks and before
 # either script's _unhandled_input. Captured keys cannot leak into the world.
 func handle_controls_input(event: InputEvent) -> bool:
+	if pause_owners.has("guard_interlude"):
+		# Let the interlude and its GUI own Esc, Space and navigation; do not
+		# open a nested world menu or a save/action shortcut over the painting.
+		return event is InputEventKey and event.keycode in [KEY_F10,KEY_F5,KEY_E,KEY_I,KEY_J,KEY_K]
 	for panel in [inventory_panel, skill_panel]:
 		if panel and panel.visible and not controls_panel.visible:
 			if event is InputEventKey and event.pressed and not event.echo:

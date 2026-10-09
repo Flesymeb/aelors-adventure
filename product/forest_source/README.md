@@ -1,4 +1,23 @@
 # 🌲 Forest in Godot 4
+## Product binding clarification (loop 24)
+
+This retained source is pinned to `885de5769b2d0cf7ea0808752e44d680abecfd5b`
+of https://github.com/Lakshman-YT/Forest-Godot4. The current product's
+`preview_controller.gd` instantiates `res://world.tscn` once as `Forest`, with
+its Terrain3D, vegetation, bridges, water, sky and collision. Guard placement
+uses `forest_ground.gd` against this authored terrain. No world source was
+copied or replaced in loop 24. `Player.tscn`, `player_controller.gd` and
+`ranger_head_assembly.gd` retain the selected village actor dependencies;
+the forest scene is not the full selected Emaceart village migration.
+
+The upstream description below is preserved as source documentation.
+“Free to download” is not a blanket redistribution license. Keep
+`!Credits-README!.txt` and each plugin/model/texture/audio notice. Terrain3D
+and Sky3D code are MIT; independent asset rights still require confirmation.
+The inherited missing `Objects/Grass_Texture.psd` / empty Texture2D import
+findings remain unresolved. Live world binding does not prove their repair,
+authenticated source delivery, or independent map acceptance.
+
 ## 📦 Note Project Files
 
 This is a **completely free forest project** created by **GW Tuts (Lakshman)** using **Godot 4.6.3 Stable**.

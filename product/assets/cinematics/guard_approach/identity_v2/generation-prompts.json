@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "generator_tool": "image_gen.imagegen",
+  "execution_mode": "built-in",
+  "backend_model_identifier": "not exposed by the built-in tool",
+  "target_original_images": "three prior bridge/guard source paintings, preserved unchanged",
+  "requests": [
+    {
+      "output": "bridge_restored.png",
+      "prompt": "Edit only the character identity and wardrobe in the FIRST image, which is the target full-screen cinematic painting. Other references are identity/silhouette references only: the portrait shows the intended youthful brown-haired faces and green-hooded ranger costume; the live game screenshot shows Aelor's actual green hood/tunic silhouette. Keep the original 16:9 scene composition, restored bridge, returned ordinary resident, lanterns, forest valley, stonework, warm dusk palette, rich high-quality cinematic painting and empty safe margins. AELOR, the young adult male at foreground left, must wear his recognizable deep forest-green raised hood and green ranger tunic with brown leather crossed straps, brown belt/gauntlets and an understated asymmetric steel shoulder guard, matching the live screenshot; replace the brown travel coat and beige scarf, but preserve the face, gaze, posture and tasteful medieval texture. His short tousled brown hair may be visible at the hood opening. ISHA, the foreground young adult woman beside him, must wear a muted burgundy-red wool shawl over a gray-brown medieval dress with cream linen sleeves and a plain off-white linen bonnet around tied-back brown hair, consistent with her live village identity. Replace the green embroidered cloak and exposed long braids. Match the portrait face without changing her age to a child. The returned bridge resident is a different person from the four abductees and stays separate. No rescue completion, fighting, XP, text, logos or UI. No new weapons, no modern accessories. Preserve all other image details and sophisticated light; corrections must be clear at game presentation size.",
+      "references": [
+        "prior painting bridge_restored.png",
+        "existing face/wardrobe portrait",
+        "observed live hero final-view screenshot"
+      ]
+    },
+    {
+      "output": "isha_remembers.png",
+      "prompt": "Edit ONLY Isha's identity and clothing in the FIRST target painting. The second portrait is an identity reference, the third live screenshot is game context, not a target to redraw. Keep the original fullscreen 16:9 composition, Isha at the lantern table, grief and determination in her expression, forest-valley bridge village background, exact storytelling, painterly cinematic detail and warm evening lighting. Isha is a young adult village woman with the brown-haired face from the portrait reference. Her LIVE costume is a muted burgundy-red wool shoulder shawl over a gray-brown medieval village dress with cream linen sleeves, and a plain off-white linen bonnet covering tied-back brown hair. Replace the green embroidered hooded cloak and exposed long braids with this clothing. Preserve her original hand positions and believable adult hands, lantern, dress shape, body posture and restrained expression. The red shawl should be recognizable but softly weathered and naturally lit. No Aelor or extra foreground character, no captions, no text, no UI, no logos. Her father Auren and three villagers are still missing; the image must not depict any of them rescued. Preserve the original art style and mature high-quality medieval atmosphere.",
+      "references": [
+        "prior painting isha_remembers.png",
+        "existing face/wardrobe portrait",
+        "observed live hero final-view screenshot"
+      ]
+    },
+    {
+      "output": "channel_guards.png",
+      "prompt": "Edit ONLY Aelor's foreground clothing in the FIRST target cinematic painting. The other references show intended identity and actual green Ranger costume; do not copy their backgrounds or redraw the game screenshot. Preserve the first image's exact 16:9 composition, forest/rock path, dormant paired blue/yellow stone pillars, exactly TWO bulky green-skinned Orc melee guards and ONE separate human bow Ranger, supported terrain, cover, guard equipment and identities, dusk light and high-quality medieval cinematic painting. AELOR is the young adult foreground observer at the left, seen from behind. Replace his brown travel jacket and beige scarf with a recognizable deep forest-green raised hood and green ranger tunic/short shoulder mantle, brown leather back/cross straps, brown bracers and an understated asymmetric steel shoulder guard, matching the live game screenshot and portrait character. Preserve his position, anatomy, gaze and noncombat pose; short tousled brown hair can be partially visible at the hood opening. Keep his hands/equipment below the frame so no new acquisition is implied. Do not change the human bow guard's outfit or either Orc. No victory, no rescue, no active teleport, no boss, no text, no UI, no logos. All remaining source pixels/content should remain as faithful as possible to the original target scene.",
+      "references": [
+        "prior painting channel_guards.png",
+        "existing face/wardrobe portrait",
+        "observed live hero final-view screenshot"
+      ]
+    }
+  ]
+}

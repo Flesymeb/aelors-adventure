@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://combat/snaiel/scenes/entities/enemies/HybridEnemy.tscn" id="1"]
+[ext_resource type="Script" path="res://combat/channel_melee_adapter.gd" id="2"]
+[node name="ChannelMeleeGuard" instance=ExtResource("1")]
+script = ExtResource("2")

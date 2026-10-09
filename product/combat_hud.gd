@@ -72,8 +72,15 @@ func _process(_delta: float) -> void:
 	enemy_name.text = "◇ 抬手预告" if opponent.phase == "telegraph" else "训练怪 · %d/%d" % [int(opponent.health), int(opponent.health_component.max_health)]
 	enemy_name.add_theme_font_size_override("font_size", int(17 * state.text_scale))
 	var opponents: Array = []
+	var occupied: Array[Rect2] = []
+	if enemy.visible: occupied.append(enemy.get_global_rect().grow(6))
+	var hud: Node = training.world.gameplay_hud
+	if hud and is_instance_valid(hud.tracker) and hud.tracker.is_visible_in_tree():
+		occupied.append(hud.tracker.get_global_rect().grow(8))
 	if training.world.bridge_encounter:
 		opponents.append_array(training.world.bridge_encounter.enemies)
+	if training.world.channel_guards:
+		opponents.append_array(training.world.channel_guards.enemies)
 	if training.world.dynamic_encounters:
 		opponents.append_array(training.world.dynamic_encounters.enemies)
 	for stale in bridge_bars.keys():
@@ -96,12 +103,33 @@ func _process(_delta: float) -> void:
 			var front = not camera.is_position_behind(p)
 			var px = camera.unproject_position(p) if front else Vector2(-1000,-1000)
 			b.rows.visible = opponent2.health > 0 and opponent2.engaged and front and Rect2(Vector2.ZERO,viewport).has_point(px) and opponent2.line_clear(training.player.global_position)
-			b.rows.position = px - Vector2(110,50)
 			b.bar.value = opponent2.health
 			b.bar.max_value = opponent2.health_component.max_health
 			b.title.text = opponent2.display_name + (" · 抬手预告" if opponent2.phase == "telegraph" else " · %d/%d" % [int(opponent2.health),int(opponent2.health_component.max_health)])
 			b.title.add_theme_font_size_override("font_size",int(17 * state.text_scale))
+			if b.rows.visible:
+				place_enemy_bar(b.rows,px,viewport,occupied)
 	if training.notice_time > 0: status.add_theme_color_override("font_color", Color(1, 0.91, 0.64))
+
+func place_enemy_bar(rows: Control, anchor: Vector2, viewport: Vector2, occupied: Array[Rect2]) -> void:
+	var size := rows.get_combined_minimum_size()
+	rows.size = size
+	var top := viewport.y * 0.24
+	var bottom := maxf(top, viewport.y - 130 - size.y)
+	var origin := Vector2(clampf(anchor.x-size.x*0.5,12,maxf(12,viewport.x-size.x-12)),clampf(anchor.y-50,top,bottom))
+	var placement := Rect2(origin,size)
+	# Nearby world anchors must not merge distinct identities/HP into one label.
+	# Keep the normal world projection, then use the nearest free vertical lane.
+	for offset in [0,-1,1,-2,2,-3,3,-4,4,-5,5]:
+		var candidate := Rect2(Vector2(origin.x,clampf(origin.y+offset*(size.y+8),top,bottom)),size)
+		var overlaps := false
+		for other in occupied:
+			if candidate.grow(4).intersects(other): overlaps = true; break
+		if not overlaps:
+			placement = candidate
+			break
+	rows.position = placement.position
+	occupied.append(placement.grow(4))
 
 func _mcp_state() -> Dictionary:
 	return {"health": training.state.health, "experience_target": training.state.experience, "enemy_bar_visible": enemy.visible, "enemy_hp": enemy_hp.value, "enemy_bar_rect": str(enemy.get_global_rect()), "status": status.text}

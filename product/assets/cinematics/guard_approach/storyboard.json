@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "title": "第一章·桥后的踪迹",
+  "duration_seconds": 6,
+  "text_is_runtime_overlay": true,
+  "slides": [
+    {
+      "image": "guard_01.png",
+      "duration_seconds": 2,
+      "caption": "桥路已通，危机未解。",
+      "beat": "恢复的桥与普通村民"
+    },
+    {
+      "image": "guard_02.png",
+      "duration_seconds": 2,
+      "caption": "奥伦与三名村民仍未归。",
+      "beat": "伊莎惦念失踪者"
+    },
+    {
+      "image": "guard_03.png",
+      "duration_seconds": 2,
+      "caption": "守卫挡路，石柱尚未开启。",
+      "beat": "两近战Orc与一远程Ranger；未激活石柱"
+    }
+  ],
+  "trigger_intent": "Earn both existing bridge actions, then ordinary Isha guard briefing. Bind through existing quest owner, no debug grant.",
+  "completion_intent": "Return to reachable guard objective; both normal finish and skip commit briefing only, never guard victory, rescue or departure.",
+  "runtime_direction": {
+    "motion": "same opening 2–4% gentle pan/zoom; Reduced Motion",
+    "transition": "same opening black/crossfade transition",
+    "captions": "engine native chapter title and scalable Chinese captions; caption stays within readable safe area",
+    "control": "world paused under one owner; pause/resume/skip; restore input/camera; durable once-only story boundary"
+  },
+  "qualification_status": "bound; independent ordinary-route acceptance pending"
+}
