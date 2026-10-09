@@ -189,9 +189,16 @@ func close() -> void:
 		hide()
 
 func _mcp_state() -> Dictionary:
-	var focus := get_viewport().gui_get_focus_owner()
+	var live := is_inside_tree() and not is_queued_for_deletion()
+	var viewport := get_viewport() if live else null
+	var focus: Control = viewport.gui_get_focus_owner() if viewport else null
 	var row: Control = focus.get_meta("focus_row", focus) if focus else null
-	var scroll: ScrollContainer = page.find_child("PageScroll", true, false)
-	var observation := {"group": group, "capturing": capturing, "preferences": host.state.preference_snapshot(), "bindings": bindings.effective_bindings.duplicate(), "binding_error": bindings.control_persistence_error, "visible": visible, "focus_rect": str(row.get_global_rect()) if row else "", "viewport_rect": str(scroll.get_global_rect()), "feedback": feedback.text, "feedback_rect": str(feedback.get_global_rect()), "scroll": scroll.scroll_vertical}
-	observation.merge(host.state.audio_observation())
+	var page_ready := live and is_instance_valid(page) and not page.is_queued_for_deletion()
+	var scroll := page.find_child("PageScroll", true, false) as ScrollContainer if page_ready else null
+	var state: Node = host.state if is_instance_valid(host) and not host.is_queued_for_deletion() else null
+	var state_ready := is_instance_valid(state) and not state.is_queued_for_deletion()
+	var bindings_ready := is_instance_valid(bindings) and not bindings.is_queued_for_deletion()
+	var feedback_ready := live and is_instance_valid(feedback) and not feedback.is_queued_for_deletion()
+	var observation := {"ready": live and is_node_ready() and state_ready and page_ready, "group": group, "capturing": capturing, "preferences": state.preference_snapshot() if state_ready else null, "bindings": bindings.effective_bindings.duplicate() if bindings_ready else null, "binding_error": bindings.control_persistence_error if bindings_ready else null, "visible": visible if live else null, "focus_rect": str(row.get_global_rect()) if is_instance_valid(row) and not row.is_queued_for_deletion() else null, "viewport_rect": str(scroll.get_global_rect()) if is_instance_valid(scroll) and not scroll.is_queued_for_deletion() else null, "feedback": feedback.text if feedback_ready else null, "feedback_rect": str(feedback.get_global_rect()) if feedback_ready else null, "scroll": scroll.scroll_vertical if is_instance_valid(scroll) and not scroll.is_queued_for_deletion() else null}
+	if state_ready: observation.merge(state.audio_observation())
 	return observation

@@ -241,4 +241,6 @@ func _exit_tree() -> void:
 	_release_world()
 
 func _mcp_state() -> Dictionary:
-	return {"beat":beat+1,"image":slides[beat].image if not slides.is_empty() else null,"elapsed":total_elapsed,"caption":captions.text if is_instance_valid(captions) else null,"paused":paused,"finished":finished,"phase":phase,"skipped":skipped,"inputs_armed":armed,"zoom":picture.scale.x if is_instance_valid(picture) else null,"transition_alpha":veil.color.a if is_instance_valid(veil) else null}
+	var live := is_inside_tree() and not is_queued_for_deletion()
+	var slide_ready := live and beat >= 0 and beat < slides.size()
+	return {"ready":live and is_node_ready() and slide_ready,"beat":beat+1 if slide_ready else null,"image":slides[beat].image if slide_ready else null,"elapsed":total_elapsed,"caption":captions.text if live and is_instance_valid(captions) and not captions.is_queued_for_deletion() else null,"paused":paused,"finished":finished,"phase":phase,"skipped":skipped,"inputs_armed":armed,"zoom":picture.scale.x if live and is_instance_valid(picture) and not picture.is_queued_for_deletion() else null,"transition_alpha":veil.color.a if live and is_instance_valid(veil) and not veil.is_queued_for_deletion() else null}

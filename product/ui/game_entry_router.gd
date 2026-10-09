@@ -168,6 +168,8 @@ func _process(delta: float) -> void:
 		if not player_ready or _confirmation_held(): return
 		if not world.training.grounded or not world.bow_training.grounded:
 			return
+		if not world.bridge_encounter.grounded or not world.chapter_pillar.grounded:
+			return
 		# Only promote a new/selected manual history after genuine safe readiness.
 		if entry_kind == "new" or entry_kind == "load":
 			if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:

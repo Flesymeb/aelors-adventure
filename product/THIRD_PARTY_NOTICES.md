@@ -150,8 +150,15 @@ Forest has no blanket MIT license. Terrain3D and Sky3D code licenses apply to
 those plugins; models, vegetation, textures, sky images and audio retain their
 individual rights. Source credits are in `forest_source/!Credits-README!.txt`.
 Unconfirmed asset redistribution rights remain unresolved. The inherited
-`Objects/Grass_Texture.psd` / empty Texture2D import findings are also unresolved;
-the successful gameplay boot does not establish a repair or complete clean import.
+`Objects/Grass_Texture.psd` / empty Texture2D import findings are also unresolved.
+Native cache-independent world/house loading and dependency traversal succeed,
+but do not establish clean import. The retained original
+`Objects/EA03_Plant_Grass_02a.fbx` and `Objects/EA03_Plant_Grass_02b.fbx` contain
+the missing PSD reference; the registered original village source also lacks
+the PSD. The retained `Textures/Grass_Texture.png` is unchanged from that source.
+No texture restoration, conversion, scenery removal or new source transfer is
+claimed. These import owners require separately authorized repair; the Forest
+versus complete-village adoption requirement still needs Host adjudication.
 
 Channel melee guards reuse `assets/training/Orc.gltf` (Quaternius CC0).
 The ranged guard binds the newly provider-packed `assets/guards/ranged_guard.glb`

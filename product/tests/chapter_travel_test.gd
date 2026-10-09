@@ -4,6 +4,67 @@ const STATE = preload("res://dialogue_state.gd")
 const GUARDS = preload("res://tests/channel_guard_test.gd")
 const BRIDGE = preload("res://tests/bridge_actions_test.gd")
 
+class DiagnosticState extends "res://dialogue_state.gd":
+	var diagnostic_save_requests := 0
+	func _ready() -> void:
+		# No preferences, histories or file writes in this opt-in fixture.
+		inventory = preload("res://inventory/product_inventory.gd").new()
+		inventory.state = self
+		add_child(inventory)
+	func save_progress(_position: Vector3, _yaw: float, _slot := 0) -> Error:
+		diagnostic_save_requests += 1
+		return OK
+	func load_progress(_slot := 0) -> Dictionary:
+		return {}
+
+class DiagnosticRouter extends "res://ui/game_entry_router.gd":
+	var diagnostic_ready := false
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		state = DiagnosticState.new()
+		state.name = "DiagnosticState"
+		var prepared: Node = load("res://tests/chapter_travel_test.gd").earned()
+		add_child(state)
+		state.restore_config(load("res://tests/chapter_travel_test.gd").history(prepared))
+		prepared.free()
+		audio = preload("res://ui/menu_audio.gd").new()
+		audio.state = state
+		add_child(audio)
+		world = preload("res://Preview.tscn").instantiate()
+		world.name = "DiagnosticVillage"
+		world.dialogue_state = state
+		world.entry_router = self
+		world.restored_position = {"position":Vector3(133,11,149),"map_id":state.GROUND.MAP_ID,"yaw":PI}
+		world.entry_ready.connect(func(): player_ready = true)
+		world.entry_failed.connect(func(message): entry_error = message)
+		route = "diagnostic_initializing"
+		add_child(world)
+		world._set_pause_owner("entry", true)
+		get_tree().paused = false
+	func _process(delta: float) -> void:
+		if route == "diagnostic_initializing":
+			if player_ready and world.training.grounded and world.bow_training.grounded and world.bridge_encounter.grounded and world.chapter_pillar.grounded:
+				diagnostic_ready = true
+				world.training.restore_history()
+				world.gameplay_hud.restore_view()
+				world._set_pause_owner("entry", false)
+				route = "world"
+			return
+		super(delta)
+	func _mcp_state() -> Dictionary:
+		var observation := super()
+		observation.diagnostic_fixture = true
+		observation.diagnostic_ready = diagnostic_ready
+		observation.diagnostic_save_requests = state.diagnostic_save_requests if is_instance_valid(state) else null
+		return observation
+
+static func attach_diagnostic(parent: Node) -> Node:
+	# Prepared state is component support, never evidence of earned progression.
+	# All save calls are intercepted before either world can autosave.
+	var router := DiagnosticRouter.new()
+	parent.add_child(router)
+	return router
+
 static func earned() -> Node:
 	var s := GUARDS.prepared()
 	for id in s.GUARD_IDS: s.settle_guard(id, Vector3(133,11,142), {"id":"healing","quantity":1})

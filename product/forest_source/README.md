@@ -15,8 +15,15 @@ The upstream description below is preserved as source documentation.
 `!Credits-README!.txt` and each plugin/model/texture/audio notice. Terrain3D
 and Sky3D code are MIT; independent asset rights still require confirmation.
 The inherited missing `Objects/Grass_Texture.psd` / empty Texture2D import
-findings remain unresolved. Live world binding does not prove their repair,
-authenticated source delivery, or independent map acceptance.
+findings remain unresolved. The native retained world/house load probe traverses
+86 resource owners and can instantiate both roots without these errors, but
+that is separate from clean import. The original retained FBX files
+`Objects/EA03_Plant_Grass_02a.fbx` and `Objects/EA03_Plant_Grass_02b.fbx` both
+reference the absent PSD; the registered village source also lacks that file.
+The retained `Textures/Grass_Texture.png` matches that original source exactly;
+it is not a PSD replacement. Repair of the FBX dependency owners needs separate
+authorization. No texture or scenery was substituted. Live world binding does
+not prove authenticated source delivery or independent map acceptance.
 
 ## 📦 Note Project Files
 

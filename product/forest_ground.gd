@@ -54,6 +54,13 @@ static func support(world: Node3D, xz: Vector2, excludes: Array[RID] = []) -> Di
 	if not is_finite(height): return {}
 	var query := PhysicsRayQueryParameters3D.create(Vector3(xz.x, 80, xz.y), Vector3(xz.x, -80, xz.y), 1, excludes)
 	var hit := world.get_world_3d().direct_space_state.intersect_ray(query)
+	# The retained departure arch now has its authored collision on the world
+	# layer. Its roof can hide valid terrain from the high ray. Query below that
+	# roof only for this exact arch; keep all support and standing-space filters.
+	var arch: Node = world.village.get_node_or_null("Terrain3D/Big rocks/Node3D/StaticBody3D")
+	if not hit.is_empty() and arch != null and hit.collider == arch and hit.position.y > height + 1.3:
+		query.from = Vector3(xz.x, height + 1.3, xz.y)
+		hit = world.get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty() or hit.normal.y < 0.65: return {}
 	var on_bridge := false
 	var collider: Object = hit.collider

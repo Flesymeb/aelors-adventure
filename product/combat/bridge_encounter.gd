@@ -24,7 +24,11 @@ func configure(owner_world: Node3D) -> void:
 func ground() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
-		grounded = GROUND.place(world,enemies[0],ANCHORS[0]) and GROUND.place(world,enemies[1],ANCHORS[1])
+		if is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion(): return
+		# Qualify both anchors even if the first is rejected.
+		var first := GROUND.place(world,enemies[0],ANCHORS[0])
+		var second := GROUND.place(world,enemies[1],ANCHORS[1])
+		grounded = first and second
 		if grounded: break
 	if not grounded: push_error("Bridge encounter lacks authored terrain support"); return
 	for enemy in enemies: enemy.home = enemy.global_position
