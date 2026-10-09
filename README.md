@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 38 |
-| Closed | 29 |
-| All | 67 |
+| Open | 39 |
+| Closed | 30 |
+| All | 69 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 21 |
-| Verified closed | 20 |
+| Active | 22 |
+| Verified closed | 21 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 46 |
+| All in this run | 48 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Native audio capture is available, but required independent Music/Effects listening remains unresolved. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Required independent audio-setting listening remains unresolved. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening completion is observed, but the remaining opening acceptance matrix cannot be closed. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening completion passes its observation; the full opening matrix remains incomplete. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -83,12 +83,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue continuity still lacks the counterpart portrait. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
-| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | The selected complete village is not adopted, and retained map/actor transfer declarations remain unauthenticated. |
+| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Source-read authentication improved, but conflicting baseline-adoption acceptance prevents closure. |
 | `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | untitled issue |
 | `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | untitled issue |
 | `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | OPEN | Retained texture dependencies still produce resource-load errors. |
-| `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | OPEN | Actual guard victories and collected-reward persistence are substantially verified; pending/full-bag recovery and E01 closeout remain incomplete. |
-| `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | OPEN | The shipped bridge-to-pillar camera still becomes occluded by authored rock and hides the player. |
+| `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | OPEN | Pending ranged-pickup recovery remains independently unverified. |
+| `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | CLOSED | Independently verified resolved at loop 27. |
+| `earned_travel_matrix_unverified` | [#68](https://github.com/Flesymeb/aelors-adventure/issues/68) | OPEN | Readable pillar access does not establish complete earned chapter travel. |
+| `fps.runtime.candidate-error-3c0e1afbfbb2` | [#69](https://github.com/Flesymeb/aelors-adventure/issues/69) | OPEN | Godot reported a candidate-owned runtime error: Bridge encounter lacks authored terrain support |
 
 ### HoH-managed GitHub issues across runs
 
@@ -96,7 +98,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 38 | 29 | 67 |
+| GitHub HoH namespace | 39 | 30 | 69 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -133,7 +135,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-27-1c470d480585` | `development_snapshot:attempt-abc2fe433f844f014d94f5b0` | NEEDS VISUAL QA |
+| `loop-27-1c470d480585` | `development_snapshot:attempt-abc2fe433f844f014d94f5b0` | BLOCKED |
 
 ### Project Planner
 
@@ -160,7 +162,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-27-1c470d480585` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (6 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `pending_guard_recovery_unverified` | MAJOR | INTERNAL | HIGH | Pending ranged-pickup recovery remains independently unverified. |
+| `earned_travel_matrix_unverified` | MAJOR | INTERNAL | HIGH | Readable pillar access does not establish complete earned chapter travel. |
+| `opening_matrix_unverified` | MAJOR | INTERNAL | HIGH | Normal opening completion passes its observation; the full opening matrix remains incomplete. |
+| `settings_listening_unverified` | MAJOR | INTERNAL | HIGH | Required independent audio-setting listening remains unresolved. |
+| `reference_acceptance_conflict` | MAJOR | INTERNAL | HIGH | Source-read authentication improved, but conflicting baseline-adoption acceptance prevents closure. |
+| `fps.runtime.candidate-error-3c0e1afbfbb2` | MAJOR | unlabelled | unlabelled | Godot reported a candidate-owned runtime error: Bridge encounter lacks authored terrain support |
 
 ---
 
@@ -1490,5 +1507,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-27-1c470d480585`
 - Latest warm start: `loop-27-50e184341cd7`
 - Last published: `loop-27-1c470d480585`
-- Best verified: `loop-26-50e184341cd7`
+- Best verified: `loop-27-1c470d480585`
 - Generated by the HoH host from immutable run evidence.
