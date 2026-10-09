@@ -218,8 +218,12 @@ func return_to_title() -> void:
 	audio.play_cue("back")
 
 func _mcp_state() -> Dictionary:
-	var focus := get_viewport().gui_get_focus_owner()
-	var observation := {"route": route, "entry_kind": entry_kind, "selected_slot": selected_slot, "resource_status": loader.status, "resource_progress": loader.progress, "initialized": initialized, "player_ready": player_ready, "entry_error": entry_error, "world_present": is_instance_valid(world), "world_processing": world.is_processing() if is_instance_valid(world) else false, "loading_present": is_instance_valid(loading), "tree_paused": get_tree().paused, "mouse_mode": Input.mouse_mode, "focus": str(focus.get_path()) if focus else "", "adventure": state._mcp_state()}
+	var viewport := get_viewport() if is_inside_tree() else null
+	var focus: Control = viewport.gui_get_focus_owner() if viewport else null
+	var tree := get_tree() if is_inside_tree() else null
+	var loader_ready := is_instance_valid(loader) and not loader.is_queued_for_deletion()
+	var state_ready := is_instance_valid(state) and not state.is_queued_for_deletion()
+	var observation := {"ready": is_node_ready() and not is_queued_for_deletion(), "loader_ready": loader_ready, "state_ready": state_ready, "opening_present": is_instance_valid(opening) and not opening.is_queued_for_deletion(), "opening": opening._mcp_state() if is_instance_valid(opening) and not opening.is_queued_for_deletion() else null, "route": route, "entry_kind": entry_kind, "selected_slot": selected_slot, "resource_status": loader.status if loader_ready else null, "resource_progress": loader.progress if loader_ready else null, "initialized": initialized, "player_ready": player_ready, "entry_error": entry_error, "world_present": is_instance_valid(world) and not world.is_queued_for_deletion(), "world_processing": world.is_processing() if is_instance_valid(world) and not world.is_queued_for_deletion() else null, "loading_present": is_instance_valid(loading) and not loading.is_queued_for_deletion(), "tree_paused": tree.paused if tree else null, "mouse_mode": Input.mouse_mode, "focus": str(focus.get_path()) if focus else "", "adventure": state._mcp_state() if state_ready else null}
 	# The entry owner already retains the rollback snapshot. Expose only facts
 	# needed to compare it with AdventureState; do not create another history.
 	for key in ["opening_completed", "logical_node", "q01_accepted", "experience", "sword_owned", "bow_owned", "lamp_owned", "lives", "arrows", "selected_equipment"]:

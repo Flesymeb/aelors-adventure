@@ -204,3 +204,41 @@ func _mcp_state() -> Dictionary:
 		"sword_source_id": last_sword_readout.get("source_id", 0), "sword_attack_instance": last_sword_readout.get("attack_instance", 0),
 		"sword_receiver": last_sword_readout.get("receiver", ""), "sword_hp_before": last_sword_readout.get("hp_before", 0.0),
 		"sword_hp_after": last_sword_readout.get("hp_after", 0.0), "sword_hp_loss": last_sword_readout.get("hp_loss", 0.0)}
+
+
+static func make_remnant() -> Node3D:
+	# Shared with the established golden XP remnant presentation.
+	var remnant := Node3D.new()
+	remnant.name = "ExperienceRemnant"
+	var glow = CPUParticles3D.new()
+	glow.amount = 14
+	glow.lifetime = 1.4
+	glow.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	glow.emission_sphere_radius = 0.2
+	glow.direction = Vector3.UP
+	glow.initial_velocity_min = 0.15
+	glow.initial_velocity_max = 0.3
+	glow.gravity = Vector3.ZERO
+	glow.scale_amount_min = 0.03
+	glow.scale_amount_max = 0.055
+	glow.color = Color(1, 0.78, 0.18)
+	var material = StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.vertex_color_use_as_albedo = true
+	var mesh = SphereMesh.new()
+	mesh.radius = 0.5
+	mesh.height = 1
+	mesh.material = material
+	glow.mesh = mesh
+	glow.position.y = 0.65
+	remnant.add_child(glow)
+	var label = Label3D.new()
+	label.text = "◇ 经验残响"
+	label.font = preload("res://dialogue_theme.tres").default_font
+	label.font_size = 44
+	label.pixel_size = 0.005
+	label.position.y = 1.25
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	remnant.add_child(label)
+
+	return remnant

@@ -227,9 +227,12 @@ func _exit_tree() -> void:
 		router.audio.music.stream_paused = false
 
 func _mcp_state() -> Dictionary:
-	var owners := ["cinematic"]
-	if pause_menu:
+	var live := is_inside_tree() and not is_queued_for_deletion()
+	var ready := live and is_node_ready() and is_instance_valid(state) and not state.is_queued_for_deletion() and beat >= 0 and beat < slides.size()
+	var menu_ready := is_instance_valid(pause_menu) and not pause_menu.is_queued_for_deletion()
+	var owners := ["cinematic"] if live else []
+	if menu_ready:
 		owners.append("opening_pause")
-		if pause_menu.sub_menu: owners.append(str(pause_menu.sub_menu.name))
-		if pause_menu.confirmation: owners.append("confirmation")
-	return {"beat": beat + 1, "image": str(slides[beat].image), "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()), "text_scale": state.text_scale, "pause_owners": owners, "timeline_paused": pause_menu != null or not inputs_armed, "transition_alpha": image_previous.modulate.a, "zoom": image_current.scale.x, "nonessential_effects": state.graphics_quality != "low", "motion": not state.reduced_motion and state.graphics_quality != "low", "inputs_armed": inputs_armed, "finished": finished}
+		if is_instance_valid(pause_menu.sub_menu): owners.append(str(pause_menu.sub_menu.name))
+		if is_instance_valid(pause_menu.confirmation): owners.append("confirmation")
+	return {"ready": ready, "beat": beat + 1 if ready else null, "image": str(slides[beat].image) if ready else null, "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()) if live and is_instance_valid(caption_panel) and not caption_panel.is_queued_for_deletion() else null, "text_scale": state.text_scale if ready else null, "pause_owners": owners, "timeline_paused": menu_ready or not inputs_armed, "transition_alpha": image_previous.modulate.a if is_instance_valid(image_previous) and not image_previous.is_queued_for_deletion() else null, "zoom": image_current.scale.x if is_instance_valid(image_current) and not image_current.is_queued_for_deletion() else null, "nonessential_effects": state.graphics_quality != "low" if ready else null, "motion": not state.reduced_motion and state.graphics_quality != "low" if ready else null, "inputs_armed": inputs_armed, "finished": finished}

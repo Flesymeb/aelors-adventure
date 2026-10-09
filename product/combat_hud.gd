@@ -71,8 +71,17 @@ func _process(_delta: float) -> void:
 	enemy_hp.value = opponent.health
 	enemy_name.text = "◇ 抬手预告" if opponent.phase == "telegraph" else "训练怪 · %d/%d" % [int(opponent.health), int(opponent.health_component.max_health)]
 	enemy_name.add_theme_font_size_override("font_size", int(17 * state.text_scale))
+	var opponents: Array = []
 	if training.world.bridge_encounter:
-		for opponent2 in training.world.bridge_encounter.enemies:
+		opponents.append_array(training.world.bridge_encounter.enemies)
+	if training.world.dynamic_encounters:
+		opponents.append_array(training.world.dynamic_encounters.enemies)
+	for stale in bridge_bars.keys():
+		if not is_instance_valid(stale) or stale.is_queued_for_deletion() or not opponents.has(stale):
+			bridge_bars[stale].rows.queue_free()
+			bridge_bars.erase(stale)
+	for opponent2 in opponents:
+		if is_instance_valid(opponent2) and not opponent2.is_queued_for_deletion():
 			if not bridge_bars.has(opponent2):
 				var rows = VBoxContainer.new()
 				var title = Label.new()

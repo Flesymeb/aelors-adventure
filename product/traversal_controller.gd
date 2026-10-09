@@ -22,6 +22,7 @@ var camera_step_offset := 0.0
 var motion_pose: SkeletonModifier3D
 var collision: CollisionShape3D
 var step_count := 0
+var floor_recovery_count := 0
 var step_grace := 0.0
 var last_step: Dictionary = {}
 var feedback := ""
@@ -220,7 +221,28 @@ func move_with_steps(delta: float) -> void:
 	var horizontal := Vector3(player.velocity.x, 0, player.velocity.z) * delta
 	if (player.is_on_floor() or step_grace > 0.0) and player.velocity.y <= 0 and horizontal.length_squared() > 0.000001 and action == "" and posture != "prone":
 		_try_step(horizontal)
+	var before := player.global_position
 	player.move_and_slide()
+	# Terrain seams can report a walkable floor repeatedly at zero travel even
+	# when the requested horizontal capsule sweep is clear. Retry that same
+	# motion only; walls, penetration and unsupported destinations cannot qualify.
+	if horizontal.length_squared() < 0.000001 or player.global_position.distance_squared_to(before) > 0.00000001 or not player.is_on_floor() or player.velocity.y > 0:
+		return
+	if player.get_slide_collision_count() == 0: return
+	for i in player.get_slide_collision_count():
+		var contact := player.get_slide_collision(i)
+		if contact.get_normal().dot(Vector3.UP) < cos(player.floor_max_angle): return
+	var volume := PhysicsShapeQueryParameters3D.new()
+	volume.shape = collision.shape
+	volume.transform = collision.global_transform
+	volume.collision_mask = player.collision_mask
+	volume.exclude = [player.get_rid()]
+	if not player.get_world_3d().direct_space_state.intersect_shape(volume, 1).is_empty(): return
+	var support := _support_observation(before + horizontal)
+	if support.is_empty() or support.normal.dot(Vector3.UP) < cos(player.floor_max_angle) or absf(support.position.y - before.y) > STEP_HEIGHT: return
+	if player.test_move(player.global_transform, horizontal): return
+	player.move_and_collide(horizontal)
+	if player.global_position.distance_squared_to(before) > 0.00000001: floor_recovery_count += 1
 
 func _try_step(horizontal: Vector3) -> bool:
 	var obstruction := KinematicCollision3D.new()
@@ -274,7 +296,7 @@ func observation() -> Dictionary:
 	# Called only by read-only runtime inspection; never drives the player or UI.
 	var heading: Vector3 = moving_direction if moving_direction.length_squared() > 0.01 else player.visual.global_basis.z
 	heading.y = 0.0
-	return {"grounded":player.is_on_floor(),"floor_normal":player.get_floor_normal() if player.is_on_floor() else Vector3.ZERO,"posture":posture,"action":action,"step_height_limit":STEP_HEIGHT,"step_grace":step_grace,"support":_support_observation(player.global_position),"ahead_support":_support_observation(player.global_position + heading.normalized() * 0.5),"last_step":last_step}
+	return {"grounded":player.is_on_floor(),"floor_normal":player.get_floor_normal() if player.is_on_floor() else Vector3.ZERO,"posture":posture,"action":action,"step_count":step_count,"floor_recovery_count":floor_recovery_count,"step_height_limit":STEP_HEIGHT,"step_grace":step_grace,"support":_support_observation(player.global_position),"ahead_support":_support_observation(player.global_position + heading.normalized() * 0.5),"last_step":last_step}
 
 func eye_height() -> float:
 	return 1.65 if posture == "standing" else (1.0 if posture == "crouch" else 0.62)

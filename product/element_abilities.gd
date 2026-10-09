@@ -181,6 +181,7 @@ func lightning_target() -> Node3D:
 	candidates.append_array(targets)
 	if world.training.monster: candidates.append(world.training.monster)
 	if world.bridge_encounter: candidates.append_array(world.bridge_encounter.enemies)
+	if world.dynamic_encounters: candidates.append_array(world.dynamic_encounters.enemies)
 	var best: Node3D
 	var score = 0.92
 	var forward = -player.camera.global_basis.z.normalized()

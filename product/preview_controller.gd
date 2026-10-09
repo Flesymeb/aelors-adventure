@@ -33,6 +33,7 @@ var bow_training: Node3D
 var lamp_training: Node3D
 var element_abilities: Node3D
 var bridge_encounter: Node3D
+var dynamic_encounters: Node3D
 var bridge_actions: Node3D
 var inventory_panel: Control
 var skill_panel: Control
@@ -127,6 +128,11 @@ func _ready() -> void:
 	bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(bridge_actions)
 	bridge_actions.configure(self)
+	dynamic_encounters = preload("res://combat/dynamic_encounters.gd").new()
+	dynamic_encounters.name = "DynamicEncounters"
+	dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(dynamic_encounters)
+	dynamic_encounters.configure(self)
 	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
@@ -330,14 +336,19 @@ func _refresh_reading_controls() -> void:
 
 
 func _mcp_state() -> Dictionary:
-	# Read existing product authorities. These facts do not create a route,
-	# award equipment, or assert connected-slice completion.
+	# Lifecycle sampling reads authorities only, including partial construction.
+	var tree := get_tree() if is_inside_tree() else null
+	var player_ready := is_instance_valid(player) and not player.is_queued_for_deletion() and player.is_inside_tree()
+	var controls_ready := is_instance_valid(controls_panel) and not controls_panel.is_queued_for_deletion() and controls_panel.is_inside_tree()
+	var state_ready := is_instance_valid(dialogue_state) and not dialogue_state.is_queued_for_deletion()
+	var isha_ready := is_instance_valid(isha) and not isha.is_queued_for_deletion() and isha.is_inside_tree()
 	var story_actors: Array[String] = []
-	for actor in get_tree().get_nodes_in_group("isha"):
-		story_actors.append(str(actor.get_path()))
-	var position := player.global_position
-	var velocity := player.velocity
-	return {"failure": _failure_observation(), "pause_owners": pause_owners.keys(), "pause_owner_count": pause_owners.size(), "product_paused": not pause_owners.is_empty(), "controls_pause_owned": pause_owners.has("controls"), "controls_submenu": str(controls_panel.sub_menu.name) if controls_panel.sub_menu else "", "preferences": dialogue_state.preference_snapshot(), "tree_paused": get_tree().paused, "developer_ui": developer_ui, "controls_visible": controls_panel.visible, "isha_distance": player.global_position.distance_to(isha.global_position), "interaction_available": isha.interaction_available, "objective": dialogue_state.objective(), "equipment": player.weapon_mode, "owns_sword": player.owns_sword, "owns_bow": player.owns_bow, "player_position": [position.x, position.y, position.z], "player_velocity": [velocity.x, velocity.y, velocity.z], "opening_progress": dialogue_state._mcp_state(), "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay}
+	if tree:
+		for actor in tree.get_nodes_in_group("isha"):
+			if not actor.is_queued_for_deletion(): story_actors.append(str(actor.get_path()))
+	var position: Vector3 = player.global_position if player_ready else Vector3.ZERO
+	var velocity: Vector3 = player.velocity if player_ready else Vector3.ZERO
+	return {"ready": is_node_ready() and not is_queued_for_deletion(), "player_ready": player_ready, "controls_ready": controls_ready, "failure": _failure_observation(), "pause_owners": pause_owners.keys(), "pause_owner_count": pause_owners.size(), "product_paused": not pause_owners.is_empty(), "controls_pause_owned": pause_owners.has("controls"), "controls_submenu": str(controls_panel.sub_menu.name) if controls_ready and is_instance_valid(controls_panel.sub_menu) else null, "preferences": dialogue_state.preference_snapshot() if state_ready else null, "tree_paused": tree.paused if tree else null, "developer_ui": developer_ui, "controls_visible": controls_panel.visible if controls_ready else null, "isha_distance": player.global_position.distance_to(isha.global_position) if player_ready and isha_ready else null, "interaction_available": isha.interaction_available if isha_ready else null, "objective": dialogue_state.objective() if state_ready else null, "equipment": player.weapon_mode if player_ready else null, "owns_sword": player.owns_sword if player_ready else null, "owns_bow": player.owns_bow if player_ready else null, "player_position": [position.x, position.y, position.z] if player_ready else null, "player_velocity": [velocity.x, velocity.y, velocity.z] if player_ready else null, "opening_progress": dialogue_state._mcp_state() if state_ready else null, "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay if is_instance_valid(quality) and not quality.is_queued_for_deletion() else null}
 
 
 func _add_help() -> void:
@@ -771,9 +782,10 @@ func _new_adventure() -> void:
 func _failure_observation() -> Dictionary:
 	var actions := []
 	for button in failure_buttons:
-		actions.append({"label": button.text, "disabled": button.disabled, "focused": button.has_focus()})
-	var focus := get_viewport().gui_get_focus_owner()
-	return {"visible": failure_root != null and failure_root.visible, "selection": failure_selection, "armed": failure_armed, "busy": failure_busy, "focus_owner": str(focus.get_path()) if focus else "", "text_scale": dialogue_state.text_scale, "actions": actions, "message": failure_body.text if failure_body else ""}
+		if is_instance_valid(button) and not button.is_queued_for_deletion(): actions.append({"label": button.text, "disabled": button.disabled, "focused": button.has_focus()})
+	var viewport := get_viewport() if is_inside_tree() else null
+	var focus: Control = viewport.gui_get_focus_owner() if viewport else null
+	return {"visible": is_instance_valid(failure_root) and not failure_root.is_queued_for_deletion() and failure_root.visible, "selection": failure_selection, "armed": failure_armed, "busy": failure_busy, "focus_owner": str(focus.get_path()) if focus else "", "text_scale": dialogue_state.text_scale if is_instance_valid(dialogue_state) and not dialogue_state.is_queued_for_deletion() else null, "actions": actions, "message": failure_body.text if is_instance_valid(failure_body) and not failure_body.is_queued_for_deletion() else null}
 
 func _add_product_panels() -> void:
 	var layer = CanvasLayer.new()

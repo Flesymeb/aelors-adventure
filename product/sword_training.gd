@@ -225,10 +225,11 @@ func restore_history() -> void:
 		phase = "idle"
 	if world.lamp_training: world.lamp_training.restore_history()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
+	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
-	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
+	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
 func commit() -> bool:
 	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
@@ -329,6 +330,7 @@ func recovery_duration() -> float:
 func interrupt(_reason: String) -> void:
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
 	if world.bridge_encounter and _reason in ["death", "load", "recovery"]: world.bridge_encounter.interrupt()
+	if world.dynamic_encounters and _reason in ["death", "load", "recovery"]: world.dynamic_encounters.interrupt()
 	player.reset_archery()
 	if world.bow_training and _reason in ["death", "load", "recovery"]: world.bow_training.clear_transients()
 	buffered = false
@@ -402,6 +404,7 @@ func advance_player(delta: float) -> void:
 		sword_source.global_position = player.global_position
 		var registry = {target: target_hitbox, monster: monster.hitbox}
 		if world.bridge_encounter: registry.merge(world.bridge_encounter.registry())
+		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
 		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
 		# Hold the completed guard pose; do not restart it every frame.
@@ -496,6 +499,7 @@ func recover_at_checkpoint() -> void:
 		return
 	monster.reset_encounter()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
+	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	sim_phase = "idle"
 	hers.idle()
 	player.traversal.reset()

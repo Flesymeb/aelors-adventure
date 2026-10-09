@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing"}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -53,6 +53,9 @@ var bridge_supply_claimed := false
 var bridge_later_supply_due := false
 var skills: Dictionary = {}
 var reward_history: Dictionary = {}
+var dynamic_serial := 0
+var dynamic_remaining := 120.0
+var dynamic_instances: Dictionary = {}
 var bag_history: Dictionary = {}
 var quick_item := "healing"
 var inventory: Node
@@ -473,6 +476,12 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		var drop: Variant = reward.get("drop",{})
 		if not drop is Dictionary: return "存档掉落物品无效"
 		if not drop.is_empty() and (drop.get("id","") not in ["healing","lifeflame"] or drop.get("quantity",0) != 1): return "存档掉落物品无效"
+	if not valid_dynamic_facts(config.get_value("post_bow", "dynamic_serial", 0), config.get_value("post_bow", "dynamic_remaining", 120.0), config.get_value("post_bow", "dynamic_instances", {})): return "存档动态遭遇无效"
+	if config.get_value("post_bow", "dynamic_serial", 0) > 0 and not config.get_value("post_bow", "element_practice_complete", false): return "存档动态遭遇前置无效"
+	var collected_xp := 0
+	for record in config.get_value("post_bow", "dynamic_instances", {}).values():
+		if record.status == "collected": collected_xp += 10
+	if xp < collected_xp: return "存档动态奖励无效"
 	return ""
 
 
@@ -661,3 +670,32 @@ func bridge_response() -> String:
 	if bridge_first_action == "light":
 		return "你先点亮桥灯，照清了出口和巡守。" + ("居民感谢你回来拉他出来，也记得等待。" if bridge_resident_rescued else "居民还在等你过桥拉他出来。") + ("桥头补给已经交付。" if bridge_supply_claimed else "桥入口的一次补给留给你。") + "父亲和另三名村民仍待救援，离村准备还未完成。"
 	return "桥边居民不是四名被掳者。先救人要面对暗处巡守，罗恩随后在前方安全点留补给；先点灯能看清路线与巡守，立即可领桥头补给。两项都要完成，顺序由你决定。"
+
+
+static func valid_dynamic_facts(serial: Variant, remaining: Variant, instances: Variant) -> bool:
+	if not serial is int or serial < 0 or serial > 10000000: return false
+	if not (remaining is int or remaining is float) or not is_finite(float(remaining)) or remaining < 0 or remaining > 120: return false
+	if not instances is Dictionary: return false
+	var active := 0
+	for id in instances:
+		if not id is String or not id.begins_with("ch01_dynamic_"): return false
+		var suffix: String = id.trim_prefix("ch01_dynamic_")
+		if not suffix.is_valid_int() or int(suffix) < 1 or int(suffix) > serial or id != "ch01_dynamic_%d" % int(suffix): return false
+		var record: Variant = instances[id]
+		if not record is Dictionary or record.get("status", "") not in ["active", "pending", "collected"] or record.get("xp", 0) != 10: return false
+		var hp: Variant = record.get("hp", -1)
+		if not (hp is int or hp is float) or not is_finite(float(hp)) or hp < 0 or hp > 42: return false
+		if (record.status == "active") != (hp > 0): return false
+		var home: Variant = record.get("home", Vector3.INF)
+		var point: Variant = record.get("position", Vector3.INF)
+		if not home is Vector3 or not home.is_finite() or not point is Vector3 or not point.is_finite() or home.distance_to(point) > 7.5: return false
+		var home_xz := Vector2(home.x,home.z)
+		if minf(home_xz.distance_to(Vector2(126,122)),home_xz.distance_to(Vector2(130,122))) > 1.8: return false
+		if record.status == "active": active += 1
+	return active <= 2
+
+func collect_dynamic_xp(id: String) -> bool:
+	if not dynamic_instances.has(id) or dynamic_instances[id].status != "pending": return false
+	dynamic_instances[id].status = "collected"
+	experience += 10
+	return true
