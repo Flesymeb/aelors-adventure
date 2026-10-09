@@ -236,7 +236,7 @@ func commit() -> bool:
 	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
 	state.sword_selected = state.selected_equipment == "sword"
 	# Autosaves update history at the fixed CP01 anchor, never at the monster.
-	var error: Error = state.save_progress(Vector3(CP01.x, 0, CP01.y), player.arm.rotation.y)
+	var error: Error = state.save_progress(Vector3(world.checkpoint_xz().x, 0, world.checkpoint_xz().y), player.arm.rotation.y)
 	commit_retry = error != OK
 	if commit_retry:
 		commit_retry_timer = 1.0
@@ -515,7 +515,7 @@ func recover_at_checkpoint() -> void:
 	state.inventory.ensure_equipment()
 	state.inventory.select_equipment(state.selected_equipment)
 	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
-	if not place_on_ground(player, CP01):
+	if not place_on_ground(player, world.checkpoint_xz()):
 		tell("检查点落地失败，请加载安全存档")
 		return
 	player.velocity = Vector3.ZERO

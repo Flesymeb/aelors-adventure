@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -48,6 +48,10 @@ var element_practice_complete := false
 var bridge_briefing_acknowledged := false
 var guard_briefing_acknowledged := false
 var guard_interlude_seen := false
+var departure_confirmed := false
+var current_map := GROUND.MAP_ID
+var cp02_claimed := false
+const MAP02 := "meadow-entry-v1"
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
 var bridge_first_action := ""
@@ -196,13 +200,37 @@ func guards_defeated() -> bool:
 
 func passage_missing_conditions() -> Array[String]:
 	var missing: Array[String] = []
-	if not bridge_briefing_available(): missing.append("完成剑、弓、旧灯与元素训练")
+	if not lessons_complete(): missing.append("完成剑、弓、旧灯与元素训练")
 	if not bridge_resident_rescued: missing.append("救出桥边居民")
 	if not bridge_lamp_lit: missing.append("恢复桥灯")
 	if not guard_briefing_acknowledged: missing.append("听取伊莎的通道守卫信息")
 	if not guards_defeated(): missing.append("击败柱群两名近战守卫与一名弓守")
-	missing.append("完成离村交谈与目的地准备")
+	if not departure_confirmed: missing.append("与伊莎确认离村")
 	return missing
+
+func lessons_complete() -> bool:
+	return bridge_briefing_available() and practice_hit and practice_defense and encounter_defeated and trace_revealed
+
+func departure_available() -> bool:
+	return lessons_complete() and bridge_resident_rescued and bridge_lamp_lit and guard_briefing_acknowledged and guards_defeated()
+
+func commit_arrival(map_id: String) -> bool:
+	if map_id not in [GROUND.MAP_ID, MAP02] or not departure_confirmed or not departure_available(): return false
+	current_map = map_id
+	if map_id == MAP02 and not cp02_claimed:
+		cp02_claimed = true
+		lives = mini(5, lives + 1)
+	return true
+
+func checkpoint_name() -> String:
+	return "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
+
+func settle_roadblock(point: Vector3, drop: Dictionary) -> bool:
+	if current_map != MAP02 or not cp02_claimed or not departure_available() or reward_history.has("map02_e01"): return false
+	reward_history["map02_e01"] = {"xp":10,"drop":drop,"position":point,"collected":drop.is_empty()}
+	experience += 10
+	progression_changed.emit()
+	return true
 
 func settle_guard(id: String, point: Vector3, drop: Dictionary) -> bool:
 	if id not in GUARD_IDS or reward_history.has(id) or not guard_briefing_available() or not guard_briefing_acknowledged: return false
@@ -217,6 +245,10 @@ func choose(index: int) -> bool:
 	if index < 0 or index >= choices.size():
 		return false
 	var choice: Dictionary = choices[index]
+	if choice.get("confirm_departure", false):
+		if dialogue_kind != "isha" or not departure_available(): return false
+		departure_confirmed = true
+		if "departure" not in confirmed_choices: confirmed_choices.append("departure")
 	if choice.get("acknowledge_guards", false):
 		if dialogue_kind != "isha" or not guard_briefing_available(): return false
 		guard_briefing_acknowledged = true
@@ -263,7 +295,7 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	config.set_value("opening", "position", position)
 	config.set_value("opening", "yaw", yaw)
 	config.set_value("training", "version", 3)
-	config.set_value("opening", "map_id", GROUND.MAP_ID)
+	config.set_value("opening", "map_id", current_map)
 	for key in TRAINING_KEYS:
 		config.set_value("training", key, get(key))
 	bag_history = inventory.snapshot() if inventory else bag_history
@@ -323,13 +355,17 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	if lives == 0: health = 0
 	var map_id := str(config.get_value("opening", "map_id", "village-v2"))
 	var saved: Vector3 = config.get_value("opening", "position", Vector3.ZERO)
-	var xz := GROUND.restored_xz(saved, map_id)
+	current_map = MAP02 if map_id == MAP02 else GROUND.MAP_ID
+	var ground_policy = preload("res://world/map02_ground.gd") if current_map == MAP02 else GROUND
+	var xz: Vector2 = ground_policy.entry_xz(saved, current_map) if current_map == MAP02 else GROUND.restored_xz(saved, current_map)
 	if map_id != GROUND.MAP_ID and encounter_defeated and not remnant_collected:
 		remnant_position = Vector3(GROUND.ENCOUNTER.x, 0, GROUND.ENCOUNTER.y)
 	persistence_error = ""
-	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": GROUND.MAP_ID}
+	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": current_map}
 
 func objective() -> String:
+	if current_map == MAP02:
+		return "林缘草甸 · 沿蓝光前方林路迎战路障近战者；可退回灯台" if not reward_history.has("map02_e01") else "草甸路障已清除 · 可整顿或通过蓝光返回河谷；押送路线仍待调查"
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
@@ -350,7 +386,7 @@ func objective() -> String:
 func guard_objective() -> String:
 	if not guard_briefing_acknowledged: return "桥头已恢复 · 返回伊莎处听取柱群守卫信息"
 	if not guards_defeated(): return "通道守卫 · 过石桥沿对岸林路到蓝色柱群；两名近战、一名弓守，可用岩石挡箭"
-	return "通道守卫已击败 · 返回伊莎处；离村准备与目的地仍未完成"
+	return "离村准备已确认 · 过桥前往蓝色柱群，按 E 出发" if departure_confirmed else "通道守卫已击败 · 返回伊莎处确认离村"
 
 func _mcp_state() -> Dictionary:
 	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
@@ -509,7 +545,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b"] + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b","map02_e01"] + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -533,6 +569,15 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	for record in config.get_value("post_bow", "dynamic_instances", {}).values():
 		if record.status == "collected": collected_xp += 10
 	if xp < collected_xp: return "存档动态奖励无效"
+	var departure: Variant = config.get_value("post_bow", "departure_confirmed", false)
+	var claimed: Variant = config.get_value("post_bow", "cp02_claimed", false)
+	var current: Variant = config.get_value("post_bow", "current_map", GROUND.MAP_ID)
+	if not departure is bool or not claimed is bool or not current is String: return "存档章节无效"
+	if current not in [GROUND.MAP_ID, MAP02]: return "存档章节无效"
+	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
+	if (claimed or current == MAP02 or map_id == MAP02 or rewards.has("map02_e01")) and not departure: return "存档草甸前置无效"
+	if (map_id == MAP02 or current == MAP02 or rewards.has("map02_e01")) and not claimed: return "存档检查点无效"
+	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
 
@@ -573,9 +618,9 @@ func slot_preview(slot: int) -> Dictionary:
 	var facts := {"slot": slot, "reason": reason}
 	if reason != "": return facts
 	var config: ConfigFile = history.config
-	facts.chapter = "第一章 · 河谷聚落"
+	facts.chapter = "第二章 · 林缘草甸" if config.get_value("opening", "map_id", "") == MAP02 else "第一章 · 河谷聚落"
 	facts.time = Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time(path)).replace("T", " ")
-	facts.checkpoint = "河谷村庄灯台"
+	facts.checkpoint = "林缘草甸灯台" if config.get_value("opening", "map_id", "") == MAP02 else "河谷村庄灯台"
 	facts.experience = int(config.get_value("opening", "experience", 0))
 	facts.lives = int(config.get_value("training", "lives", 3))
 	facts.arrows = int(config.get_value("training", "arrows", 0))
@@ -627,10 +672,13 @@ func quest_entries() -> Array[Dictionary]:
 			"action":bridge_objective(), "steps":steps})
 	if guard_briefing_available():
 		var steps: Array[String] = []
-		if guard_briefing_acknowledged: steps.append("伊莎交代：奥伦与三位村民仍被掳，蓝色通道尚未开放")
+		if guard_briefing_acknowledged: steps.append("伊莎交代：奥伦与三位村民仍被掳，追踪前先清除守卫")
+		if departure_confirmed: steps.append("已与伊莎确认离村 · 蓝色通道已开放")
 		for id in GUARD_IDS:
 			if reward_history.has(id): steps.append("弓守已击败" if id == "channel_ranged" else "柱群近战守卫已击败")
 		rows.append({"id":"guards", "title":"柱群守卫", "complete":guards_defeated(), "context":"两名近战守卫掩护一名弓守。岩石能挡箭；可退回桥头整顿。胜利只解除守卫条件，四名被掳者仍待救援。", "action":guard_objective(), "steps":steps})
+	if cp02_claimed:
+		rows.append({"id":"meadow", "title":"林缘草甸", "complete":false, "context":"灯台是安全的落脚点。路障近战者抬手后出拳；可退回灯台整顿。四名被掳者仍待救援。", "action":objective(), "steps":["林缘灯台已启用"] + (["路障近战者已击败"] if reward_history.has("map02_e01") else [])})
 	return rows
 
 func tracked_entry() -> Dictionary:

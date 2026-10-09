@@ -2,6 +2,8 @@ extends Node3D
 ## An inactive CH01 passage. No transport or chapter-completion authority.
 const GROUND := preload("res://forest_ground.gd")
 const ANCHOR := Vector2(133,151)
+var return_passage := false
+var anchor: Vector2 = ANCHOR
 var world: Node3D
 var state: Node
 var grounded := false
@@ -80,7 +82,7 @@ func ground() -> void:
 		await get_tree().physics_frame
 		var excluded: Array[RID] = []
 		for stone in stones: excluded.append(stone.get_child(0).get_rid())
-		var hit: Dictionary = GROUND.support(world,ANCHOR,excluded)
+		var hit: Dictionary = GROUND.support(world,anchor,excluded)
 		if not hit.is_empty():
 			global_position = hit.position
 			grounded = true
@@ -92,22 +94,29 @@ func _physics_process(delta: float) -> void:
 	if not grounded: return
 	elapsed += delta
 	# No shader TIME: product pause suspends the actual presentation clock.
-	var pulse := 0.72 if state.reduced_motion else 0.35 + 0.4 * pow(maxf(0,sin(elapsed*2.0)),2)
+	var active: bool = return_passage or state.passage_missing_conditions().is_empty()
+	var pulse := 0.85 if active or state.reduced_motion else 0.35 + 0.4 * pow(maxf(0,sin(elapsed*2.0)),2)
 	flow.scale.x = pulse
 	flow.scale.z = pulse
 	light.light_energy = pulse * 2
 	particles.emitting = not state.reduced_motion
 	var near: bool = world.player.global_position.distance_to(global_position) < 2.5
 	if near and not prompted and world.pause_owners.is_empty():
-		world.training.tell("蓝色柱群尚未激活 · [E] 查看缺少的条件",3)
+		world.training.tell("[E] 返回河谷聚落" if return_passage else ("[E] 前往林缘草甸" if active else "蓝色柱群尚未激活 · [E] 查看缺少的条件"),3)
 	prompted = near
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not grounded or not world.pause_owners.is_empty() or world.training.player_locked(): return
 	if event is InputEventKey and event.keycode == KEY_E and event.pressed and not event.echo and world.player.global_position.distance_to(global_position) < 2.5:
-		rejected_entries += 1
-		world.training.tell("通道未开放 · " + "；".join(state.passage_missing_conditions()),6)
+		if not return_passage and not state.passage_missing_conditions().is_empty():
+			rejected_entries += 1
+			world.training.tell("通道未开放 · " + "；".join(state.passage_missing_conditions()),6)
+		elif not world.training.can_save() or not world.bow_training.can_save():
+			world.training.tell("请先退出战斗，等攻击与箭落定后再出发", 4)
+		elif world.entry_router:
+			world.entry_router.travel_to(state.GROUND.MAP_ID if return_passage else state.MAP02)
+		else: world.training.tell("请从标题进入冒险后再出发", 4)
 		get_viewport().set_input_as_handled()
 
 func _mcp_state() -> Dictionary:
-	return {"grounded":grounded,"active":false,"destination":"林缘草甸","missing_conditions":state.passage_missing_conditions(),"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position)}
+	return {"grounded":grounded,"active":return_passage or state.passage_missing_conditions().is_empty(),"destination":"河谷聚落" if return_passage else "林缘草甸","missing_conditions":state.passage_missing_conditions(),"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position)}

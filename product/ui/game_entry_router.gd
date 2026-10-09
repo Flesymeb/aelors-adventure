@@ -16,6 +16,14 @@ var previous_history: Dictionary = {}
 var canvas: CanvasLayer
 var initialization_elapsed := 0.0
 var opening: Control
+var transition: CanvasLayer
+var source_world: Node3D
+var destination_map := ""
+var travel_history: Dictionary = {}
+var travel_resource := ""
+var travel_started_ms := 0
+var travel_finishing := false
+var source_ui_visibility: Array[Dictionary] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -108,7 +116,7 @@ func _construct_world(_resource: PackedScene) -> void:
 		if restored.is_empty():
 			_entry_failed("存档无法恢复。原进度已保留，请重试。")
 			return
-	var preview := load("res://Preview.tscn") as PackedScene
+	var preview := load("res://world/map02_entry.tscn" if state.current_map == state.MAP02 else "res://Preview.tscn") as PackedScene
 	if not preview:
 		_entry_failed("冒险资源无法读取。请重试。")
 		return
@@ -132,12 +140,23 @@ func _construct_world(_resource: PackedScene) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _world_ready() -> void:
-	if route != "initializing": return
+	if route not in ["initializing", "travel_initializing"]: return
 	# Resource completion is not readiness: retain this screen until training
 	# and player placements succeed and confirmation controls are released.
 	player_ready = true
 
 func _process(delta: float) -> void:
+	if route == "travel_loading":
+		_poll_travel()
+		return
+	if route == "travel_initializing":
+		if Time.get_ticks_msec() - travel_started_ms > 30000:
+			_travel_failed("落脚点尚未准备好，已返回上一处边界。")
+			return
+		if not transition.paused and player_ready and world.training.grounded and world.bow_training.grounded and world.bridge_encounter.grounded and not travel_finishing:
+			travel_finishing = true
+			_finish_travel()
+		return
 	if route == "loading" and loading: loading.update_progress(loader.progress, false)
 	if route == "initializing":
 		loading.update_progress(1.0, true)
@@ -170,6 +189,9 @@ func _confirmation_held() -> bool:
 	return Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_key_pressed(KEY_SPACE) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)
 
 func _entry_failed(message: String) -> void:
+	if route.begins_with("travel"):
+		_travel_failed(message)
+		return
 	loader.cancel()
 	if is_instance_valid(world):
 		world.process_mode = Node.PROCESS_MODE_DISABLED
@@ -197,6 +219,9 @@ func _retry() -> void:
 	_start_loading()
 
 func return_to_title() -> void:
+	if route.begins_with("travel"):
+		if route == "travel_reveal": return
+		_travel_failed("")
 	if route == "returning": return
 	loader.cancel()
 	if route in ["opening", "loading", "initializing", "error"]: state.restore_adventure(previous_history)
@@ -229,3 +254,124 @@ func _mcp_state() -> Dictionary:
 	for key in ["opening_completed", "logical_node", "q01_accepted", "experience", "sword_owned", "bow_owned", "lamp_owned", "lives", "arrows", "selected_equipment"]:
 		observation["previous_" + key] = previous_history.get(key)
 	return observation
+
+func restore_map(slot: int) -> void:
+	# Existing history-reader validation and title entry remain the only load owner.
+	await return_to_title()
+	enter_adventure("load", slot)
+
+func travel_to(map_id: String) -> bool:
+	if route != "world" or map_id == state.current_map or map_id not in [state.GROUND.MAP_ID, state.MAP02]: return false
+	if not state.departure_available() or not state.departure_confirmed or state.conversation_active or state.lives <= 0: return false
+	if not world.pause_owners.is_empty() or not world.training.can_save() or not world.bow_training.can_save(): return false
+	if not preload("res://ui/chapter_transition.gd").available():
+		world.training.tell("通道暂时无法开启 · 请在村庄整顿后重试", 5)
+		return false
+	# Save the valid source boundary before a presentation or resource request.
+	if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK: return false
+	travel_history = state.adventure_snapshot()
+	source_world = world
+	destination_map = map_id
+	transition = preload("res://ui/ChapterTransition.tscn").instantiate()
+	transition.world = source_world
+	transition.shorter = state.cp02_claimed
+	transition.returning = map_id == state.GROUND.MAP_ID
+	transition.black_boundary.connect(_load_destination)
+	route = "travel_story"
+	add_child(transition)
+	return true
+
+func _load_destination() -> void:
+	if route != "travel_story": return
+	travel_resource = "res://world/map02_entry.tscn" if destination_map == state.MAP02 else "res://Preview.tscn"
+	var error := ResourceLoader.load_threaded_request(travel_resource, "PackedScene")
+	if error != OK:
+		_travel_failed("通道无法开启，已返回上一处落脚点。")
+		return
+	travel_started_ms = Time.get_ticks_msec()
+	route = "travel_loading"
+
+func _poll_travel() -> void:
+	var status := ResourceLoader.load_threaded_get_status(travel_resource)
+	if status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE or Time.get_ticks_msec() - travel_started_ms > 30000:
+		_travel_failed("通道无法开启，已返回上一处落脚点。")
+		return
+	if status != ResourceLoader.THREAD_LOAD_LOADED or transition.paused: return
+	var scene := ResourceLoader.load_threaded_get(travel_resource) as PackedScene
+	if scene == null:
+		_travel_failed("目的地无法准备，已返回上一处落脚点。")
+		return
+	source_ui_visibility.clear()
+	for layer_node in source_world.find_children("*", "CanvasLayer", true, false):
+		for item in layer_node.get_children():
+			if item is CanvasItem:
+				source_ui_visibility.append({"node":item,"visible":item.visible})
+				item.hide()
+	source_world.hide()
+	source_world.process_mode = Node.PROCESS_MODE_DISABLED
+	world = scene.instantiate()
+	world.name = "MeadowAdventure" if destination_map == state.MAP02 else "VillageAdventure"
+	world.dialogue_state = state
+	world.entry_router = self
+	# Boundary facts remain at the source until a grounded destination exists.
+	world.restored_position = {"position":Vector3.ZERO,"map_id":"", "yaw":PI if destination_map == state.MAP02 else 0.0}
+	player_ready = false
+	travel_finishing = false
+	route = "travel_initializing"
+	world.entry_ready.connect(_world_ready)
+	world.entry_failed.connect(_entry_failed)
+	add_child(world)
+	world._set_pause_owner("entry", true)
+	get_tree().paused = false
+
+func _finish_travel() -> void:
+	if not state.commit_arrival(destination_map):
+		_travel_failed("目的地尚未开放，已返回上一处落脚点。")
+		return
+	state.conversation_active = false
+	if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:
+		_travel_failed("无法保存新的落脚点，已返回上一处边界。")
+		return
+	world.training.restore_history()
+	world.gameplay_hud.restore_view()
+	route = "travel_reveal"
+	await transition.reveal_arrival()
+	# Input consumed by skip/confirmation cannot become an attack on arrival.
+	while _confirmation_held(): await get_tree().process_frame
+	world._set_pause_owner("entry", false)
+	source_world.process_mode = Node.PROCESS_MODE_DISABLED
+	source_world.queue_free()
+	source_world = null
+	transition.world = null
+	transition.queue_free()
+	transition = null
+	get_tree().paused = not world.pause_owners.is_empty()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED
+	route = "world"
+	world.gameplay_hud.notify(state.checkpoint_name() + " · 落脚点已保存")
+
+func _travel_failed(message: String) -> void:
+	if is_instance_valid(world) and world != source_world:
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+		world.queue_free()
+	state.restore_adventure(travel_history)
+	world = source_world
+	if is_instance_valid(transition):
+		transition._release_world()
+		transition.queue_free()
+	transition = null
+	if is_instance_valid(source_world):
+		source_world.show()
+		for visibility in source_ui_visibility:
+			if is_instance_valid(visibility.node): visibility.node.visible = visibility.visible
+		source_ui_visibility.clear()
+		source_world.process_mode = Node.PROCESS_MODE_ALWAYS
+		source_world._set_pause_owner("chapter_travel", false)
+		if message != "": source_world.training.tell(message, 5)
+	source_world = null
+	travel_finishing = false
+	route = "world"
+
+func begin_new_adventure_from_world() -> void:
+	await return_to_title()
+	enter_adventure("new", 0)

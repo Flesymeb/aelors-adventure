@@ -229,7 +229,7 @@ func _process(delta: float) -> void:
 	if not world.restoring_interface and not world.pause_owners.has("entry"):
 		if facts.lives != previous.lives: notify("命火 %s%d · 剩余 %d" % ["+" if facts.lives > previous.lives else "", facts.lives - previous.lives, facts.lives])
 		if facts.steps != previous.steps: notify("任务更新 · " + state.tracked_entry().title)
-		if previous.recovery and not facts.recovery and state.health > 0 and state.persistence_error == "": notify("已返回河谷村庄灯台")
+		if previous.recovery and not facts.recovery and state.health > 0 and state.persistence_error == "": notify("已返回" + state.checkpoint_name())
 	previous = facts
 	root.visible = active
 	# Always-process UI still lays out while the game tree is frozen. Transient
@@ -285,7 +285,7 @@ func _process(delta: float) -> void:
 		if world.bow_training and world.bow_training.interaction_prompt() != "": hint = world.bow_training.interaction_prompt()
 		if world.lamp_training and world.lamp_training.interaction_prompt() != "": hint = world.lamp_training.interaction_prompt()
 		if world.bridge_actions and world.bridge_actions.interaction_prompt() != "": hint = world.bridge_actions.interaction_prompt()
-		if hint == "" and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
+		if hint == "" and not world.meadow_slice and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
 	for pair in [["1","sword","巡路剑",state.sword_owned],["2","bow","巡路弓",state.bow_owned],["3","lamp","旧灯",state.lamp_owned]]:
 		var slot: Dictionary = shortcut_slots[pair[1]]
 		# Acquisition facts also drive the actual hand/back mounts. The bag's

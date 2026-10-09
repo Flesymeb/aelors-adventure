@@ -140,7 +140,7 @@ func refresh_entries() -> void:
 				list_buttons.append(item)
 			_select_entry(selection)
 	footer_status.add_theme_font_size_override("font_size", int(14 * state.text_scale))
-	footer_status.text = "命火 %d / 5 · 检查点：河谷村庄灯台\n倒下扣除一命；读档恢复所选记录。" % state.lives
+	footer_status.text = "命火 %d / 5 · 检查点：%s\n倒下扣除一命；读档恢复所选记录。" % [state.lives, state.checkpoint_name()]
 	if state.persistence_error != "": footer_status.text += "\n" + state.persistence_error + " · F5 重试保存"
 	_layout_details.call_deferred()
 	reflow(self)

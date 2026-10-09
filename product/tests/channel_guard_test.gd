@@ -8,6 +8,10 @@ static func prepared() -> Node:
 	state.perform_bridge_action("light")
 	state.perform_bridge_action("rescue")
 	state.guard_briefing_acknowledged = true
+	state.practice_hit = true
+	state.practice_defense = true
+	state.encounter_defeated = true
+	state.trace_revealed = true
 	state.experience = 40
 	return state
 
@@ -20,7 +24,7 @@ static func run() -> Dictionary:
 		checks[id+"_settles"] = state.settle_guard(id,Vector3(133,11,142),{"id":"healing","quantity":1})
 		checks[id+"_repeat"] = not state.settle_guard(id,Vector3.ZERO,{})
 	checks.three_only = state.experience == starting+30 and state.reward_history.size() == 3 and state.guards_defeated()
-	checks.passage_still_inactive = state.passage_missing_conditions() == ["完成离村交谈与目的地准备"]
+	checks.farewell_required = state.passage_missing_conditions() == ["与伊莎确认离村"]
 	var config: ConfigFile = BRIDGE_TEST.config_for(state)
 	config.set_value("opening","experience",state.experience)
 	checks.valid_history = state.config_unavailable_reason(config) == ""

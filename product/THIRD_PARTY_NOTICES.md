@@ -179,3 +179,7 @@ storyboard and acquisition receipts are retained in `identity_v2/`; SOURCE.json
 maps those unchanged source paintings to guard_01/02/03.png. Earlier root-level
 receipts describe the superseded paintings. Independent style and ordinary-route
 acceptance remain pending.
+
+## Chapter overlay/tween adapter
+
+`ui/chapter_transition.gd` adapts the overlay and awaited tween mechanism from Pandita Studio scene-switcher, revision aa88ab647143f8d0448c4deaa8805b97027852ea, MIT. Original license: `ui/scene_switcher_LICENSE.txt`. Source: https://github.com/Pandita-Studio/scene-switcher-godot-addon . Product chapter state, rollback and input ownership remain in the entry router.

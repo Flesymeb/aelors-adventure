@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "title": "第二章 · 林缘草甸",
+  "slides": [
+    {
+      "image": "farewell.png",
+      "caption": "伊莎：奥伦和三位村民仍待救援。带上剑、弓与旧灯，沿草甸追踪押送队。",
+      "duration_seconds": 1.6
+    },
+    {
+      "image": "passage.png",
+      "caption": "蓝光汇聚，通道在艾洛身旁闭合。",
+      "duration_seconds": 1.6
+    },
+    {
+      "image": "arrival.png",
+      "caption": "林缘草甸灯台 · 前方近战者挡住押送道路。",
+      "duration_seconds": 1.4
+    }
+  ]
+}

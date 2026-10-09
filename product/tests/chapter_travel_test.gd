@@ -1,0 +1,50 @@
+extends RefCounted
+## Isolated logic checks; no progression or player-save writes on normal startup.
+const STATE = preload("res://dialogue_state.gd")
+const GUARDS = preload("res://tests/channel_guard_test.gd")
+const BRIDGE = preload("res://tests/bridge_actions_test.gd")
+
+static func earned() -> Node:
+	var s := GUARDS.prepared()
+	for id in s.GUARD_IDS: s.settle_guard(id, Vector3(133,11,142), {"id":"healing","quantity":1})
+	return s
+
+static func history(s: Node) -> ConfigFile:
+	var c := BRIDGE.config_for(s)
+	c.set_value("opening", "experience", s.experience)
+	c.set_value("opening", "map_id", s.current_map)
+	return c
+
+static func run() -> Dictionary:
+	var checks := {}
+	var s := earned()
+	var xp: int = s.experience
+	checks.earned_farewell_only = s.departure_available() and s.passage_missing_conditions() == ["与伊莎确认离村"]
+	s.dialogue_kind = "isha"
+	s.begin()
+	checks.readable_choice = s.logical_node == "G04" and s.current_nodes().G04.choices.size() == 2
+	checks.consent = s.choose(0) and s.departure_confirmed and s.passage_missing_conditions().is_empty() and s.experience == xp
+	var source := history(s)
+	checks.source_valid = s.config_unavailable_reason(source) == ""
+	var first_lives: int = s.lives
+	checks.arrival = s.commit_arrival(s.MAP02) and s.current_map == s.MAP02 and s.cp02_claimed and s.lives == first_lives + 1 and s.experience == xp
+	checks.repeat_arrival = s.commit_arrival(s.MAP02) and s.lives == first_lives + 1
+	var destination := history(s)
+	checks.destination_valid = s.config_unavailable_reason(destination) == ""
+	var restored := STATE.new()
+	var position: Dictionary = restored.restore_config(destination)
+	checks.continue_map = position.map_id == s.MAP02 and restored.current_map == s.MAP02 and restored.cp02_claimed and restored.lives == s.lives
+	checks.continue_no_claim = restored.commit_arrival(s.MAP02) and restored.lives == s.lives
+	checks.return_both_directions = restored.commit_arrival(s.GROUND.MAP_ID) and restored.commit_arrival(s.MAP02) and restored.lives == s.lives
+	restored.restore_config(source)
+	checks.interrupted_source = restored.current_map == s.GROUND.MAP_ID and not restored.cp02_claimed and restored.lives == first_lives and restored.departure_confirmed
+	checks.resource_gate_boolean = preload("res://ui/chapter_transition.gd").available() is bool
+	destination.set_value("post_bow", "cp02_claimed", false)
+	checks.reject_unsafe_map = s.config_unavailable_reason(destination) != ""
+	s.free()
+	restored.free()
+	var unearned := STATE.new()
+	unearned.logical_node = "G04"
+	checks.no_unearned_consent = not unearned.choose(0) and not unearned.departure_confirmed
+	unearned.free()
+	return checks

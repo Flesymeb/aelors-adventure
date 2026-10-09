@@ -9,6 +9,8 @@ const SPAWN_XZ := GROUND.SPAWN
 
 signal entry_ready
 signal entry_failed(message: String)
+var ground_policy = GROUND
+var meadow_slice := false
 var menu_audio: Node
 var entry_router: Node
 var village: Node3D
@@ -65,8 +67,9 @@ func _ready() -> void:
 		source_camera.current = false
 	player = PLAYER_SCENE.instantiate()
 	player.process_mode = Node.PROCESS_MODE_DISABLED
-	var initial_height: float = village.get_node("Terrain3D").data.get_height(Vector3(SPAWN_XZ.x, 0, SPAWN_XZ.y))
-	player.position = Vector3(SPAWN_XZ.x, initial_height + 0.1, SPAWN_XZ.y)
+	var spawn: Vector2 = checkpoint_xz()
+	var initial_height: float = village.get_node("Terrain3D").data.get_height(Vector3(spawn.x, 0, spawn.y))
+	player.position = Vector3(spawn.x, initial_height + 0.1, spawn.y)
 	player.configure_equipment(false, false)
 	add_child(player)
 	player.get_node("CameraArm/Camera").current = true
@@ -121,28 +124,32 @@ func _ready() -> void:
 	element_abilities.name = "ElementAbilities"
 	add_child(element_abilities)
 	element_abilities.configure(self)
-	bridge_encounter = preload("res://combat/bridge_encounter.gd").new()
+	if meadow_slice:
+		bridge_encounter = preload("res://combat/Map02Roadblock.tscn").instantiate()
+	else:
+		bridge_encounter = preload("res://combat/bridge_encounter.gd").new()
 	bridge_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
 	bridge_encounter.name = "BridgeEncounter"
 	add_child(bridge_encounter)
 	bridge_encounter.configure(self)
-	bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
-	bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(bridge_actions)
-	bridge_actions.configure(self)
-	channel_guards = preload("res://combat/ChannelGuardEncounter.tscn").instantiate()
-	channel_guards.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(channel_guards)
-	channel_guards.configure(self)
-	chapter_pillar = preload("res://world/ChapterPillar.tscn").instantiate()
-	chapter_pillar.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(chapter_pillar)
-	chapter_pillar.configure(self)
-	dynamic_encounters = preload("res://combat/dynamic_encounters.gd").new()
-	dynamic_encounters.name = "DynamicEncounters"
-	dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(dynamic_encounters)
-	dynamic_encounters.configure(self)
+	if not meadow_slice:
+		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
+		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(bridge_actions)
+		bridge_actions.configure(self)
+		channel_guards = preload("res://combat/ChannelGuardEncounter.tscn").instantiate()
+		channel_guards.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(channel_guards)
+		channel_guards.configure(self)
+		chapter_pillar = preload("res://world/ChapterPillar.tscn").instantiate()
+		chapter_pillar.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(chapter_pillar)
+		chapter_pillar.configure(self)
+		dynamic_encounters = preload("res://combat/dynamic_encounters.gd").new()
+		dynamic_encounters.name = "DynamicEncounters"
+		dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(dynamic_encounters)
+		dynamic_encounters.configure(self)
 	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
@@ -171,16 +178,16 @@ func _add_village_buildings() -> void:
 
 
 func _place_player() -> void:
-	var xz := GROUND.restored_xz(restored_position.get("position", Vector3.ZERO), restored_position.get("map_id", ""))
+	var xz: Vector2 = GROUND.restored_xz(restored_position.get("position", Vector3.ZERO), restored_position.get("map_id", ""))
 	# Terrain collision initialization may lag scene _ready. Keep physics disabled
 	# until the actual collision surface and standing volume are available.
 	var placed := false
 	for attempt in 120:
 		await get_tree().physics_frame
-		placed = GROUND.place(self, player, xz)
-		if not placed and xz != SPAWN_XZ:
-			xz = SPAWN_XZ
-			placed = GROUND.place(self, player, xz)
+		placed = ground_policy.place(self, player, xz)
+		if not placed and xz != checkpoint_xz():
+			xz = checkpoint_xz()
+			placed = ground_policy.place(self, player, xz)
 		if placed: break
 	if not placed:
 		if entry_router:
@@ -226,7 +233,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	# Continue may restore a committed briefing before its presentation completed.
 	# Wait for the ordinary grounded, safe world boundary; never replay seen art.
-	if player and player.has_meta("spawn_position") and dialogue_state.persistence_error == "" and not dialogue_state.conversation_active and training and training.can_save() and bow_training and bow_training.can_save():
+	if not meadow_slice and player and player.has_meta("spawn_position") and dialogue_state.persistence_error == "" and not dialogue_state.conversation_active and training and training.can_save() and bow_training and bow_training.can_save():
 		_try_guard_interlude()
 	if skill_panel and not initial_skill_prompted and dialogue_state.lamp_owned and dialogue_state.pending_points() > 0 and dialogue_state.skills.is_empty() and pause_owners.is_empty() and not training.player_locked() and player.attack_timer <= 0 and player.switch_timer <= 0:
 		initial_skill_prompted = true
@@ -289,7 +296,7 @@ func _dialogue_closed() -> void:
 	_try_guard_interlude()
 
 func _try_guard_interlude() -> void:
-	if pause_owners.is_empty() and get_node_or_null("GuardInterlude") == null and preload("res://ui/guard_interlude.gd").eligible(dialogue_state):
+	if not meadow_slice and pause_owners.is_empty() and get_node_or_null("GuardInterlude") == null and preload("res://ui/guard_interlude.gd").eligible(dialogue_state):
 		var interlude = preload("res://ui/guard_interlude.tscn").instantiate()
 		interlude.name = "GuardInterlude"
 		interlude.world = self
@@ -326,8 +333,14 @@ func _load_opening(slot: int) -> void:
 		restoring_interface = false
 		_recovery_error("读取存档失败，请重试。")
 		return
+	if restored.get("map_id", GROUND.MAP_ID) != active_map_id():
+		dialogue_state.restore_adventure(previous)
+		restoring_interface = false
+		if entry_router: entry_router.restore_map(slot)
+		else: _recovery_error("请返回标题读取此存档")
+		return
 	var old_position := player.global_position
-	if not training.place_on_ground(player, GROUND.restored_xz(restored.position, restored.get("map_id", ""))) and not training.place_on_ground(player, SPAWN_XZ):
+	if not training.place_on_ground(player, (preload("res://world/map02_ground.gd").entry_xz(restored.position, restored.get("map_id", "")) if meadow_slice else GROUND.restored_xz(restored.position, restored.get("map_id", "")))) and not training.place_on_ground(player, checkpoint_xz()):
 		dialogue_state.restore_adventure(previous)
 		restoring_interface = false
 		_recovery_error("存档位置无法安全落地 · 请重试或选择新游戏。")
@@ -445,7 +458,7 @@ func _close_controls() -> void:
 # Called at the start of the player's _input, before mouse attacks and before
 # either script's _unhandled_input. Captured keys cannot leak into the world.
 func handle_controls_input(event: InputEvent) -> bool:
-	if pause_owners.has("guard_interlude"):
+	if pause_owners.has("guard_interlude") or pause_owners.has("chapter_travel") or pause_owners.has("entry"):
 		# Let the interlude and its GUI own Esc, Space and navigation; do not
 		# open a nested world menu or a save/action shortcut over the painting.
 		return event is InputEventKey and event.keycode in [KEY_F10,KEY_F5,KEY_E,KEY_I,KEY_J,KEY_K]
@@ -511,7 +524,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and training and training.interact():
 				return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and isha.can_interact(player):
+			if event.keycode == KEY_E and not meadow_slice and not player.blocked_keys.has(KEY_E) and isha.can_interact(player):
 				if dialogue_state.dialogue_kind != "isha":
 					dialogue_state.conversation_active = false
 				dialogue_state.dialogue_kind = "isha"
@@ -786,9 +799,12 @@ func _finish_recovery() -> void:
 
 
 func _new_adventure() -> void:
+	if meadow_slice and entry_router:
+		entry_router.begin_new_adventure_from_world()
+		return
 	var previous: Dictionary = dialogue_state.adventure_snapshot()
 	var old_position := player.global_position
-	if not training.place_on_ground(player, SPAWN_XZ):
+	if not training.place_on_ground(player, checkpoint_xz()):
 		_recovery_error("检查点无法安全落地 · 冒险仍暂停，请重试。")
 		return
 	dialogue_state.reset_adventure()
@@ -827,3 +843,9 @@ func _add_product_panels() -> void:
 		panel.audio = menu_audio
 		layer.add_child(panel)
 		panel.hide()
+
+func checkpoint_xz() -> Vector2:
+	return ground_policy.SPAWN
+
+func active_map_id() -> String:
+	return dialogue_state.MAP02 if meadow_slice else GROUND.MAP_ID
