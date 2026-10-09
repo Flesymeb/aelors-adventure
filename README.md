@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 36 |
+| Open | 38 |
 | Closed | 28 |
-| All | 64 |
+| All | 66 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 19 |
+| Active | 21 |
 | Verified closed | 19 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 43 |
+| All in this run | 45 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,20 +55,20 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Music/Effects listening acceptance remains unresolved; gains and waveform presence do not establish the required perceptual comparison. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Required independent Music/Effects listening acceptance remains unresolved. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening and pause behavior passed locally, but the complete opening acceptance evidence debt remains. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Normal opening success does not close the remaining opening acceptance matrix. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
 | `fps.runtime.candidate-error-ea18d19a2edb` | [#46](https://github.com/Flesymeb/aelors-adventure/issues/46) | CLOSED | Independently verified resolved at loop 9. |
 | `lightning-negative-case-unobserved` | [#45](https://github.com/Flesymeb/aelors-adventure/issues/45) | OPEN | untitled issue |
 | `r02_runtime_boundaries_unverified` | [#47](https://github.com/Flesymeb/aelors-adventure/issues/47) | OPEN | untitled issue |
-| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Local recovery success does not establish complete milestone acceptance or actual older-history compatibility. |
+| `milestone_acceptance_evidence_missing` | [#48](https://github.com/Flesymeb/aelors-adventure/issues/48) | OPEN | Required chapter progression remains impossible; the new guards extend an unfinished slice. |
 | `next_chapter_boundary_unverified` | [#49](https://github.com/Flesymeb/aelors-adventure/issues/49) | OPEN | untitled issue |
 | `initial_encounter_audio_quality_unverified` | [#50](https://github.com/Flesymeb/aelors-adventure/issues/50) | OPEN | untitled issue |
 | `initial_enemy_obstacle_clearance_unverified` | [#51](https://github.com/Flesymeb/aelors-adventure/issues/51) | OPEN | untitled issue |
@@ -80,12 +80,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue still lacks its counterpart portrait. |
-| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | The null-safe callback repair is supported by inspection and startup smoke, but its original absent-controls boundary remains unverified. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Adjacent Hers dialogue continuity still lacks the counterpart portrait. |
+| `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | OPEN | The original absent-controls and pending-teardown observation boundaries remain unverified. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
-| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Declared village actor/map source access and complete adoption remain unauthenticated. |
-| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | The CH01 encounter works in the observed route, but its complete safety, feedback and recovery acceptance remains unverified. |
+| `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | The selected complete village is not adopted, and retained map/actor transfer declarations remain unauthenticated. |
 | `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | untitled issue |
+| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | untitled issue |
+| `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | OPEN | Guard skip, victory and durable reward acceptance remain independently unverified. |
+| `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | OPEN | Retained texture dependencies still produce resource-load errors. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -93,7 +95,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 36 | 28 | 64 |
+| GitHub HoH namespace | 38 | 28 | 66 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -130,7 +132,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-24-c7062b95cb09` | `development_snapshot:attempt-273c1d18b21ef550db2da723` | DEVELOPER REPORT READY |
+| `loop-24-c7062b95cb09` | `development_snapshot:attempt-273c1d18b21ef550db2da723` | BLOCKED |
 
 ### Project Planner
 
@@ -157,7 +159,24 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-24-c7062b95cb09` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 8 (7 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `milestone_route_incomplete` | MAJOR | USER BLOCKING | HIGH | Required chapter progression remains impossible; the new guards extend an unfinished slice. |
+| `selected_village_adoption_incomplete` | MAJOR | DEGRADED | HIGH | The selected complete village is not adopted, and retained map/actor transfer declarations remain unauthenticated. |
+| `retained_texture_dependencies_missing` | MAJOR | DEGRADED | HIGH | Retained texture dependencies still produce resource-load errors. |
+| `guard_closeout_evidence_incomplete` | MAJOR | INTERNAL | HIGH | Guard skip, victory and durable reward acceptance remain independently unverified. |
+| `settings_listening_unverified` | MAJOR | INTERNAL | HIGH | Required independent Music/Effects listening acceptance remains unresolved. |
+| `opening_matrix_unverified` | MAJOR | INTERNAL | HIGH | Normal opening success does not close the remaining opening acceptance matrix. |
+| `lifecycle_boundary_unverified` | MAJOR | INTERNAL | HIGH | The original absent-controls and pending-teardown observation boundaries remain unverified. |
+| `hers_portrait_continuity_failed` | MINOR | DEGRADED | MEDIUM | Adjacent Hers dialogue continuity still lacks the counterpart portrait. |
 
 ---
 
@@ -1331,5 +1350,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-24-c7062b95cb09`
 - Latest warm start: `loop-24-4d3b0e1f9e4d`
 - Last published: `loop-24-c7062b95cb09`
-- Best verified: `loop-23-4d3b0e1f9e4d`
+- Best verified: `loop-24-c7062b95cb09`
 - Generated by the HoH host from immutable run evidence.
