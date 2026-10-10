@@ -81,12 +81,15 @@ static func run() -> Dictionary:
 	var s := earned()
 	var xp: int = s.experience
 	checks.earned_farewell_only = s.departure_available() and s.passage_missing_conditions() == ["与伊莎确认离村"]
+	checks.optional_patrols_not_required = not s.reward_history.has("bridge_patrol_a") and not s.reward_history.has("bridge_patrol_b") and s.objective() == s.guard_objective()
 	s.dialogue_kind = "isha"
 	s.begin()
 	checks.readable_choice = s.logical_node == "G04" and s.current_nodes().G04.choices.size() == 2
 	checks.consent = s.choose(0) and s.departure_confirmed and s.passage_missing_conditions().is_empty() and s.experience == xp
+	checks.consent_objective = s.objective() == s.guard_objective() and s.objective().contains("按 E 出发")
 	var source := history(s)
 	checks.source_valid = s.config_unavailable_reason(source) == ""
+	checks.merge(objective_projection_checks(source))
 	var first_lives: int = s.lives
 	checks.arrival = s.commit_arrival(s.MAP02) and s.current_map == s.MAP02 and s.cp02_claimed and s.lives == first_lives + 1 and s.experience == xp
 	checks.repeat_arrival = s.commit_arrival(s.MAP02) and s.lives == first_lives + 1
@@ -109,6 +112,29 @@ static func run() -> Dictionary:
 	unearned.logical_node = "G04"
 	checks.no_unearned_consent = not unearned.choose(0) and not unearned.departure_confirmed
 	unearned.free()
+	return checks
+
+static func objective_projection_checks(source: ConfigFile) -> Dictionary:
+	# Read-only projection on isolated restored facts; no ordinary Continue or
+	# E01 completion claim, and no progress/reward setters to repair the journal.
+	var restored := STATE.new()
+	restored.restore_config(source)
+	var facts := restored.training_snapshot().duplicate(true)
+	var rewards := restored.reward_history.duplicate(true)
+	var xp: int = restored.experience
+	var objective: String = restored.objective()
+	var rows: Array[Dictionary] = restored.quest_entries()
+	var rescue_action := ""
+	var guard_action := ""
+	for row in rows:
+		if row.id == "rescue": rescue_action = row.action
+		if row.id == "guards": guard_action = row.action
+	var checks := {
+		"restored_farewell_objective": restored.departure_confirmed and restored.guards_defeated() and objective == restored.guard_objective() and objective.contains("按 E 出发"),
+		"restored_journal_agreement": rescue_action == objective and guard_action == objective,
+		"objective_reads_preserve_facts": restored.training_snapshot() == facts and restored.reward_history == rewards and restored.experience == xp,
+	}
+	restored.free()
 	return checks
 
 static func resource_checks() -> Dictionary:

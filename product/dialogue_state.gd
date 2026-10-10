@@ -408,7 +408,8 @@ func objective() -> String:
 	if skills.is_empty(): return "首次升级 · 按 K 选择火焰或雷电"
 	if not element_practice_complete: return "元素练习 · 罗恩草靶旁，4 火焰 / 5 雷电；可重复尝试"
 	if not bridge_resident_rescued or not bridge_lamp_lit: return bridge_objective()
-	if not reward_history.has("bridge_patrol_a") or not reward_history.has("bridge_patrol_b"): return "追踪救援 · 从罗恩草靶左侧的木板入口过桥，清除对岸两名巡守"
+	# Bridge patrols are optional encounters, not departure prerequisites. Project
+	# the same authoritative bridge/guard facts used by the farewell and pillar.
 	return guard_objective()
 
 func guard_objective() -> String:

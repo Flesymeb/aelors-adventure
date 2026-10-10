@@ -44,6 +44,14 @@ static func observer_lifecycle_checks() -> Dictionary:
 static func detached_audio_checks() -> Dictionary:
 	# Exercise real assigned dependencies and freed handles without entering the
 	# tree, playing audio, invoking _ready, or loading/writing user preferences.
+	# Standalone probes have no AdventureState _ready to register audio buses.
+	# Godot exposes Master for an unregistered requested bus; measure that
+	# boundary without creating buses. Live routing is checked separately below.
+	var music_bus_index := AudioServer.get_bus_index("Music")
+	var effects_bus_index := AudioServer.get_bus_index("Effects")
+	var bus_count := AudioServer.bus_count
+	var expected_music_bus := "Music" if music_bus_index >= 0 else "Master"
+	var expected_voice_bus := "Effects" if effects_bus_index >= 0 else "Master"
 	var observer: Node = preload("res://ui/menu_audio.gd").new()
 	observer.state = preload("res://dialogue_state.gd").new()
 	observer.music = AudioStreamPlayer.new()
@@ -60,7 +68,8 @@ static func detached_audio_checks() -> Dictionary:
 	observer.free()
 	return {"detached_audio_read_only": before == repeated,
 		"detached_audio_not_started": before.ready == false and before.music_playing == false and before.playing == false,
-		"detached_audio_routes": before.music_bus == "Music" and before.voice_bus == "Effects",
+		"detached_audio_routes": before.music_bus == expected_music_bus and before.voice_bus == expected_voice_bus,
+		"detached_audio_bus_registry_unchanged": AudioServer.bus_count == bus_count and AudioServer.get_bus_index("Music") == music_bus_index and AudioServer.get_bus_index("Effects") == effects_bus_index,
 		"freed_streams_unavailable": freed_streams.ready == false and freed_streams.music_position == null and freed_streams.music_paused == null and freed_streams.voice_paused == null,
 		"freed_audio_state_unavailable": freed_state.ready == false and freed_state.muted == null}
 
