@@ -3209,7 +3209,23 @@
         {
           "id": "remaining_active_window",
           "kind": "game_time",
-          "duration_ms": 4000
+          "duration_ms": 4000,
+          "watch": {
+            "hz": 20,
+            "specs": [
+              {
+                "path": "/root/GameEntry/Adventure/GameplayHUD",
+                "fields": [
+                  "notice_event_id",
+                  "notice_remaining",
+                  "notice_active_elapsed",
+                  "sword_acquisition_active_elapsed",
+                  "sword_acquisition_emissions",
+                  "notice_visible_in_tree"
+                ]
+              }
+            ]
+          }
         },
         {
           "id": "five_active_seconds_expired",
@@ -3705,355 +3721,75 @@
       "tags": [
         "title-settings-audio-page-required",
         "master-volume-focus-required",
-        "unmuted-original-mix-at-least-0.05-required",
-        "isolated-preferences-required"
+        "unmuted-original-mix-at-least-005-required",
+        "isolated-preferences-required",
+        "default-music-065-effects-100-required",
+        "host-active-bus-capture-listening-required"
       ],
       "requirement_ids": [
         "R19"
       ],
       "budget": {
-        "gameplay_ms": 1200,
-        "wall_seconds": 90
+        "gameplay_ms": 21000,
+        "wall_seconds": 180
       },
       "steps": [
-        {
-          "id": "audio_focus",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"
-          ],
-          "fields": [
-            "ready",
-            "group",
-            "focus_name"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings",
-              "field": "ready",
-              "value_type": "boolean",
-              "op": "equals",
-              "value": true
-            },
-            {
-              "path": "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings",
-              "field": "group",
-              "value_type": "string",
-              "op": "equals",
-              "value": "audio"
-            },
-            {
-              "path": "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings",
-              "field": "focus_name",
-              "value_type": "string",
-              "op": "equals",
-              "value": "Master Volume"
-            }
-          ]
-        },
-        {
-          "id": "original_mix",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/AdventureState"
-          ],
-          "fields": [
-            "music_volume",
-            "effects_volume",
-            "music_effective_gain",
-            "effects_effective_gain",
-            "muted_sound",
-            "preference_error"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "muted_sound",
-              "value_type": "boolean",
-              "op": "equals",
-              "value": false
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "preference_error",
-              "value_type": "string",
-              "op": "equals",
-              "value": ""
-            }
-          ]
-        },
-        {
-          "id": "focus_music",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Tab",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "music_focused",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"
-          ],
-          "fields": [
-            "focus_name"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings",
-              "field": "focus_name",
-              "value_type": "string",
-              "op": "equals",
-              "value": "Music Volume"
-            }
-          ]
-        },
-        {
-          "id": "lower_music",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Left",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "music_lowered",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/AdventureState"
-          ],
-          "fields": [
-            "music_volume",
-            "effects_volume",
-            "music_effective_gain",
-            "effects_effective_gain",
-            "muted_sound",
-            "preference_error"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_volume",
-              "value_type": "number",
-              "op": "delta",
-              "baseline": "original_mix",
-              "delta": -0.05
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            }
-          ]
-        },
-        {
-          "id": "restore_music",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Right",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "music_restored",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/AdventureState"
-          ],
-          "fields": [
-            "music_volume",
-            "effects_volume",
-            "music_effective_gain",
-            "effects_effective_gain",
-            "muted_sound",
-            "preference_error"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            }
-          ]
-        },
-        {
-          "id": "focus_effects",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Tab",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "effects_focused",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"
-          ],
-          "fields": [
-            "focus_name"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/EntryCanvas/MainMenu/TitleSettings",
-              "field": "focus_name",
-              "value_type": "string",
-              "op": "equals",
-              "value": "Effects Volume"
-            }
-          ]
-        },
-        {
-          "id": "lower_effects",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Left",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "effects_lowered",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/AdventureState"
-          ],
-          "fields": [
-            "music_volume",
-            "effects_volume",
-            "music_effective_gain",
-            "effects_effective_gain",
-            "muted_sound",
-            "preference_error"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_volume",
-              "value_type": "number",
-              "op": "delta",
-              "baseline": "original_mix",
-              "delta": -0.05
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            }
-          ]
-        },
-        {
-          "id": "restore_effects",
-          "kind": "input",
-          "duration_ms": 200,
-          "inputs": [
-            {
-              "key": "Right",
-              "duration_ms": 60
-            }
-          ]
-        },
-        {
-          "id": "effects_restored",
-          "kind": "state",
-          "paths": [
-            "/root/GameEntry/AdventureState"
-          ],
-          "fields": [
-            "music_volume",
-            "effects_volume",
-            "music_effective_gain",
-            "effects_effective_gain",
-            "muted_sound",
-            "preference_error"
-          ],
-          "assertions": [
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_volume",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "music_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            },
-            {
-              "path": "/root/GameEntry/AdventureState",
-              "field": "effects_effective_gain",
-              "value_type": "number",
-              "op": "unchanged",
-              "baseline": "original_mix"
-            }
-          ]
-        }
+        {"id":"audio_focus","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["ready","group","focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"group","value_type":"string","op":"equals","value":"audio"},{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"Master Volume"}]},
+        {"id":"original_mix","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"muted_sound","value_type":"boolean","op":"equals","value":false},{"path":"/root/GameEntry/AdventureState","field":"preference_error","value_type":"string","op":"equals","value":""},{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"equals","value":0.65},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"equals","value":1}]},
+        {"id":"focus_music","kind":"input","duration_ms":200,"inputs":[{"key":"Tab","duration_ms":60}]},
+        {"id":"music_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"Music Volume"}]},
+        {"id":"lower_music","kind":"input","duration_ms":200,"inputs":[{"key":"Left","duration_ms":60}]},
+        {"id":"music_lowered","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"delta","baseline":"original_mix","delta":-0.05},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"restore_music","kind":"input","duration_ms":200,"inputs":[{"key":"Right","duration_ms":60}]},
+        {"id":"music_restored","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"focus_effects","kind":"input","duration_ms":200,"inputs":[{"key":"Tab","duration_ms":60}]},
+        {"id":"effects_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"Effects Volume"}]},
+        {"id":"lower_effects","kind":"input","duration_ms":200,"inputs":[{"key":"Left","duration_ms":60}]},
+        {"id":"effects_lowered","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"delta","baseline":"original_mix","delta":-0.05},{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"restore_effects","kind":"input","duration_ms":200,"inputs":[{"key":"Right","duration_ms":60}]},
+        {"id":"effects_restored","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"active_original_focus_retry","kind":"input","duration_ms":700,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60},{"key":"Tab","start_ms":350,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_original_retry_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"RetrySavePreferences"}]},
+        {"id":"active_original_confirm","kind":"input","duration_ms":700,"inputs":[{"key":"Enter","start_ms":0,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_original_cue_route","kind":"state","paths":["/root/GameEntry/MenuAudio"],"fields":["ready","last_cue","music_playing","voice_bus","music_bus"],"assertions":[{"path":"/root/GameEntry/MenuAudio","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"last_cue","value_type":"string","op":"equals","value":"confirm"},{"path":"/root/GameEntry/MenuAudio","field":"music_playing","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"voice_bus","value_type":"string","op":"equals","value":"Effects"},{"path":"/root/GameEntry/MenuAudio","field":"music_bus","value_type":"string","op":"equals","value":"Music"}]},
+        {"id":"active_original_back_to_mute","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"active_original_back_to_effects","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"silence_effects","kind":"input","duration_ms":2400,"inputs":[{"key":"Left","start_ms":0,"duration_ms":60},{"key":"Left","start_ms":120,"duration_ms":60},{"key":"Left","start_ms":240,"duration_ms":60},{"key":"Left","start_ms":360,"duration_ms":60},{"key":"Left","start_ms":480,"duration_ms":60},{"key":"Left","start_ms":600,"duration_ms":60},{"key":"Left","start_ms":720,"duration_ms":60},{"key":"Left","start_ms":840,"duration_ms":60},{"key":"Left","start_ms":960,"duration_ms":60},{"key":"Left","start_ms":1080,"duration_ms":60},{"key":"Left","start_ms":1200,"duration_ms":60},{"key":"Left","start_ms":1320,"duration_ms":60},{"key":"Left","start_ms":1440,"duration_ms":60},{"key":"Left","start_ms":1560,"duration_ms":60},{"key":"Left","start_ms":1680,"duration_ms":60},{"key":"Left","start_ms":1800,"duration_ms":60},{"key":"Left","start_ms":1920,"duration_ms":60},{"key":"Left","start_ms":2040,"duration_ms":60},{"key":"Left","start_ms":2160,"duration_ms":60},{"key":"Left","start_ms":2280,"duration_ms":60}]},
+        {"id":"effects_zero","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"equals","value":0},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"equals","value":0},{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"active_effects_zero_focus_retry","kind":"input","duration_ms":700,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60},{"key":"Tab","start_ms":350,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_effects_zero_retry_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"RetrySavePreferences"}]},
+        {"id":"active_effects_zero_confirm","kind":"input","duration_ms":700,"inputs":[{"key":"Enter","start_ms":0,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_effects_zero_cue_route","kind":"state","paths":["/root/GameEntry/MenuAudio"],"fields":["ready","last_cue","music_playing","voice_bus","music_bus"],"assertions":[{"path":"/root/GameEntry/MenuAudio","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"last_cue","value_type":"string","op":"equals","value":"confirm"},{"path":"/root/GameEntry/MenuAudio","field":"music_playing","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"voice_bus","value_type":"string","op":"equals","value":"Effects"},{"path":"/root/GameEntry/MenuAudio","field":"music_bus","value_type":"string","op":"equals","value":"Music"}]},
+        {"id":"active_effects_zero_back_to_mute","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"active_effects_zero_back_to_effects","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"restore_effects_from_zero","kind":"input","duration_ms":2400,"inputs":[{"key":"Right","start_ms":0,"duration_ms":60},{"key":"Right","start_ms":120,"duration_ms":60},{"key":"Right","start_ms":240,"duration_ms":60},{"key":"Right","start_ms":360,"duration_ms":60},{"key":"Right","start_ms":480,"duration_ms":60},{"key":"Right","start_ms":600,"duration_ms":60},{"key":"Right","start_ms":720,"duration_ms":60},{"key":"Right","start_ms":840,"duration_ms":60},{"key":"Right","start_ms":960,"duration_ms":60},{"key":"Right","start_ms":1080,"duration_ms":60},{"key":"Right","start_ms":1200,"duration_ms":60},{"key":"Right","start_ms":1320,"duration_ms":60},{"key":"Right","start_ms":1440,"duration_ms":60},{"key":"Right","start_ms":1560,"duration_ms":60},{"key":"Right","start_ms":1680,"duration_ms":60},{"key":"Right","start_ms":1800,"duration_ms":60},{"key":"Right","start_ms":1920,"duration_ms":60},{"key":"Right","start_ms":2040,"duration_ms":60},{"key":"Right","start_ms":2160,"duration_ms":60},{"key":"Right","start_ms":2280,"duration_ms":60}]},
+        {"id":"effects_after_zero_restored","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"equals","value":1},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"equals","value":1},{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"active_effects_restored_focus_retry","kind":"input","duration_ms":700,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60},{"key":"Tab","start_ms":350,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_effects_restored_retry_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"RetrySavePreferences"}]},
+        {"id":"active_effects_restored_confirm","kind":"input","duration_ms":700,"inputs":[{"key":"Enter","start_ms":0,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_effects_restored_cue_route","kind":"state","paths":["/root/GameEntry/MenuAudio"],"fields":["ready","last_cue","music_playing","voice_bus","music_bus"],"assertions":[{"path":"/root/GameEntry/MenuAudio","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"last_cue","value_type":"string","op":"equals","value":"confirm"},{"path":"/root/GameEntry/MenuAudio","field":"music_playing","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"voice_bus","value_type":"string","op":"equals","value":"Effects"},{"path":"/root/GameEntry/MenuAudio","field":"music_bus","value_type":"string","op":"equals","value":"Music"}]},
+        {"id":"active_effects_restored_back_to_mute","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"active_effects_restored_back_to_effects","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"return_to_music","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"silence_music","kind":"input","duration_ms":1560,"inputs":[{"key":"Left","start_ms":0,"duration_ms":60},{"key":"Left","start_ms":120,"duration_ms":60},{"key":"Left","start_ms":240,"duration_ms":60},{"key":"Left","start_ms":360,"duration_ms":60},{"key":"Left","start_ms":480,"duration_ms":60},{"key":"Left","start_ms":600,"duration_ms":60},{"key":"Left","start_ms":720,"duration_ms":60},{"key":"Left","start_ms":840,"duration_ms":60},{"key":"Left","start_ms":960,"duration_ms":60},{"key":"Left","start_ms":1080,"duration_ms":60},{"key":"Left","start_ms":1200,"duration_ms":60},{"key":"Left","start_ms":1320,"duration_ms":60},{"key":"Left","start_ms":1440,"duration_ms":60}]},
+        {"id":"music_zero","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"equals","value":0},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"equals","value":0},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"return_to_effects_at_music_zero","kind":"input","duration_ms":200,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60}]},
+        {"id":"active_music_zero_focus_retry","kind":"input","duration_ms":700,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60},{"key":"Tab","start_ms":350,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_music_zero_retry_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"RetrySavePreferences"}]},
+        {"id":"active_music_zero_confirm","kind":"input","duration_ms":700,"inputs":[{"key":"Enter","start_ms":0,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_music_zero_cue_route","kind":"state","paths":["/root/GameEntry/MenuAudio"],"fields":["ready","last_cue","music_playing","voice_bus","music_bus"],"assertions":[{"path":"/root/GameEntry/MenuAudio","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"last_cue","value_type":"string","op":"equals","value":"confirm"},{"path":"/root/GameEntry/MenuAudio","field":"music_playing","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"voice_bus","value_type":"string","op":"equals","value":"Effects"},{"path":"/root/GameEntry/MenuAudio","field":"music_bus","value_type":"string","op":"equals","value":"Music"}]},
+        {"id":"active_music_zero_back_to_mute","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"active_music_zero_back_to_effects","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"return_to_music_for_restore","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"restore_music_from_zero","kind":"input","duration_ms":1560,"inputs":[{"key":"Right","start_ms":0,"duration_ms":60},{"key":"Right","start_ms":120,"duration_ms":60},{"key":"Right","start_ms":240,"duration_ms":60},{"key":"Right","start_ms":360,"duration_ms":60},{"key":"Right","start_ms":480,"duration_ms":60},{"key":"Right","start_ms":600,"duration_ms":60},{"key":"Right","start_ms":720,"duration_ms":60},{"key":"Right","start_ms":840,"duration_ms":60},{"key":"Right","start_ms":960,"duration_ms":60},{"key":"Right","start_ms":1080,"duration_ms":60},{"key":"Right","start_ms":1200,"duration_ms":60},{"key":"Right","start_ms":1320,"duration_ms":60},{"key":"Right","start_ms":1440,"duration_ms":60}]},
+        {"id":"music_after_zero_restored","kind":"state","paths":["/root/GameEntry/AdventureState"],"fields":["music_volume","effects_volume","music_effective_gain","effects_effective_gain","muted_sound","preference_error"],"assertions":[{"path":"/root/GameEntry/AdventureState","field":"music_volume","value_type":"number","op":"equals","value":0.65},{"path":"/root/GameEntry/AdventureState","field":"music_effective_gain","value_type":"number","op":"equals","value":0.65},{"path":"/root/GameEntry/AdventureState","field":"effects_volume","value_type":"number","op":"unchanged","baseline":"original_mix"},{"path":"/root/GameEntry/AdventureState","field":"effects_effective_gain","value_type":"number","op":"unchanged","baseline":"original_mix"}]},
+        {"id":"return_to_effects_after_music_restore","kind":"input","duration_ms":200,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60}]},
+        {"id":"active_music_restored_focus_retry","kind":"input","duration_ms":700,"inputs":[{"key":"Tab","start_ms":0,"duration_ms":60},{"key":"Tab","start_ms":350,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_music_restored_retry_focused","kind":"state","paths":["/root/GameEntry/EntryCanvas/MainMenu/TitleSettings"],"fields":["focus_name"],"assertions":[{"path":"/root/GameEntry/EntryCanvas/MainMenu/TitleSettings","field":"focus_name","value_type":"string","op":"equals","value":"RetrySavePreferences"}]},
+        {"id":"active_music_restored_confirm","kind":"input","duration_ms":700,"inputs":[{"key":"Enter","start_ms":0,"duration_ms":60}],"watch":{"specs":[{"path":"/root/GameEntry/MenuAudio","fields":["last_cue","playing","music_playing","voice_bus","music_bus"]}],"hz":20}},
+        {"id":"active_music_restored_cue_route","kind":"state","paths":["/root/GameEntry/MenuAudio"],"fields":["ready","last_cue","music_playing","voice_bus","music_bus"],"assertions":[{"path":"/root/GameEntry/MenuAudio","field":"ready","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"last_cue","value_type":"string","op":"equals","value":"confirm"},{"path":"/root/GameEntry/MenuAudio","field":"music_playing","value_type":"boolean","op":"equals","value":true},{"path":"/root/GameEntry/MenuAudio","field":"voice_bus","value_type":"string","op":"equals","value":"Effects"},{"path":"/root/GameEntry/MenuAudio","field":"music_bus","value_type":"string","op":"equals","value":"Music"}]},
+        {"id":"active_music_restored_back_to_mute","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]},
+        {"id":"active_music_restored_back_to_effects","kind":"input","duration_ms":300,"inputs":[{"key":"Up","duration_ms":60}]}
       ]
     }
   ]

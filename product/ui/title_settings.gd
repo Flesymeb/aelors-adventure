@@ -79,7 +79,8 @@ func build() -> void:
 		host.button(column, "恢复默认设置", func():
 				host.state.reset_preferences()
 				commit())
-	host.button(column, "重试保存设置", commit)
+	var retry_save: Button = host.button(column, "重试保存设置", commit)
+	retry_save.name = "RetrySavePreferences"
 	host.reflow(page)
 	var next_focus: Control = column.find_child(focus_name, true, false) if focus_name != "" else null
 	if next_focus:
@@ -122,6 +123,7 @@ func slider(label: String, key: String, low: float, high: float, increment: floa
 	control.focus_mode = Control.FOCUS_ALL
 	row.add_child(control)
 	control.set_meta("focus_row", row)
+	control.focus_entered.connect(func(): host.audio.play_cue("focus"))
 	control.focus_entered.connect(_keep_focus_visible.call_deferred)
 	var update := func(value: float): value_label.text = label + " · " + ("%d%%" % int(round(value * 100)) if percent else "%.2f" % value)
 	update.call(control.value)
