@@ -244,9 +244,18 @@ func commit_arrival(map_id: String) -> bool:
 func checkpoint_name() -> String:
 	return "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
 
-func settle_roadblock(point: Vector3, drop: Dictionary) -> bool:
-	if current_map != MAP02 or not cp02_claimed or not departure_available() or reward_history.has("map02_e01"): return false
-	reward_history["map02_e01"] = {"xp":10,"drop":drop,"position":point,"collected":drop.is_empty()}
+# The old singleton ID remains the first actor's earned history.
+const E01_IDS := ["map02_e01", "map02_e01_b"]
+
+func roadblock_defeated() -> bool:
+	return E01_IDS.all(func(id): return reward_history.has(id))
+
+func roadblock_remaining() -> int:
+	return E01_IDS.filter(func(id): return not reward_history.has(id)).size()
+
+func settle_roadblock(point: Vector3, drop: Dictionary, id := "map02_e01") -> bool:
+	if id not in E01_IDS or current_map != MAP02 or not cp02_claimed or not departure_available() or reward_history.has(id): return false
+	reward_history[id] = {"xp":10,"drop":drop,"position":point,"collected":drop.is_empty()}
 	experience += 10
 	progression_changed.emit()
 	return true
@@ -384,7 +393,7 @@ func restore_config(config: ConfigFile) -> Dictionary:
 
 func objective() -> String:
 	if current_map == MAP02:
-		return "林缘草甸 · 沿蓝光前方林路迎战路障近战者；可退回灯台" if not reward_history.has("map02_e01") else "草甸路障已清除 · 可整顿或通过蓝光返回河谷；押送路线仍待调查"
+		return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining() if not roadblock_defeated() else "押送路线 · 前往 E02 林路调查押送痕迹；可返回灯台整顿"
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
@@ -566,7 +575,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b","map02_e01"] + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -596,8 +605,8 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if not departure is bool or not claimed is bool or not current is String: return "存档章节无效"
 	if current not in [GROUND.MAP_ID, MAP02]: return "存档章节无效"
 	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
-	if (claimed or current == MAP02 or map_id == MAP02 or rewards.has("map02_e01")) and not departure: return "存档草甸前置无效"
-	if (map_id == MAP02 or current == MAP02 or rewards.has("map02_e01")) and not claimed: return "存档检查点无效"
+	if (claimed or current == MAP02 or map_id == MAP02 or E01_IDS.any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
+	if (map_id == MAP02 or current == MAP02 or E01_IDS.any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -699,7 +708,7 @@ func quest_entries() -> Array[Dictionary]:
 			if reward_history.has(id): steps.append("弓守已击败" if id == "channel_ranged" else "柱群近战守卫已击败")
 		rows.append({"id":"guards", "title":"柱群守卫", "complete":guards_defeated(), "context":"两名近战守卫掩护一名弓守。岩石能挡箭；可退回桥头整顿。胜利只解除守卫条件，四名被掳者仍待救援。", "action":guard_objective(), "steps":steps})
 	if cp02_claimed:
-		rows.append({"id":"meadow", "title":"林缘草甸", "complete":false, "context":"灯台是安全的落脚点。路障近战者抬手后出拳；可退回灯台整顿。四名被掳者仍待救援。", "action":objective(), "steps":["林缘灯台已启用"] + (["路障近战者已击败"] if reward_history.has("map02_e01") else [])})
+		rows.append({"id":"meadow", "title":"林缘草甸", "complete":false, "context":"灯台是安全的落脚点。两名路障近战者抬手后出拳；可退回灯台整顿。四名被掳者仍待救援。", "action":objective(), "steps":["林缘灯台已启用"] + E01_IDS.filter(func(id): return reward_history.has(id)).map(func(id): return "路障前哨已击败" if id == "map02_e01" else "路障后哨已击败") + (["E01 路障已清除 · 前往 E02 调查押送路线"] if roadblock_defeated() else [])})
 	return rows
 
 func tracked_entry() -> Dictionary:

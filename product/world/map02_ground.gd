@@ -3,6 +3,7 @@ extends "res://forest_ground.gd"
 const MAP02_ID := "meadow-entry-v1"
 const ENTRY := Vector2(135, 133)
 const ROADBLOCK := Vector2(133, 146)
+const ROADBLOCK_ANCHORS := [ROADBLOCK, Vector2(135, 146)]
 const RETURN := Vector2(127, 133)
 
 static func entry_xz(position: Vector3, map_id: String) -> Vector2:

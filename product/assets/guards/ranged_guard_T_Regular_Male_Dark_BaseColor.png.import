@@ -3,10 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dslni207av7ys"
-path.s3tc="res://.godot/imported/ranged_guard_T_Regular_Male_Dark_BaseColor.png-75bbf07a1b5b19088cfdd67347f8965c.s3tc.ctex"
+path="res://.godot/imported/ranged_guard_T_Regular_Male_Dark_BaseColor.png-75bbf07a1b5b19088cfdd67347f8965c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 generator_parameters={
 "md5": "9ee756d9b312a460fad345f0508a6222"
@@ -15,11 +14,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/guards/ranged_guard_T_Regular_Male_Dark_BaseColor.png"
-dest_files=["res://.godot/imported/ranged_guard_T_Regular_Male_Dark_BaseColor.png-75bbf07a1b5b19088cfdd67347f8965c.s3tc.ctex"]
+dest_files=["res://.godot/imported/ranged_guard_T_Regular_Male_Dark_BaseColor.png-75bbf07a1b5b19088cfdd67347f8965c.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -41,4 +40,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

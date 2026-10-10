@@ -235,4 +235,12 @@ func _mcp_state() -> Dictionary:
 		owners.append("opening_pause")
 		if is_instance_valid(pause_menu.sub_menu): owners.append(str(pause_menu.sub_menu.name))
 		if is_instance_valid(pause_menu.confirmation): owners.append("confirmation")
-	return {"ready": ready, "beat": beat + 1 if ready else null, "image": str(slides[beat].image) if ready else null, "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()) if live and is_instance_valid(caption_panel) and not caption_panel.is_queued_for_deletion() else null, "text_scale": state.text_scale if ready else null, "pause_owners": owners, "timeline_paused": menu_ready or not inputs_armed, "transition_alpha": image_previous.modulate.a if is_instance_valid(image_previous) and not image_previous.is_queued_for_deletion() else null, "zoom": image_current.scale.x if is_instance_valid(image_current) and not image_current.is_queued_for_deletion() else null, "nonessential_effects": state.graphics_quality != "low" if ready else null, "motion": not state.reduced_motion and state.graphics_quality != "low" if ready else null, "inputs_armed": inputs_armed, "finished": finished}
+	var observation := {"ready": ready, "beat": beat + 1 if ready else null, "image": str(slides[beat].image) if ready else null, "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()) if live and is_instance_valid(caption_panel) and not caption_panel.is_queued_for_deletion() else null, "text_scale": state.text_scale if ready else null, "pause_owners": owners, "pause_menu_present": menu_ready, "timeline_paused": menu_ready or not inputs_armed, "skip_hold": skip_hold, "transition_alpha": image_previous.modulate.a if is_instance_valid(image_previous) and not image_previous.is_queued_for_deletion() else null, "zoom": image_current.scale.x if is_instance_valid(image_current) and not image_current.is_queued_for_deletion() else null, "nonessential_effects": state.graphics_quality != "low" if ready else null, "motion": not state.reduced_motion and state.graphics_quality != "low" if ready else null, "inputs_armed": inputs_armed, "finished": finished}
+	# Scalar playback facts support bounded pause/skip watches. Reading them
+	# must never seek, resume a stream, or apply the current preferences.
+	for channel in ["music", "ambience", "cue"]:
+		var player: AudioStreamPlayer = get(channel)
+		var available := live and is_instance_valid(player) and not player.is_queued_for_deletion()
+		observation[channel + "_playing"] = player.playing if available else null
+		observation[channel + "_paused"] = player.stream_paused if available else null
+	return observation

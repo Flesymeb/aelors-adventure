@@ -31,7 +31,38 @@ static func observer_lifecycle_checks() -> Dictionary:
 		checks[path + "_initial_shape"] = initial.has("ready") and initial.ready == false
 		checks[path + "_read_only"] = initial == repeated
 		checks[path + "_pending_teardown"] = observer.is_queued_for_deletion() and pending.ready == false
+		if path == "ui/illustrated_opening.gd":
+			checks.opening_skip_initial = initial.skip_hold == 0.0 and initial.pause_menu_present == false
+			checks.opening_streams_unavailable = initial.music_playing == null and initial.music_paused == null and initial.ambience_paused == null and initial.cue_paused == null
+		if path == "ui/menu_audio.gd":
+			checks.menu_streams_unavailable = initial.music_position == null and initial.music_paused == null and initial.voice_paused == null
+		if path == "ui/title_settings.gd":
+			checks.settings_focus_unavailable = initial.focus_name == null and pending.focus_name == null
+	checks.merge(detached_audio_checks())
 	return checks
+
+static func detached_audio_checks() -> Dictionary:
+	# Exercise real assigned dependencies and freed handles without entering the
+	# tree, playing audio, invoking _ready, or loading/writing user preferences.
+	var observer: Node = preload("res://ui/menu_audio.gd").new()
+	observer.state = preload("res://dialogue_state.gd").new()
+	observer.music = AudioStreamPlayer.new()
+	observer.music.bus = "Music"
+	observer.voice = AudioStreamPlayer.new()
+	observer.voice.bus = "Effects"
+	var before: Dictionary = observer._mcp_state()
+	var repeated: Dictionary = observer._mcp_state()
+	observer.music.free()
+	observer.voice.free()
+	var freed_streams: Dictionary = observer._mcp_state()
+	observer.state.free()
+	var freed_state: Dictionary = observer._mcp_state()
+	observer.free()
+	return {"detached_audio_read_only": before == repeated,
+		"detached_audio_not_started": before.ready == false and before.music_playing == false and before.playing == false,
+		"detached_audio_routes": before.music_bus == "Music" and before.voice_bus == "Effects",
+		"freed_streams_unavailable": freed_streams.ready == false and freed_streams.music_position == null and freed_streams.music_paused == null and freed_streams.voice_paused == null,
+		"freed_audio_state_unavailable": freed_state.ready == false and freed_state.muted == null}
 
 static func live_read_checks(router: Node) -> Dictionary:
 	# Opt-in check of the actual current entry boundary. Do not call the mutable
@@ -49,7 +80,8 @@ static func live_read_checks(router: Node) -> Dictionary:
 		"preferences_unchanged": state.preference_snapshot() == preferences,
 		"history_unchanged": state.training_snapshot() == history and state.confirmed_choices == choices,
 		"route_unchanged": router.route == route,
-		"playback_not_reset": audio_after.music_position >= audio_before.music_position and audio_after.music_playing == audio_before.music_playing}
+		"playback_not_reset": audio_after.music_position >= audio_before.music_position and audio_after.music_playing == audio_before.music_playing,
+		"audio_pause_unchanged": audio_after.music_paused == audio_before.music_paused and audio_after.voice_paused == audio_before.voice_paused and audio_after.last_cue == audio_before.last_cue}
 	if is_instance_valid(router.opening):
 		var opening: Node = router.opening
 		var before: Dictionary = opening._mcp_state()
@@ -57,6 +89,8 @@ static func live_read_checks(router: Node) -> Dictionary:
 		checks.opening_ready_shape = before.ready == true and before.beat is int and before.image is String
 		checks.opening_clock_unchanged = before.elapsed == after.elapsed and before.beat_elapsed == after.beat_elapsed and before.finished == after.finished
 		checks.opening_pause_unchanged = before.pause_owners == after.pause_owners and before.timeline_paused == after.timeline_paused
+		checks.opening_skip_unchanged = before.skip_hold == after.skip_hold and before.inputs_armed == after.inputs_armed and before.pause_menu_present == after.pause_menu_present
+		checks.opening_audio_unchanged = before.music_playing == after.music_playing and before.music_paused == after.music_paused and before.ambience_paused == after.ambience_paused and before.cue_paused == after.cue_paused
 	for node in router.find_children("*", "Control", true, false):
 		var script: Script = node.get_script()
 		if script == null or script.resource_path != "res://ui/title_settings.gd": continue

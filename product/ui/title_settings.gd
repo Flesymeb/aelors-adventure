@@ -200,5 +200,6 @@ func _mcp_state() -> Dictionary:
 	var bindings_ready := is_instance_valid(bindings) and not bindings.is_queued_for_deletion()
 	var feedback_ready := live and is_instance_valid(feedback) and not feedback.is_queued_for_deletion()
 	var observation := {"ready": live and is_node_ready() and state_ready and page_ready, "group": group, "capturing": capturing, "preferences": state.preference_snapshot() if state_ready else null, "bindings": bindings.effective_bindings.duplicate() if bindings_ready else null, "binding_error": bindings.control_persistence_error if bindings_ready else null, "visible": visible if live else null, "focus_rect": str(row.get_global_rect()) if is_instance_valid(row) and not row.is_queued_for_deletion() else null, "viewport_rect": str(scroll.get_global_rect()) if is_instance_valid(scroll) and not scroll.is_queued_for_deletion() else null, "feedback": feedback.text if feedback_ready else null, "feedback_rect": str(feedback.get_global_rect()) if feedback_ready else null, "scroll": scroll.scroll_vertical if is_instance_valid(scroll) and not scroll.is_queued_for_deletion() else null}
+	observation["focus_name"] = str(focus.name) if page_ready and is_instance_valid(focus) and not focus.is_queued_for_deletion() and page.is_ancestor_of(focus) else null
 	if state_ready: observation.merge(state.audio_observation())
 	return observation

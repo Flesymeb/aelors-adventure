@@ -42,8 +42,12 @@ func _place_player() -> void:
 		for i in 14:
 			var point: Vector2 = ground.ENTRY.lerp(ground.ROADBLOCK, float(i)/13.0)
 			if ground.place(self, stance, point): route_samples += 1
+		# Keep the approach check and qualify the short branch to each actor.
+		for anchor in ground.ROADBLOCK_ANCHORS:
+			for i in 3:
+				if ground.place(self, stance, ground.ROADBLOCK.lerp(anchor, float(i)/2.0)): route_samples += 1
 		stance.queue_free()
-		route_ready = route_samples == 14
+		route_ready = route_samples == 20
 		if not route_ready:
 			entry_failed.emit("草甸道路无法安全通行。已保留上一处落脚点。")
 			return

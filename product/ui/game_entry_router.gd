@@ -43,6 +43,7 @@ func _ready() -> void:
 	loader.scene_loaded.connect(_construct_world)
 	loader.load_failed.connect(_entry_failed)
 	canvas = CanvasLayer.new()
+	canvas.name = "EntryCanvas"
 	canvas.layer = 100
 	add_child(canvas)
 	_show_title()
