@@ -30,7 +30,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	state = preload("res://dialogue_state.gd").new()
+	state = create_adventure_state()
 	state.name = "AdventureState"
 	add_child(state)
 	audio = preload("res://ui/menu_audio.gd").new()
@@ -47,6 +47,9 @@ func _ready() -> void:
 	canvas.layer = 100
 	add_child(canvas)
 	_show_title()
+
+func create_adventure_state() -> Node:
+	return preload("res://dialogue_state.gd").new()
 
 func _show_title() -> void:
 	get_viewport().disable_3d = false
@@ -386,7 +389,7 @@ func _travel_failed(message: String) -> void:
 func _suspend_source_collision() -> void:
 	source_collision_state.clear()
 	for node in source_world.find_children("*", "", true, false):
-		if node is CollisionObject3D or node == source_world.village.get_node("Terrain3D"):
+		if node is CollisionObject3D or node == source_world.village.get_node_or_null("Terrain3D"):
 			source_collision_state.append({"node":node,"layer":node.collision_layer,"mask":node.collision_mask})
 			node.collision_layer = 0
 			node.collision_mask = 0

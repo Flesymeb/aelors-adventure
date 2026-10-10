@@ -78,7 +78,19 @@ func show_pickup(id: String) -> void:
 	sprite.modulate = Color(1,0.82,0.3)
 	sprite.no_depth_test = false
 	add_child(sprite)
-	sprite.global_position = history.position + Vector3.UP * 0.7
+	if world.meadow_slice:
+		var anchor: Vector2 = Vector2(history.position.x, history.position.z)
+		var ground = world.ground_policy
+		if ground.entry_xz(history.position, state.MAP02) != anchor:
+			var index: int = state.E01_IDS.find(id)
+			anchor = ground.ROADBLOCK_ANCHORS[index] if index >= 0 else ground.PRESSURE_ANCHORS[state.PRESSURE_IDS.find(id)]
+		if not ground.place(world, sprite, anchor):
+			world.entry_failed.emit("保留的掉落缺少安全落脚点。")
+			sprite.queue_free()
+			return
+		sprite.global_position += Vector3.UP * 0.62
+	else:
+		sprite.global_position = history.position + Vector3.UP * 0.7
 	pickups[id] = sprite
 
 func _physics_process(delta: float) -> void:

@@ -1,5 +1,5 @@
 extends "res://preview_controller.gd"
-## The retained map/controller dependency closure, with a scoped meadow route.
+## Independent authored environment with the retained product controller.
 var route_ready := false
 var route_samples := 0
 var pressure_route_samples := 0
@@ -11,8 +11,9 @@ func _ready() -> void:
 	super()
 	# CH01 teaching remains in the shared combat component, without its actors
 	# being presented as new meadow objectives or an alternative progression path.
-	for node in [isha, training.hers, training.target, training.monster, bow_training.ronen, bow_training.target, bow_training.obstruction]:
+	for node in [isha, training.hers, training.target, training.monster, lamp_training.signpost, bow_training.ronen, bow_training.target, bow_training.obstruction]:
 		node.hide()
+		node.process_mode = Node.PROCESS_MODE_DISABLED
 		for body in [node] + node.find_children("*", "CollisionObject3D", true, false):
 			if body is CollisionObject3D: body.collision_layer = 0
 	bow_training.pending_demo = false
@@ -22,6 +23,18 @@ func _ready() -> void:
 	chapter_pillar.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(chapter_pillar)
 	chapter_pillar.configure(self)
+
+func create_element_abilities() -> Node3D:
+	return preload("res://world/map02_element_abilities.gd").new()
+
+func create_environment() -> Node3D:
+	var forest: Node3D = preload("res://assets/maps/map02/Main.tscn").instantiate()
+	forest.set_script(preload("res://world/map02_environment.gd"))
+	return forest
+
+func initial_spawn_height(_spawn: Vector2) -> float:
+	# Placement waits for actual collision support before enabling the body.
+	return 15.0
 
 func checkpoint_xz() -> Vector2:
 	return preload("res://world/map02_ground.gd").ENTRY
@@ -51,7 +64,7 @@ func _place_player() -> void:
 		# The cover blocks the central arrow lane. Qualify a walking flank,
 		# then both actor homes and the return line on actual retained collision.
 		pressure_route_samples = 0
-		var points: Array[Vector2] = [ground.ROADBLOCK, ground.PRESSURE_APPROACH, Vector2(125,153), Vector2(125,157), ground.PRESSURE_ANCHORS[0], ground.PRESSURE_ANCHORS[1]]
+		var points: Array[Vector2] = [ground.ROADBLOCK, ground.PRESSURE_APPROACH, ground.PRESSURE_FLANK[0], ground.PRESSURE_FLANK[1], ground.PRESSURE_ANCHORS[0], ground.PRESSURE_ANCHORS[1]]
 		for i in points.size() - 1:
 			for j in 5:
 				if ground.place(self, stance, points[i].lerp(points[i+1], float(j)/4.0)) and pressure_encounter.standing_clear(stance): pressure_route_samples += 1
@@ -70,7 +83,7 @@ func _place_player() -> void:
 
 func _mcp_state() -> Dictionary:
 	var result := super()
-	result.map_id = "meadow-entry-v1"
+	result.map_id = preload("res://world/map02_ground.gd").MAP02_ID
 	result.route_ready = route_ready
 	result.route_samples = route_samples
 	result.pressure_route_ready = pressure_route_ready

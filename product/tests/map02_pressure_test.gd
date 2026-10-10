@@ -10,7 +10,7 @@ class DiagnosticPressureRouter extends ROADBLOCK.DiagnosticMeadowRouter:
 		# The parent fixture already intercepts persistence. This prepared history
 		# is supplemental component support, never proof of ordinary earned travel.
 		for id in state.E01_IDS: state.settle_roadblock(Vector3(133,11,146), {}, id)
-		world.restored_position = {"position":Vector3(128,11,151), "map_id":state.MAP02, "yaw":PI}
+		world.restored_position = {"position":Vector3(8,0,53), "map_id":state.MAP02, "yaw":PI}
 
 static func attach_diagnostic(parent: Node) -> Node:
 	var router := DiagnosticPressureRouter.new()
@@ -144,6 +144,10 @@ static func supply_checks(parent: Node) -> Dictionary:
 	checks.light_first_preserved = not light.meadow_branch_supply_available() and light.claim_meadow_branch_supply().is_empty()
 	light.free()
 	return checks
+
+static func lightning_contact_checks(parent: Node) -> Dictionary:
+	# Exercise the E02 subclass with the same real Snaiel contact/reaction owner.
+	return preload("res://tests/ranged_lightning_contact_test.gd").lightning_contact_checks(parent,preload("res://combat/map02_ranged_adapter.gd"))
 
 static func lifecycle_checks(world: Node3D) -> Dictionary:
 	var state: Node = world.dialogue_state

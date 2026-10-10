@@ -82,7 +82,7 @@ func ground() -> void:
 		await get_tree().physics_frame
 		var excluded: Array[RID] = []
 		for stone in stones: excluded.append(stone.get_child(0).get_rid())
-		var hit: Dictionary = GROUND.support(world,anchor,excluded)
+		var hit: Dictionary = world.ground_policy.support(world,anchor,excluded)
 		if not hit.is_empty():
 			global_position = hit.position
 			grounded = true

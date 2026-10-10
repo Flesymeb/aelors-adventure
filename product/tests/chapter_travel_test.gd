@@ -176,6 +176,14 @@ static func collision_handoff_checks() -> Dictionary:
 	var checks := {"source_collision_suspended":actor.collision_layer == 0 and actor.collision_mask == 0 and terrain.collision_layer == 0}
 	router._restore_source_collision()
 	checks.source_collision_restored = actor.collision_layer == 5 and actor.collision_mask == 3 and terrain.collision_layer == 1 and router.source_collision_state.is_empty()
+	# Return travel has authored mesh bodies, without a Terrain3D node.
+	terrain.name = "AuthoredTerrainCollision"
+	actor.collision_layer = 2
+	actor.collision_mask = 1
+	router._suspend_source_collision()
+	checks.authored_source_collision_suspended = actor.collision_layer == 0 and actor.collision_mask == 0 and terrain.collision_layer == 0
+	router._restore_source_collision()
+	checks.authored_source_collision_restored = actor.collision_layer == 2 and actor.collision_mask == 1 and terrain.collision_layer == 1 and router.source_collision_state.is_empty()
 	source.free()
 	router.free()
 	return checks

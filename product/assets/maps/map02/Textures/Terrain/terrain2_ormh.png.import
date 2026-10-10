@@ -1,0 +1,29 @@
+[remap]
+
+importer="2d_array_texture"
+type="CompressedTexture2DArray"
+uid="uid://bvs7nru5f6csl"
+path.s3tc="res://.godot/imported/terrain2_ormh.png-08ac75103f9d61c25af2b7e4a45a769d.s3tc.ctexarray"
+metadata={
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+
+[deps]
+
+source_file="res://assets/maps/map02/Textures/Terrain/terrain2_ormh.png"
+dest_files=["res://.godot/imported/terrain2_ormh.png-08ac75103f9d61c25af2b7e4a45a769d.s3tc.ctexarray"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+slices/horizontal=2
+slices/vertical=2

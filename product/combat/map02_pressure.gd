@@ -52,12 +52,12 @@ func ground() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion(): return
-		var hit: Dictionary = GROUND.support(world, cover_xz, [cover_body.get_rid()])
+		var hit: Dictionary = world.ground_policy.support(world, cover_xz, [cover_body.get_rid()])
 		if hit.is_empty(): continue
 		cover.global_position = hit.position - Vector3.UP * cover.mesh.get_aabb().position.y * cover.scale.y
 		var supported := true
 		for i in enemies.size():
-			var placed := GROUND.place(world, enemies[i], actor_anchors[i])
+			var placed: bool = world.ground_policy.place(world, enemies[i], actor_anchors[i])
 			supported = placed and supported
 			if placed and not standing_clear(enemies[i]): supported = false
 		if not supported: continue
@@ -140,7 +140,7 @@ func rebuild_supplies() -> void:
 		sprite.queue_free()
 	supplies.clear()
 	for kind in ["branch", "victory"]:
-		var hit: Dictionary = GROUND.support(world, branch_supply_xz if kind == "branch" else victory_supply_xz, [cover_body.get_rid()])
+		var hit: Dictionary = world.ground_policy.support(world, branch_supply_xz if kind == "branch" else victory_supply_xz, [cover_body.get_rid()])
 		if hit.is_empty():
 			world.entry_failed.emit("押送路段补给缺少安全落脚点。")
 			continue

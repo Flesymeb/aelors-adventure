@@ -57,6 +57,9 @@ func configure(owner_world: Node3D) -> void:
 	ground_module.call_deferred()
 
 func ground_module() -> void:
+	if world.meadow_slice:
+		grounded = true
+		return
 	for attempt in 120:
 		await get_tree().physics_frame
 		grounded = world.training.place_on_ground(ronen, RONEN_XZ) and world.training.place_on_ground(target, TARGET_XZ) and world.training.place_on_ground(obstruction, CRATE_XZ)
@@ -68,7 +71,7 @@ func prerequisite_complete() -> bool:
 	return state.sword_owned and state.practice_hit and state.practice_defense and state.remnant_collected
 
 func interaction_prompt() -> String:
-	if not grounded or world.training.player_locked() or not ronen.can_interact(player): return ""
+	if world.meadow_slice or not grounded or world.training.player_locked() or not ronen.can_interact(player): return ""
 	return "[E] 与罗恩交谈" if not state.bow_owned else "[E] 免费补箭 / 查看弓练习"
 
 func interact() -> bool:

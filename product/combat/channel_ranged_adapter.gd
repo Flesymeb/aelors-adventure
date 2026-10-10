@@ -111,6 +111,8 @@ func _physics_process(delta: float) -> void:
 		hurt_remaining = maxf(0,hurt_remaining-delta)
 		phase = "hurt"
 		if hurt_remaining <= 0:
+			phase = "idle"
+			blackboard.set_value("got_hit",false)
 			presentation.current_animation = ""
 			presentation._play_animation("Idle")
 	elif returning:
@@ -148,7 +150,7 @@ func _move(destination: Vector3, stage: String) -> void:
 	if direction.length() < 0.05: return
 	direction = direction.normalized()
 	var excluded: Array[RID] = [get_rid(),encounter.world.player.get_rid()]
-	var hit: Dictionary = preload("res://forest_ground.gd").support(encounter.world,Vector2(global_position.x+direction.x*0.5,global_position.z+direction.z*0.5),excluded)
+	var hit: Dictionary = encounter.world.ground_policy.support(encounter.world,Vector2(global_position.x+direction.x*0.5,global_position.z+direction.z*0.5),excluded)
 	if hit.is_empty() or absf(hit.position.y-global_position.y) > 0.7: return
 	velocity.x = direction.x * 1.5
 	velocity.z = direction.z * 1.5
@@ -187,6 +189,11 @@ func _shoot(occurrence: int) -> void:
 	projectile.launch(origin,locked_direction,get_rid(),16,global_position + Vector3.UP*1.3)
 	shots_fired += 1
 	encounter.world.training.feedback.swing()
+
+func on_hurt(result: Dictionary) -> void:
+	# Elemental contact defers the registered reaction until after its immunity
+	# decision. Use that same callback; damage and defeat stay with Snaiel.
+	if handler.reaction.is_valid(): handler.reaction.call(result)
 
 func _hurt(result: Dictionary) -> void:
 	if result.outcome == "defeat": return

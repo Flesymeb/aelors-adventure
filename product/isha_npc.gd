@@ -86,6 +86,7 @@ func _build_idle_clip() -> void:
 
 func _ground() -> void:
 	var world := get_parent()
+	if world.meadow_slice: return
 	for attempt in 120:
 		await get_tree().physics_frame
 		if preload("res://forest_ground.gd").place(world, self, preload("res://forest_ground.gd").ISHA):

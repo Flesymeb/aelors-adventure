@@ -57,20 +57,25 @@ var failure_pending: Button
 var failure_busy := false
 
 
+func create_element_abilities() -> Node3D:
+	return preload("res://element_abilities.gd").new()
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	village = SOURCE_SCENE.instantiate()
+	village = create_environment()
 	village.name = "Forest"
-	GROUND.bind_departure_collision(village)
+	if not meadow_slice: GROUND.bind_departure_collision(village)
 	village.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(village)
 	var source_camera := village.get_node_or_null("Camera/Camera") as Camera3D
 	if source_camera:
 		source_camera.current = false
 	player = PLAYER_SCENE.instantiate()
+	player.ground_policy = ground_policy
+	if meadow_slice: player.minimum_world_height = -25.0
 	player.process_mode = Node.PROCESS_MODE_DISABLED
 	var spawn: Vector2 = checkpoint_xz()
-	var initial_height: float = village.get_node("Terrain3D").data.get_height(Vector3(spawn.x, 0, spawn.y))
+	var initial_height: float = initial_spawn_height(spawn)
 	player.position = Vector3(spawn.x, initial_height + 0.1, spawn.y)
 	player.configure_equipment(false, false)
 	add_child(player)
@@ -78,7 +83,7 @@ func _ready() -> void:
 	_add_village_buildings()
 	_place_player.call_deferred()
 	quality = Node.new()
-	quality.set_script(ENVIRONMENT_QUALITY)
+	quality.set_script(preload("res://world/map02_quality.gd") if meadow_slice else ENVIRONMENT_QUALITY)
 	add_child(quality)
 	if dialogue_state == null:
 		dialogue_state = preload("res://dialogue_state.gd").new()
@@ -121,7 +126,7 @@ func _ready() -> void:
 	lamp_training.name = "LampTraining"
 	add_child(lamp_training)
 	lamp_training.configure(self)
-	element_abilities = preload("res://element_abilities.gd").new()
+	element_abilities = create_element_abilities()
 	element_abilities.process_mode = Node.PROCESS_MODE_PAUSABLE
 	element_abilities.name = "ElementAbilities"
 	add_child(element_abilities)
@@ -140,6 +145,8 @@ func _ready() -> void:
 		pressure_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
 		pressure_encounter.actor_anchors.assign(ground_policy.PRESSURE_ANCHORS)
 		pressure_encounter.cover_xz = ground_policy.PRESSURE_COVER
+		pressure_encounter.branch_supply_xz = ground_policy.PRESSURE_APPROACH
+		pressure_encounter.victory_supply_xz = ground_policy.PRESSURE_FLANK[0]
 		add_child(pressure_encounter)
 		pressure_encounter.configure(self)
 	if not meadow_slice:
@@ -163,6 +170,12 @@ func _ready() -> void:
 	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
+
+func create_environment() -> Node3D:
+	return SOURCE_SCENE.instantiate()
+
+func initial_spawn_height(spawn: Vector2) -> float:
+	return village.get_node("Terrain3D").data.get_height(Vector3(spawn.x, 0, spawn.y))
 
 func _add_village_buildings() -> void:
 	# Retain authored medieval building meshes, materials and collision only.
@@ -394,7 +407,7 @@ func _mcp_state() -> Dictionary:
 			if not actor.is_queued_for_deletion(): story_actors.append(str(actor.get_path()))
 	var position: Vector3 = player.global_position if player_ready else Vector3.ZERO
 	var velocity: Vector3 = player.velocity if player_ready else Vector3.ZERO
-	return {"ready": is_node_ready() and not is_queued_for_deletion(), "player_ready": player_ready, "controls_ready": controls_ready, "failure": _failure_observation(), "pause_owners": pause_owners.keys(), "pause_owner_count": pause_owners.size(), "product_paused": not pause_owners.is_empty(), "controls_pause_owned": pause_owners.has("controls"), "controls_submenu": str(controls_panel.sub_menu.name) if controls_ready and is_instance_valid(controls_panel.sub_menu) else null, "preferences": dialogue_state.preference_snapshot() if state_ready else null, "tree_paused": tree.paused if tree else null, "developer_ui": developer_ui, "controls_visible": controls_panel.visible if controls_ready else null, "isha_distance": player.global_position.distance_to(isha.global_position) if player_ready and isha_ready else null, "interaction_available": isha.interaction_available if isha_ready else null, "objective": dialogue_state.objective() if state_ready else null, "equipment": player.weapon_mode if player_ready else null, "owns_sword": player.owns_sword if player_ready else null, "owns_bow": player.owns_bow if player_ready else null, "player_position": [position.x, position.y, position.z] if player_ready else null, "player_velocity": [velocity.x, velocity.y, velocity.z] if player_ready else null, "opening_progress": dialogue_state._mcp_state() if state_ready else null, "story_actors": story_actors, "authored_map": SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay if is_instance_valid(quality) and not quality.is_queued_for_deletion() else null}
+	return {"ready": is_node_ready() and not is_queued_for_deletion(), "player_ready": player_ready, "controls_ready": controls_ready, "failure": _failure_observation(), "pause_owners": pause_owners.keys(), "pause_owner_count": pause_owners.size(), "product_paused": not pause_owners.is_empty(), "controls_pause_owned": pause_owners.has("controls"), "controls_submenu": str(controls_panel.sub_menu.name) if controls_ready and is_instance_valid(controls_panel.sub_menu) else null, "preferences": dialogue_state.preference_snapshot() if state_ready else null, "tree_paused": tree.paused if tree else null, "developer_ui": developer_ui, "controls_visible": controls_panel.visible if controls_ready else null, "isha_distance": player.global_position.distance_to(isha.global_position) if player_ready and isha_ready else null, "interaction_available": isha.interaction_available if isha_ready else null, "objective": dialogue_state.objective() if state_ready else null, "equipment": player.weapon_mode if player_ready else null, "owns_sword": player.owns_sword if player_ready else null, "owns_bow": player.owns_bow if player_ready else null, "player_position": [position.x, position.y, position.z] if player_ready else null, "player_velocity": [velocity.x, velocity.y, velocity.z] if player_ready else null, "opening_progress": dialogue_state._mcp_state() if state_ready else null, "story_actors": story_actors, "authored_map": "res://assets/maps/map02/Main.tscn" if meadow_slice else SOURCE_SCENE.resource_path, "player_scene": PLAYER_SCENE.resource_path, "lamp_overlay": quality.developer_lamp_overlay if is_instance_valid(quality) and not quality.is_queued_for_deletion() else null}
 
 
 func _add_help() -> void:

@@ -29,7 +29,7 @@ func ground() -> void:
 		if is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion(): return
 		grounded = true
 		for i in enemies.size():
-			var supported := GROUND.place(world, enemies[i], MEADOW_GROUND.ROADBLOCK_ANCHORS[i])
+			var supported := MEADOW_GROUND.place(world, enemies[i], MEADOW_GROUND.ROADBLOCK_ANCHORS[i])
 			grounded = supported and grounded
 		if grounded: break
 	if not grounded:

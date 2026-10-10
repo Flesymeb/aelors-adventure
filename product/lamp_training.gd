@@ -35,6 +35,9 @@ func configure(owner_world: Node3D) -> void:
 	ground.call_deferred()
 
 func ground() -> void:
+	if world.meadow_slice:
+		restore_history()
+		return
 	for attempt in 120:
 		await get_tree().physics_frame
 		grounded = GROUND.place(world,signpost,TRACE_XZ)

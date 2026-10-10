@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/maps/map02/Meshes/Plants/fern_02_a.glb" id="1_1vphc"]
+[ext_resource type="Script" path="res://assets/maps/map02/addons/groundcover/GroundcoverMesh.gd" id="2_haefo"]
+[ext_resource type="Script" path="res://assets/maps/map02/addons/groundcover/GroundcoverData.gd" id="6_c361b"]
+
+[sub_resource type="Resource" id="Resource_7k4sk"]
+script = ExtResource("2_haefo")
+mesh = ExtResource("1_1vphc")
+id = ""
+
+[resource]
+script = ExtResource("6_c361b")
+meshes = [SubResource("Resource_7k4sk")]
+chunkSize = 50
+viewDistance = 200.0

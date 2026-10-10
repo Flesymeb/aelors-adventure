@@ -1,5 +1,8 @@
 extends CharacterBody3D
 
+var ground_policy = preload("res://forest_ground.gd")
+var minimum_world_height := 7.0
+
 const MODEL_PATH := "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
 const ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL1_Standard.glb"
 const SWORD_PATH := "res://Weapons/Sword_Bronze.gltf"
@@ -738,7 +741,7 @@ func _physics_process(delta: float) -> void:
 	attack_timer = maxf(0.0, attack_timer - delta)
 	_update_animation(direction.length_squared() > 0.01)
 	_update_footsteps(before)
-	if global_position.y < 7.0 or not preload("res://forest_ground.gd").in_bounds(Vector2(global_position.x, global_position.z)):
+	if global_position.y < minimum_world_height or not ground_policy.in_bounds(Vector2(global_position.x, global_position.z)):
 		if combat: combat.lethal_fall()
 		else: respawn()
 

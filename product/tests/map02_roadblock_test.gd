@@ -29,7 +29,7 @@ class DiagnosticMeadowRouter extends TRAVEL.DiagnosticRouter:
 		world.name = "DiagnosticMeadow"
 		world.dialogue_state = state
 		world.entry_router = self
-		world.restored_position = {"position":Vector3(135,11,133),"map_id":state.MAP02,"yaw":PI}
+		world.restored_position = {"position":Vector3(3,0,25),"map_id":state.MAP02,"yaw":PI}
 		world.entry_ready.connect(func(): player_ready = true)
 		world.entry_failed.connect(func(message): entry_error = message)
 		route = "diagnostic_initializing"
@@ -46,6 +46,10 @@ static func attach_diagnostic(parent: Node) -> Node:
 
 static func run() -> Dictionary:
 	var checks := {}
+	var ground = preload("res://world/map02_ground.gd")
+	checks.obsolete_map02_position_recovers_cp02 = ground.entry_xz(Vector3(133,11,146), ground.MAP02_ID) == ground.ENTRY
+	checks.map02_position_preserved = ground.entry_xz(Vector3(4,2,61), ground.MAP02_ID) == Vector2(4,61)
+	checks.other_map_recovers_cp02 = ground.entry_xz(Vector3(4,2,61), "forest-885de576-v1") == ground.ENTRY
 	var state := TRAVEL.earned()
 	state.departure_confirmed = true
 	state.commit_arrival(state.MAP02)

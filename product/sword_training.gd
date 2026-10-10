@@ -173,6 +173,10 @@ func resolved_enemy_contact(result: Dictionary) -> void:
 	if result.source_id == sword_source.get_instance_id() and combo == 2: stop_on_contact(0.045)
 
 func ground_module() -> void:
+	if world.meadow_slice:
+		grounded = true
+		restore_history()
+		return
 	for attempt in 120:
 		await get_tree().physics_frame
 		grounded = place_on_ground(hers, HERS_XZ) and place_on_ground(target, PRACTICE_XZ) and place_on_ground(monster, ENCOUNTER_XZ)
@@ -187,7 +191,7 @@ func ground_module() -> void:
 	restore_history()
 
 func place_on_ground(body: Node3D, xz: Vector2) -> bool:
-	return GROUND.place(world, body, xz)
+	return world.ground_policy.place(world, body, xz)
 
 func restore_history() -> void:
 	interrupt("load")
@@ -208,7 +212,7 @@ func restore_history() -> void:
 	state.inventory.ensure_equipment()
 	state.inventory.select_equipment(state.selected_equipment)
 	player.configure_equipment(state.sword_owned, state.bow_owned, state.selected_equipment)
-	monster.reset_encounter()
+	if not world.meadow_slice: monster.reset_encounter()
 	player_hitbox.reset_contacts()
 	target_hitbox.reset_contacts()
 	environment_hitbox.reset_contacts()
@@ -505,7 +509,7 @@ func recover_at_checkpoint() -> void:
 	if state.lives <= 0:
 		show_game_over()
 		return
-	monster.reset_encounter()
+	if not world.meadow_slice: monster.reset_encounter()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
 	if world.pressure_encounter: world.pressure_encounter.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
