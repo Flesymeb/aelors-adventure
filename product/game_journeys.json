@@ -3208,41 +3208,8 @@
         },
         {
           "id": "remaining_active_window",
-          "kind": "input",
-          "duration_ms": 4000,
-          "inputs": [],
-          "watch": {
-            "hz": 20,
-            "specs": [
-              {
-                "path": "/root/GameEntry/Adventure",
-                "fields": [
-                  "product_paused",
-                  "pause_owner_count",
-                  "controls_pause_owned",
-                  "controls_visible",
-                  "controls_submenu"
-                ]
-              },
-              {
-                "path": "/root/GameEntry/Adventure/GameplayHUD",
-                "fields": [
-                  "notice_event_id",
-                  "notice_remaining",
-                  "notice_active_elapsed",
-                  "sword_acquisition_active_elapsed",
-                  "sword_acquisition_emissions",
-                  "notice_visible_in_tree"
-                ]
-              },
-              {
-                "path": "/root/GameEntry/Adventure/SwordTraining",
-                "fields": [
-                  "sword_grants"
-                ]
-              }
-            ]
-          }
+          "kind": "game_time",
+          "duration_ms": 4000
         },
         {
           "id": "five_active_seconds_expired",
@@ -3397,6 +3364,10 @@
     {
       "schema_version": 1,
       "id": "r21-opening-held-space-skip",
+      "tags": [
+        "isolated-fresh-opening-data-required",
+        "title-new-game-focus-required"
+      ],
       "requirement_ids": [
         "R21"
       ],
@@ -3587,6 +3558,10 @@
     {
       "schema_version": 1,
       "id": "r21-opening-pause-resume",
+      "tags": [
+        "isolated-fresh-opening-data-required",
+        "title-new-game-focus-required"
+      ],
       "requirement_ids": [
         "R21"
       ],
@@ -3727,6 +3702,12 @@
     {
       "schema_version": 1,
       "id": "r19-separate-music-effects-routing",
+      "tags": [
+        "title-settings-audio-page-required",
+        "master-volume-focus-required",
+        "unmuted-original-mix-at-least-0.05-required",
+        "isolated-preferences-required"
+      ],
       "requirement_ids": [
         "R19"
       ],
