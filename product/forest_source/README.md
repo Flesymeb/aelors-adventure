@@ -14,16 +14,23 @@ The upstream description below is preserved as source documentation.
 “Free to download” is not a blanket redistribution license. Keep
 `!Credits-README!.txt` and each plugin/model/texture/audio notice. Terrain3D
 and Sky3D code are MIT; independent asset rights still require confirmation.
-The inherited missing `Objects/Grass_Texture.psd` / empty Texture2D import
-findings remain unresolved. The native retained world/house load probe traverses
-86 resource owners and can instantiate both roots without these errors, but
-that is separate from clean import. The original retained FBX files
-`Objects/EA03_Plant_Grass_02a.fbx` and `Objects/EA03_Plant_Grass_02b.fbx` both
-reference the absent PSD; the registered village source also lacks that file.
-The retained `Textures/Grass_Texture.png` matches that original source exactly;
-it is not a PSD replacement. Repair of the FBX dependency owners needs separate
-authorization. No texture or scenery was substituted. Live world binding does
-not prove authenticated source delivery or independent map acceptance.
+The original `Objects/EA03_Plant_Grass_02a.fbx` and
+`Objects/EA03_Plant_Grass_02b.fbx` inherited an absent author's PSD path. The
+registered original village source also lacks that PSD. Its extracted
+`LPNP_Atlas026` materials for both owners and `Materials/EA_Grass_Card.tres`
+already bind `Textures/Grass_Texture.png`; the retained PNG matches those source
+bytes and retains its RGBA alpha channel. In loop 29, only the FBX Texture/Video
+path and media-name declarations were repaired to that existing PNG using
+`../Textures/Grass_Texture.png`. Geometry, UVs, IDs, material properties and
+connections are preserved. No PSD was fabricated, PNG converted, source copied
+or scenery removed. The authored alpha-cutout material remains unchanged.
+
+The native retained-resource probe now includes both FBX owners and their actual
+albedo bindings, alongside world/house loading and dependency traversal. A fresh
+native import log and ordinary bright/dark material review remain separate
+validation gates. Live world binding and these source inspections do not prove
+authenticated source delivery or independent map acceptance; the Forest versus
+complete-village adoption requirement still needs Host adjudication.
 
 ## 📦 Note Project Files
 

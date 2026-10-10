@@ -17,6 +17,15 @@ class PickupEnemy extends CharacterBody3D:
 	var stable_id := "channel_ranged"
 	func reset_encounter() -> void: pass
 
+class ObservationEnemy extends CharacterBody3D:
+	var stable_id := "channel_ranged"
+	var display_name := "fixture ranged guard"
+	var health := 0.0
+	var phase := "death"
+	var engaged := false
+	var navigation_ready := false
+	func _mcp_state() -> Dictionary: return {"health":health,"phase":phase}
+
 static func prepared() -> Node:
 	var state: Node = BRIDGE_TEST.prepared()
 	state.perform_bridge_action("light")
@@ -31,6 +40,13 @@ static func prepared() -> Node:
 
 static func run() -> Dictionary:
 	var checks := {}
+	for adapter in [preload("res://combat/bridge_encounter.gd"), preload("res://combat/channel_guard_encounter.gd")]:
+		var unconfigured = adapter.new()
+		var observed: Dictionary = unconfigured._mcp_state()
+		checks["unconfigured_" + ("channel" if observed.has("ranged") else "bridge")] = not observed.ready and not observed.state_ready and observed.rewards == null and observed.enemies.is_empty()
+		if observed.has("ranged"):
+			checks.unconfigured_channel_details = observed.ranged == null and observed.cover_position == null and observed.complete == null and observed.missing_conditions == null
+		unconfigured.free()
 	var state := prepared()
 	var starting: int = state.experience
 	checks.unsettled_projection = state.guard_melee_a_reward_state == "unsettled" and state.guard_melee_a_xp == 0
@@ -47,12 +63,26 @@ static func run() -> Dictionary:
 	restored.restore_config(config)
 	checks.restore_no_award = restored.guards_defeated() and restored.experience == state.experience and not restored.settle_guard("channel_ranged",Vector3.ZERO,{})
 	checks.pending_pickup_retained = not restored.reward_history.channel_ranged.collected
+	checks.pending_metadata_roundtrip = restored.reward_history.channel_ranged == state.reward_history.channel_ranged and restored.reward_history.keys() == state.reward_history.keys()
 	checks.pending_projection = restored.guard_melee_a_reward_state == "pending" and restored.guard_melee_b_reward_state == "pending" and restored.guard_ranged_reward_state == "pending" and restored.guard_melee_a_xp == 10 and restored.guard_melee_b_xp == 10 and restored.guard_ranged_xp == 10
 	checks.scalar_selector_shape = restored._mcp_state().guard_ranged_reward_state == "pending" and restored._mcp_state().guard_ranged_xp == 10
 	# Isolated projection test; not a claim of ordinary pickup collection.
 	var before_projection := restored.adventure_snapshot()
 	var observed: String = restored.guard_ranged_reward_state
 	checks.observation_read_only = observed == "pending" and restored.adventure_snapshot() == before_projection
+	# Config roundtrip is diagnostic: neither an ordinary death nor Continue.
+	# A collected record must retain its item/position and cannot award XP again.
+	var collected := BRIDGE_TEST.config_for(state)
+	collected.set_value("opening", "experience", state.experience)
+	var collected_rewards: Dictionary = state.reward_history.duplicate(true)
+	collected_rewards.channel_ranged.collected = true
+	collected.set_value("post_bow", "reward_history", collected_rewards)
+	var collected_state := STATE.new()
+	collected_state.restore_config(collected)
+	checks.collected_metadata_roundtrip = collected_state.reward_history.channel_ranged == collected_rewards.channel_ranged and collected_state.guard_ranged_reward_state == "collected"
+	checks.collected_no_reaward = collected_state.experience == state.experience and not collected_state.settle_guard("channel_ranged", Vector3.ZERO, {})
+	checks.roundtrip_source_unchanged = state.guard_ranged_reward_state == "pending" and state.experience == starting + 30
+	collected_state.free()
 	config.set_value("post_bow","guard_briefing_acknowledged",false)
 	checks.reject_unearned = restored.config_unavailable_reason(config) != ""
 	config.set_value("post_bow","guard_briefing_acknowledged",true)
@@ -83,6 +113,40 @@ static func run() -> Dictionary:
 	checks.interruption_no_late_release = releases == [1]
 	action.free()
 	board.free()
+	return checks
+
+static func observation_lifecycle_checks(parent: Node) -> Dictionary:
+	# Opt-in isolated lifetime fixture; no combat, progression or save mutation.
+	var stage := Node3D.new()
+	stage.process_mode = Node.PROCESS_MODE_DISABLED
+	parent.add_child(stage)
+	var state := prepared()
+	stage.add_child(state)
+	state.settle_guard("channel_ranged", Vector3(0,50,0), {"id":"healing","quantity":1})
+	var encounter := preload("res://combat/channel_guard_encounter.gd").new()
+	stage.add_child(encounter)
+	encounter.state = state
+	encounter.grounded = true
+	for i in 3:
+		var enemy := ObservationEnemy.new()
+		stage.add_child(enemy)
+		encounter.enemies.append(enemy)
+	encounter.cover = MeshInstance3D.new()
+	stage.add_child(encounter.cover)
+	var before: Dictionary = state.reward_history.duplicate(true)
+	var observed: Dictionary = encounter._mcp_state()
+	var checks := {"configured_observation_shape":observed.ready and observed.state_ready and observed.enemies.size() == 3 and observed.enemies[2].id == "channel_ranged" and observed.ranged.health == 0.0 and observed.cover_position != null}
+	checks.configured_observation_read_only = observed.rewards.channel_ranged == before.channel_ranged and state.reward_history == before and state.experience == 50
+	state.queue_free()
+	encounter.enemies[2].queue_free()
+	encounter.cover.queue_free()
+	observed = encounter._mcp_state()
+	checks.queued_dependencies_unknown = not observed.ready and not observed.state_ready and observed.rewards == null and observed.enemies[2] == null and observed.ranged == null and observed.cover_position == null and observed.complete == null
+	checks.queued_observation_preserves_pending = state.reward_history == before and state.guard_ranged_reward_state == "pending" and state.guard_ranged_xp == 10 and state.experience == 50
+	encounter.queue_free()
+	observed = encounter._mcp_state()
+	checks.queued_encounter_not_ready = not observed.ready
+	stage.free()
 	return checks
 
 static func pending_pickup_checks(parent: Node) -> Dictionary:

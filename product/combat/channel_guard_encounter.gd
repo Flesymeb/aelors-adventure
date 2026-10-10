@@ -109,9 +109,9 @@ func _physics_process(delta: float) -> void:
 func _mcp_state() -> Dictionary:
 	var result := super()
 	result.active = active
-	result.complete = state.guards_defeated()
-	result.missing_conditions = state.passage_missing_conditions()
-	result.enemy_ids = state.GUARD_IDS
-	result.ranged = enemies[2]._mcp_state()
-	result.cover_position = str(cover.global_position)
+	result.complete = state.guards_defeated() if result.state_ready else null
+	result.missing_conditions = state.passage_missing_conditions() if result.state_ready else null
+	result.enemy_ids = state.GUARD_IDS if result.state_ready else null
+	result.ranged = enemies[2]._mcp_state() if enemies.size() > 2 and is_instance_valid(enemies[2]) and not enemies[2].is_queued_for_deletion() else null
+	result.cover_position = str(cover.global_position) if is_instance_valid(cover) and not cover.is_queued_for_deletion() else null
 	return result

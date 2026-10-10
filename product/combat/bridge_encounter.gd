@@ -102,4 +102,11 @@ func _physics_process(delta: float) -> void:
 		world.training.tell("已拾取 · " + ("疗伤药 [6]" if reward.drop.id == "healing" else "命火 · I 背包使用"),4)
 
 func _mcp_state() -> Dictionary:
-	return {"grounded":grounded,"enemies":enemies.map(func(e): return {"id":e.stable_id,"name":e.display_name,"hp":e.health,"phase":e.phase,"engaged":e.engaged,"position":str(e.global_position),"navigation_ready":e.navigation_ready}),"rewards":state.reward_history,"pickups":pickups.keys()}
+	var state_ready := is_instance_valid(state) and not state.is_queued_for_deletion()
+	var observation := {"ready":grounded and state_ready and not is_queued_for_deletion(),"state_ready":state_ready,"grounded":grounded,"enemies":[],"rewards":state.reward_history if state_ready else null,"pickups":pickups.keys()}
+	for enemy in enemies:
+		if not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
+			observation.enemies.append(null)
+			continue
+		observation.enemies.append({"id":enemy.stable_id,"name":enemy.display_name,"hp":enemy.health,"phase":enemy.phase,"engaged":enemy.engaged,"position":str(enemy.global_position),"navigation_ready":enemy.navigation_ready})
+	return observation
