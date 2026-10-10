@@ -36,6 +36,7 @@ var lamp_training: Node3D
 var element_abilities: Node3D
 var channel_guards: Node3D
 var chapter_pillar: Node3D
+var pressure_encounter: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
 var bridge_actions: Node3D
@@ -133,6 +134,14 @@ func _ready() -> void:
 	bridge_encounter.name = "BridgeEncounter"
 	add_child(bridge_encounter)
 	bridge_encounter.configure(self)
+	if meadow_slice:
+		pressure_encounter = preload("res://combat/Map02Pressure.tscn").instantiate()
+		pressure_encounter.name = "Map02Pressure"
+		pressure_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
+		pressure_encounter.actor_anchors.assign(ground_policy.PRESSURE_ANCHORS)
+		pressure_encounter.cover_xz = ground_policy.PRESSURE_COVER
+		add_child(pressure_encounter)
+		pressure_encounter.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -519,6 +528,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and pressure_encounter and pressure_encounter.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bridge_actions and bridge_actions.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bow_training and bow_training.interact():

@@ -2,6 +2,8 @@ extends "res://preview_controller.gd"
 ## The retained map/controller dependency closure, with a scoped meadow route.
 var route_ready := false
 var route_samples := 0
+var pressure_route_samples := 0
+var pressure_route_ready := false
 
 func _ready() -> void:
 	meadow_slice = true
@@ -33,7 +35,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not ground.place(self, player, xz): xz = ground.ENTRY; continue
-		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded: continue
+		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded: continue
 		# Qualify support and standing volume along the scoped approach, not an
 		# invisible replacement floor. The retained collision remains authoritative.
 		route_samples = 0
@@ -46,8 +48,16 @@ func _place_player() -> void:
 		for anchor in ground.ROADBLOCK_ANCHORS:
 			for i in 3:
 				if ground.place(self, stance, ground.ROADBLOCK.lerp(anchor, float(i)/2.0)): route_samples += 1
+		# The cover blocks the central arrow lane. Qualify a walking flank,
+		# then both actor homes and the return line on actual retained collision.
+		pressure_route_samples = 0
+		var points: Array[Vector2] = [ground.ROADBLOCK, ground.PRESSURE_APPROACH, Vector2(125,153), Vector2(125,157), ground.PRESSURE_ANCHORS[0], ground.PRESSURE_ANCHORS[1]]
+		for i in points.size() - 1:
+			for j in 5:
+				if ground.place(self, stance, points[i].lerp(points[i+1], float(j)/4.0)) and pressure_encounter.standing_clear(stance): pressure_route_samples += 1
+		pressure_route_ready = pressure_route_samples == 25
 		stance.queue_free()
-		route_ready = route_samples == 20
+		route_ready = route_samples == 20 and pressure_route_ready
 		if not route_ready:
 			entry_failed.emit("草甸道路无法安全通行。已保留上一处落脚点。")
 			return
@@ -63,5 +73,7 @@ func _mcp_state() -> Dictionary:
 	result.map_id = "meadow-entry-v1"
 	result.route_ready = route_ready
 	result.route_samples = route_samples
+	result.pressure_route_ready = pressure_route_ready
+	result.pressure_route_samples = pressure_route_samples
 	result.checkpoint = "CP02"
 	return result

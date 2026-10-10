@@ -285,6 +285,7 @@ func _process(delta: float) -> void:
 		if world.bow_training and world.bow_training.interaction_prompt() != "": hint = world.bow_training.interaction_prompt()
 		if world.lamp_training and world.lamp_training.interaction_prompt() != "": hint = world.lamp_training.interaction_prompt()
 		if world.bridge_actions and world.bridge_actions.interaction_prompt() != "": hint = world.bridge_actions.interaction_prompt()
+		if world.pressure_encounter and world.pressure_encounter.interaction_prompt() != "": hint = world.pressure_encounter.interaction_prompt()
 		if hint == "" and not world.meadow_slice and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
 	for pair in [["1","sword","巡路剑",state.sword_owned],["2","bow","巡路弓",state.bow_owned],["3","lamp","旧灯",state.lamp_owned]]:
 		var slot: Dictionary = shortcut_slots[pair[1]]

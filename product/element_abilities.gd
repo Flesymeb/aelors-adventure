@@ -2,6 +2,7 @@ extends Node3D
 ## Product release/cooldown authority; Snaiel contacts still settle enemy damage.
 const GROUND = preload("res://forest_ground.gd")
 const CONTACT_ENEMY = preload("res://combat/snaiel/scripts/entities/enemy.gd")
+const RANGED_ENEMY = preload("res://combat/channel_ranged_adapter.gd")
 var world: Node3D
 var state: Node
 var player: CharacterBody3D
@@ -182,6 +183,7 @@ func lightning_target() -> Node3D:
 	if world.training.monster: candidates.append(world.training.monster)
 	if world.bridge_encounter: candidates.append_array(world.bridge_encounter.enemies)
 	if world.dynamic_encounters: candidates.append_array(world.dynamic_encounters.enemies)
+	if world.pressure_encounter: candidates.append_array(world.pressure_encounter.enemies)
 	if world.channel_guards: candidates.append_array(world.channel_guards.enemies)
 	var best: Node3D
 	var score = 0.92
@@ -203,7 +205,7 @@ func eligible_target(target) -> bool:
 	if not is_instance_valid(target) or not target is Node3D: return false
 	if target.is_queued_for_deletion() or not target.is_inside_tree() or not target.is_node_ready(): return false
 	if target is StaticBody3D and target in targets: return true
-	if not target is CONTACT_ENEMY: return false
+	if not (target is CONTACT_ENEMY or target is RANGED_ENEMY): return false
 	if not is_instance_valid(target.health_component) or not is_instance_valid(target.handler): return false
 	if not target.health_component.enabled or not target.health_component.is_alive(): return false
 	if not is_instance_valid(target.hitbox) or not target.hitbox.enabled: return false

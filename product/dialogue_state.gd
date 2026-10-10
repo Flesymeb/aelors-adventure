@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -51,6 +51,8 @@ var guard_interlude_seen := false
 var departure_confirmed := false
 var current_map := GROUND.MAP_ID
 var cp02_claimed := false
+var pressure_supply_claimed := false
+var meadow_branch_supply_claimed := false
 const MAP02 := "meadow-entry-v1"
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
@@ -260,6 +262,43 @@ func settle_roadblock(point: Vector3, drop: Dictionary, id := "map02_e01") -> bo
 	progression_changed.emit()
 	return true
 
+const PRESSURE_IDS := ["map02_e02_melee", "map02_e02_ranged"]
+
+func pressure_defeated() -> bool:
+	return PRESSURE_IDS.all(func(id): return reward_history.has(id))
+
+func pressure_remaining() -> int:
+	return PRESSURE_IDS.filter(func(id): return not reward_history.has(id)).size()
+
+func settle_pressure(point: Vector3, drop: Dictionary, id: String) -> bool:
+	if id not in PRESSURE_IDS or current_map != MAP02 or not cp02_claimed or not departure_available() or not roadblock_defeated() or reward_history.has(id) or not point.is_finite(): return false
+	if not drop.is_empty() and (drop.get("id", "") not in ["healing", "lifeflame"] or drop.get("quantity", 0) != 1): return false
+	reward_history[id] = {"xp":10, "drop":drop.duplicate(true), "position":point, "collected":drop.is_empty()}
+	experience += 10
+	progression_changed.emit()
+	return true
+
+func pressure_supply_available() -> bool:
+	return cp02_claimed and pressure_defeated() and not pressure_supply_claimed
+
+func claim_pressure_supply() -> Dictionary:
+	if not pressure_supply_available() or current_map != MAP02 or health <= 0 or recovery_pending or inventory == null: return {}
+	var gain: Dictionary = inventory.settle_recovery_supply(20)
+	if gain.is_empty(): return {}
+	pressure_supply_claimed = true
+	return gain
+
+func meadow_branch_supply_available() -> bool:
+	return cp02_claimed and roadblock_defeated() and bridge_first_action == "rescue" and bridge_later_supply_due and not meadow_branch_supply_claimed
+
+func claim_meadow_branch_supply() -> Dictionary:
+	if not meadow_branch_supply_available() or current_map != MAP02 or health <= 0 or recovery_pending or inventory == null: return {}
+	# A full player leaves the visible parcel pending instead of wasting it.
+	if health >= 100 and (not bow_owned or arrows >= 12): return {}
+	var gain: Dictionary = inventory.settle_bridge_supply()
+	meadow_branch_supply_claimed = true
+	return gain
+
 func settle_guard(id: String, point: Vector3, drop: Dictionary) -> bool:
 	if id not in GUARD_IDS or reward_history.has(id) or not guard_briefing_available() or not guard_briefing_acknowledged: return false
 	reward_history[id] = {"xp":10,"drop":drop,"position":point,"collected":drop.is_empty()}
@@ -393,7 +432,9 @@ func restore_config(config: ConfigFile) -> Dictionary:
 
 func objective() -> String:
 	if current_map == MAP02:
-		return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining() if not roadblock_defeated() else "押送路线 · 前往 E02 林路调查押送痕迹；可返回灯台整顿"
+		if not roadblock_defeated(): return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining()
+		if not pressure_defeated(): return "E02 押送守卫（剩余 %d/2） · 沿林路前行，利用岩石挡箭；可退回灯台" % pressure_remaining()
+		return "E02 已清除 · " + ("领取一次胜利补给；" if pressure_supply_available() else "胜利补给已领取；") + "押送路线的线索仍待调查"
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
@@ -576,7 +617,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + PRESSURE_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -599,15 +640,23 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var collected_xp := 0
 	for record in config.get_value("post_bow", "dynamic_instances", {}).values():
 		if record.status == "collected": collected_xp += 10
-	if xp < collected_xp: return "存档动态奖励无效"
+	if xp < rewards.size() * 10 + collected_xp: return "存档动态奖励无效"
 	var departure: Variant = config.get_value("post_bow", "departure_confirmed", false)
 	var claimed: Variant = config.get_value("post_bow", "cp02_claimed", false)
 	var current: Variant = config.get_value("post_bow", "current_map", GROUND.MAP_ID)
 	if not departure is bool or not claimed is bool or not current is String: return "存档章节无效"
 	if current not in [GROUND.MAP_ID, MAP02]: return "存档章节无效"
 	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
-	if (claimed or current == MAP02 or map_id == MAP02 or E01_IDS.any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
-	if (map_id == MAP02 or current == MAP02 or E01_IDS.any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
+	if (claimed or current == MAP02 or map_id == MAP02 or (E01_IDS + PRESSURE_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
+	if (map_id == MAP02 or current == MAP02 or (E01_IDS + PRESSURE_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
+	var e02_earned: bool = PRESSURE_IDS.any(func(id): return rewards.has(id))
+	var e02_complete: bool = PRESSURE_IDS.all(func(id): return rewards.has(id))
+	var e01_complete: bool = E01_IDS.all(func(id): return rewards.has(id))
+	for key in ["pressure_supply_claimed", "meadow_branch_supply_claimed"]:
+		if not config.get_value("post_bow", key, false) is bool: return "存档草甸补给无效"
+	if e02_earned and not e01_complete: return "存档押送守卫前置无效"
+	if config.get_value("post_bow", "pressure_supply_claimed", false) and not e02_complete: return "存档胜利补给无效"
+	if config.get_value("post_bow", "meadow_branch_supply_claimed", false) and (not claimed or not e01_complete or bridge_facts.bridge_first_action != "rescue" or not bridge_facts.bridge_later_supply_due): return "存档分支补给无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -697,7 +746,7 @@ func quest_entries() -> Array[Dictionary]:
 		if bridge_resident_rescued: steps.append("桥边居民已救出 · 不是四名被掳者")
 		if bridge_lamp_lit: steps.append("桥灯已恢复 · 通路照明可见")
 		if bridge_supply_claimed: steps.append("桥头分支补给已领取")
-		if bridge_later_supply_due: steps.append("先救人 · 罗恩的前方安全点补给待交付")
+		if bridge_later_supply_due: steps.append("先救人 · 罗恩的前方安全点补给" + ("已交付" if meadow_branch_supply_claimed else "待交付"))
 		rows.append({"id":"bridge", "title":"石桥对岸", "complete":false,
 			"context":bridge_response(),
 			"action":bridge_objective(), "steps":steps})
@@ -710,6 +759,13 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"guards", "title":"柱群守卫", "complete":guards_defeated(), "context":"两名近战守卫掩护一名弓守。岩石能挡箭；可退回桥头整顿。胜利只解除守卫条件，四名被掳者仍待救援。", "action":guard_objective(), "steps":steps})
 	if cp02_claimed:
 		rows.append({"id":"meadow", "title":"林缘草甸", "complete":false, "context":"灯台是安全的落脚点。两名路障近战者抬手后出拳；可退回灯台整顿。四名被掳者仍待救援。", "action":objective(), "steps":["林缘灯台已启用"] + E01_IDS.filter(func(id): return reward_history.has(id)).map(func(id): return "路障前哨已击败" if id == "map02_e01" else "路障后哨已击败") + (["E01 路障已清除 · 前往 E02 调查押送路线"] if roadblock_defeated() else [])})
+	if cp02_claimed and roadblock_defeated():
+		var steps: Array[String] = []
+		for id in PRESSURE_IDS:
+			if reward_history.has(id): steps.append("押送近卫已击败" if id == PRESSURE_IDS[0] else "押送弓守已击败")
+		if pressure_supply_claimed: steps.append("一次胜利恢复补给已领取")
+		if meadow_branch_supply_claimed: steps.append("罗恩的救人分支补给已交付")
+		rows.append({"id":"pressure", "title":"押送路线", "complete":pressure_defeated(), "context":"一名近卫掩护弓守。沿林路利用岩石阻断箭线，近身或用弓反击；退回灯台可脱离。战胜守卫后线索仍须调查。", "action":objective(), "steps":steps})
 	return rows
 
 func tracked_entry() -> Dictionary:
@@ -802,7 +858,7 @@ func bridge_objective() -> String:
 
 func bridge_response() -> String:
 	if bridge_first_action == "rescue":
-		return "谢谢你先把桥边居民拉了出来。暗处的巡守很危险。" + ("桥灯也恢复了。" if bridge_lamp_lit else "请再恢复桥灯。") + "罗恩会在前方安全点、E02 前留下补给；尚未交付。父亲和另三名村民仍待救援。"
+		return "谢谢你先把桥边居民拉了出来。暗处的巡守很危险。" + ("桥灯也恢复了。" if bridge_lamp_lit else "请再恢复桥灯。") + ("罗恩在 E02 前的补给已经交付。" if meadow_branch_supply_claimed else "罗恩会在前方安全点、E02 前留下补给；尚未交付。") + "父亲和另三名村民仍待救援。"
 	if bridge_first_action == "light":
 		return "你先点亮桥灯，照清了出口和巡守。" + ("居民感谢你回来拉他出来，也记得等待。" if bridge_resident_rescued else "居民还在等你过桥拉他出来。") + ("桥头补给已经交付。" if bridge_supply_claimed else "桥入口的一次补给留给你。") + "父亲和另三名村民仍待救援，离村准备还未完成。"
 	return "桥边居民不是四名被掳者。先救人要面对暗处巡守，罗恩随后在前方安全点留补给；先点灯能看清路线与巡守，立即可领桥头补给。两项都要完成，顺序由你决定。"

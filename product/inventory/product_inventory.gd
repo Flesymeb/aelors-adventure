@@ -119,3 +119,11 @@ func settle_bridge_supply() -> Dictionary:
 	if state.bow_owned: state.arrows = mini(12, state.arrows + 4)
 	changed.emit()
 	return {"health":state.health - before_health, "arrows":state.arrows - before_arrows}
+
+# Fixed E02 recovery is not a bag item or an enemy XP reward.
+func settle_recovery_supply(amount: float) -> Dictionary:
+	if state.health <= 0 or state.recovery_pending or state.health >= 100: return {}
+	var before: float = state.health
+	state.health = minf(100, state.health + amount)
+	changed.emit()
+	return {"health":state.health - before}
