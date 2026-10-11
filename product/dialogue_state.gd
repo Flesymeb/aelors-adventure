@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -55,6 +55,8 @@ var pressure_supply_claimed := false
 var meadow_branch_supply_claimed := false
 var mf01_acquired := false
 var e03_revealed := false
+var mf02_acquired := false
+var line_supply_claimed := false
 const MAP02 := "meadow-entry-v1"
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
@@ -304,8 +306,51 @@ func settle_ambush(point: Vector3, drop: Dictionary, id: String) -> bool:
 	if not drop.is_empty() and (drop.get("id", "") not in ["healing", "lifeflame"] or drop.get("quantity", 0) != 1): return false
 	reward_history[id] = {"xp":10, "drop":drop.duplicate(true), "position":point, "collected":drop.is_empty()}
 	experience += 10
+	if ambush_defeated(): tracked_quest = "line"
 	progression_changed.emit()
 	return true
+
+const LINE_IDS := ["map02_e04_melee_a", "map02_e04_melee_b", "map02_e04_ranged"]
+
+func line_defense_available() -> bool:
+	return current_map == MAP02 and cp02_claimed and mf01_acquired and e03_revealed and ambush_defeated() and health > 0 and not recovery_pending
+
+func line_defeated() -> bool:
+	return LINE_IDS.all(func(id): return reward_history.has(id))
+
+func line_remaining() -> int:
+	return LINE_IDS.filter(func(id): return not reward_history.has(id)).size()
+
+func settle_line(point: Vector3, drop: Dictionary, id: String) -> bool:
+	if id not in LINE_IDS or not line_defense_available() or reward_history.has(id) or not point.is_finite(): return false
+	if not drop.is_empty() and (drop.get("id", "") not in ["healing", "lifeflame"] or drop.get("quantity", 0) != 1): return false
+	reward_history[id] = {"xp":10, "drop":drop.duplicate(true), "position":point, "collected":drop.is_empty()}
+	experience += 10
+	tracked_quest = "line_record" if line_defeated() else "line"
+	progression_changed.emit()
+	return true
+
+func acquire_mf02() -> bool:
+	if mf02_acquired or not line_defense_available() or not line_defeated(): return false
+	mf02_acquired = true
+	tracked_quest = "line_record"
+	progression_changed.emit()
+	return true
+
+func mf02_information() -> String:
+	if not mf02_acquired: return "墓殿方向尚未查明。沿 E03 树线继续前行，清除 E04 的两名近卫与弓守，再调查固定标记。"
+	return "押送队沿林路前往裂隙墓殿。石旁的结界记号指向墓殿入口，拘束仍未解除。\nMF02 标记独立于尸体；M / J 保留墓殿方向与结界记号。返程沿树线与岩石右侧回到草甸灯台。\n四位村民仍待救援；墓殿通路尚未开放。"
+
+func line_supply_available() -> bool:
+	return line_defense_available() and line_defeated() and not line_supply_claimed
+
+func claim_line_supply() -> Dictionary:
+	if not line_supply_available() or inventory == null: return {}
+	var gain: Dictionary = inventory.settle_recovery_supply(20)
+	if gain.is_empty(): return {}
+	line_supply_claimed = true
+	progression_changed.emit()
+	return gain
 
 func pressure_supply_available() -> bool:
 	return cp02_claimed and pressure_defeated() and not pressure_supply_claimed
@@ -465,7 +510,9 @@ func objective() -> String:
 		if not pressure_defeated(): return "E02 押送守卫（剩余 %d/2） · 沿林路前行，利用岩石挡箭；可退回灯台" % pressure_remaining()
 		if mf01_acquired:
 			if not ambush_defeated(): return "MF01 已记录 · E03 林缘魔痕（剩余 %d/2） · 按 3 装备旧灯，F 显形；M / J 查阅路线" % ambush_remaining() if not e03_revealed else "E03 伏击者已显形（剩余 %d/2） · 闪避或格挡突进，再反击；可退回灯台" % ambush_remaining()
-			return "E03 伏击已清除 · MF01 路线保留；押送痕迹通往深林，四位村民尚待救援"
+			if not line_defeated(): return "E03 已清除 · 沿树线前行至 E04（剩余 %d/3）；利用岩石挡箭，优先处理弓守" % line_remaining()
+			if not mf02_acquired: return "E04 已清除 · 固定石旁标记按 E 调查 MF02；另有一次恢复补给"
+			return "MF02 已记录 · M / J 查阅墓殿方向与结界记号；" + ("可领取一次恢复补给；" if line_supply_available() else "") + "四位村民仍待救援"
 		return "E02 已清除 · " + ("领取一次胜利补给；" if pressure_supply_available() else "胜利补给已领取；") + ("MF01 已记录 · M 查看农田至林缘路线，J 查看记录；后续痕迹仍待追踪" if mf01_acquired else "岩石后方固定路碑 · 按 E 调查 MF01")
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
@@ -649,7 +696,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + PRESSURE_IDS + AMBUSH_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -679,8 +726,8 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if not departure is bool or not claimed is bool or not current is String: return "存档章节无效"
 	if current not in [GROUND.MAP_ID, MAP02]: return "存档章节无效"
 	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
-	if (claimed or current == MAP02 or map_id == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
-	if (map_id == MAP02 or current == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
+	if (claimed or current == MAP02 or map_id == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
+	if (map_id == MAP02 or current == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
 	var e02_earned: bool = PRESSURE_IDS.any(func(id): return rewards.has(id))
 	var e02_complete: bool = PRESSURE_IDS.all(func(id): return rewards.has(id))
 	var e01_complete: bool = E01_IDS.all(func(id): return rewards.has(id))
@@ -694,6 +741,13 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var revealed: Variant = config.get_value("post_bow", "e03_revealed", false)
 	if not revealed is bool: return "存档伏击显形无效"
 	if (revealed or AMBUSH_IDS.any(func(id): return rewards.has(id))) and (not claimed or not e02_complete or not config.get_value("post_bow", "mf01_acquired", false)): return "存档伏击前置无效"
+	var line_earned: bool = LINE_IDS.any(func(id): return rewards.has(id))
+	var line_complete: bool = LINE_IDS.all(func(id): return rewards.has(id))
+	var e03_complete: bool = AMBUSH_IDS.all(func(id): return rewards.has(id))
+	for key in ["mf02_acquired", "line_supply_claimed"]:
+		if not config.get_value("post_bow", key, false) is bool: return "存档墓殿路线记录无效"
+	if line_earned and (not e03_complete or not revealed): return "存档林路防线前置无效"
+	if (config.get_value("post_bow", "mf02_acquired", false) or config.get_value("post_bow", "line_supply_claimed", false)) and (not claimed or not e03_complete or not revealed or not line_complete): return "存档林路调查前置无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -805,7 +859,10 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"pressure", "title":"押送路线", "complete":pressure_defeated(), "context":"一名近卫掩护弓守。沿林路利用岩石阻断箭线，近身或用弓反击；退回灯台可脱离。战胜守卫后线索仍须调查。", "action":objective(), "steps":steps})
 	if cp02_claimed:
 		rows.append({"id":"ambush", "title":"林缘魔痕 · E03", "complete":ambush_defeated(), "context":"MF01 路碑前方的树线有遮掩轮廓。旧灯 F 照亮周围 7 米；显形后先辨认，再闪避或格挡抬手突进。", "action":objective(), "steps":(["伏击者已显形"] if e03_revealed else []) + AMBUSH_IDS.filter(func(id): return reward_history.has(id)).map(func(id): return "赤角伏击者已击败" if id == AMBUSH_IDS[0] else "铁颚伏击者已击败")})
-		rows.append({"id":"route_record", "title":"农田至林缘 · MF01", "complete":false, "context":mf01_information(), "action":"M 查看路线 · 四位村民仍待救援" if mf01_acquired else "击败押送守卫，调查岩石后方的固定路碑", "steps":["固定路线记录已取得 · 保存后可继续查阅"] if mf01_acquired else []})
+		rows.append({"id":"route_record", "title":"农田至林缘 · MF01", "complete":false, "context":mf01_information(), "action":objective() if mf01_acquired else "击败押送守卫，调查岩石后方的固定路碑", "steps":["固定路线记录已取得 · 保存后可继续查阅"] if mf01_acquired else []})
+	if cp02_claimed:
+		rows.append({"id":"line", "title":"林路防线 · E04", "complete":line_defeated(), "context":"两名近卫与一名弓守占据树线后的林路。用岩石阻断箭线；沿原路可退回灯台。胜利后调查固定标记，恢复补给另行领取。", "action":objective(), "steps":LINE_IDS.filter(func(id): return reward_history.has(id)).map(func(id): return "林路弓守已击败" if id == LINE_IDS[2] else "林路近卫已击败") + (["一次恢复补给已领取"] if line_supply_claimed else [])})
+		rows.append({"id":"line_record", "title":"墓殿方向与结界记号 · MF02", "complete":mf02_acquired, "context":mf02_information(), "action":"M 查阅墓殿方向 · 四位村民仍待救援" if mf02_acquired else "清除 E04，调查石旁固定标记", "steps":["固定标记已记录 · 保存后可继续查阅"] if mf02_acquired else []})
 	return rows
 
 func tracked_entry() -> Dictionary:

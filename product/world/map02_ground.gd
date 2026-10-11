@@ -15,6 +15,15 @@ const AMBUSH_APPROACH := Vector2(3, 70)
 const AMBUSH_ROUTE_START := Vector2(3, 65)
 const AMBUSH_FLANK := Vector2(3, 74)
 const AMBUSH_ANCHORS := [Vector2(4, 75), Vector2(7, 76)]
+const LINE_APPROACH := Vector2(5, 88)
+const LINE_COVER := Vector2(6.244, 96.483)
+const LINE_COVER_PATH := "Decorations-Forest/@rock_moss_set_01_rock06@28709"
+const LINE_FLANK := [Vector2(3, 92), Vector2(3, 96)]
+const LINE_ANCHORS := [Vector2(4, 95), Vector2(9, 95), Vector2(9, 100)]
+const LINE_RECORD := Vector2(13, 100)
+const LINE_RECORD_APPROACH := Vector2(11, 101)
+const LINE_SUPPLY := Vector2(2, 100)
+const LINE_SUPPLY_APPROACH := Vector2(4, 100)
 
 static func in_bounds(xz: Vector2) -> bool:
 	return xz.is_finite() and xz.x >= -1100 and xz.x <= 700 and xz.y >= -1300 and xz.y <= 500
@@ -23,7 +32,7 @@ static func entry_xz(position: Vector3, map_id: String) -> Vector2:
 	# Old MAP02 reused village coordinates. Recover at CP02 without altering facts.
 	if map_id != MAP02_ID or not position.is_finite(): return ENTRY
 	var xz := Vector2(position.x, position.z)
-	return xz if xz.x >= -20 and xz.x <= 35 and xz.y >= 10 and xz.y <= 85 else ENTRY
+	return xz if xz.x >= -20 and xz.x <= 35 and xz.y >= 10 and xz.y <= 105 else ENTRY
 
 static func support(world: Node3D, xz: Vector2, excludes: Array = []) -> Dictionary:
 	if not in_bounds(xz): return {}
@@ -31,14 +40,28 @@ static func support(world: Node3D, xz: Vector2, excludes: Array = []) -> Diction
 	exclusions.assign(excludes)
 	var player = world.get("player")
 	if is_instance_valid(player) and player is CollisionObject3D and not exclusions.has(player.get_rid()): exclusions.append(player.get_rid())
-	var ray := PhysicsRayQueryParameters3D.create(Vector3(xz.x, 220, xz.y), Vector3(xz.x, -60, xz.y), 1, exclusions)
-	var hit := world.get_world_3d().direct_space_state.intersect_ray(ray)
-	if hit.is_empty() or hit.normal.y < 0.65: return {}
-	# Only the actual opaque terrain may support route anchors. A rock/tree roof
-	# is never mistaken for the intended bank below it.
+	# Select terrain support directly. Authored canopy/trunk collision remains
+	# active for movement and standing volume, but cannot masquerade as ground.
 	var terrain: Node = world.village.get_node("Main Terrain")
-	if not terrain.is_ancestor_of(hit.collider): return {}
-	return hit
+	if not world.village.has_meta("terrain_support_exclusions"):
+		var authored_exclusions: Array[RID] = []
+		for body in world.village.find_children("*", "CollisionObject3D", true, false):
+			if not terrain.is_ancestor_of(body): authored_exclusions.append(body.get_rid())
+		world.village.set_meta("terrain_support_exclusions", authored_exclusions)
+	for rid in world.village.get_meta("terrain_support_exclusions"):
+		if not exclusions.has(rid): exclusions.append(rid)
+	# A ray exactly on a native triangle seam can miss both faces. Bounded
+	# neighboring rays recover the same authored surface plane, never a floor.
+	for offset in [Vector2.ZERO, Vector2(0.015,0.011), Vector2(-0.013,-0.017)]:
+		var p: Vector2 = xz + offset
+		var ray := PhysicsRayQueryParameters3D.create(Vector3(p.x, 220, p.y), Vector3(p.x, -60, p.y), 1, exclusions)
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(ray)
+		if hit.is_empty() or hit.normal.y < 0.65 or not terrain.is_ancestor_of(hit.collider): continue
+		var n: Vector3 = hit.normal
+		var y: float = hit.position.y + (n.x * offset.x + n.z * offset.y) / n.y
+		hit.position = Vector3(xz.x, y, xz.y)
+		return hit
+	return {}
 
 static func place(world: Node3D, body: Node3D, xz: Vector2) -> bool:
 	var excludes: Array = []

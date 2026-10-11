@@ -83,6 +83,8 @@ func _process(_delta: float) -> void:
 		opponents.append_array(training.world.pressure_encounter.enemies)
 	if training.world.ambush_encounter:
 		opponents.append_array(training.world.ambush_encounter.enemies)
+	if training.world.get("line_encounter"):
+		opponents.append_array(training.world.line_encounter.enemies)
 	if training.world.channel_guards:
 		opponents.append_array(training.world.channel_guards.enemies)
 	if training.world.dynamic_encounters:

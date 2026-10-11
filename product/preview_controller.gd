@@ -38,6 +38,8 @@ var channel_guards: Node3D
 var chapter_pillar: Node3D
 var route_clue: Node3D
 var ambush_encounter: Node3D
+var line_encounter: Node3D
+var line_record: Node3D
 var pressure_encounter: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
@@ -164,6 +166,16 @@ func _ready() -> void:
 		ambush_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(ambush_encounter)
 		ambush_encounter.configure(self)
+		line_encounter = preload("res://combat/Map02LineDefense.tscn").instantiate()
+		line_encounter.name = "Map02LineDefense"
+		line_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(line_encounter)
+		line_encounter.configure(self)
+		line_record = preload("res://world/map02_line_record.gd").new()
+		line_record.name = "MF02LineRecord"
+		line_record.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(line_record)
+		line_record.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -308,6 +320,7 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 	else: pause_owners.erase(owner_id)
 	var now_paused := not pause_owners.is_empty()
 	if now_paused != was_paused:
+		if now_paused and is_instance_valid(line_encounter): line_encounter.interrupt()
 		player.set_controls_open(now_paused)
 		get_tree().paused = now_paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if now_paused else Input.MOUSE_MODE_CAPTURED
@@ -571,6 +584,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 				_open_controls()
 				return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and route_clue and route_clue.interact(): return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and line_record and line_record.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and pressure_encounter and pressure_encounter.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bridge_actions and bridge_actions.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true

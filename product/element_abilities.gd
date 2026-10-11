@@ -196,6 +196,7 @@ func lightning_target() -> Node3D:
 	if world.dynamic_encounters: candidates.append_array(world.dynamic_encounters.enemies)
 	if world.pressure_encounter: candidates.append_array(world.pressure_encounter.enemies)
 	if world.get("ambush_encounter"): candidates.append_array(world.ambush_encounter.enemies)
+	if world.get("line_encounter"): candidates.append_array(world.line_encounter.enemies)
 	if world.channel_guards: candidates.append_array(world.channel_guards.enemies)
 	var best: Node3D
 	var score = 0.92
