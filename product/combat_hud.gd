@@ -79,6 +79,10 @@ func _process(_delta: float) -> void:
 		occupied.append(hud.tracker.get_global_rect().grow(8))
 	if training.world.bridge_encounter:
 		opponents.append_array(training.world.bridge_encounter.enemies)
+	if training.world.pressure_encounter:
+		opponents.append_array(training.world.pressure_encounter.enemies)
+	if training.world.ambush_encounter:
+		opponents.append_array(training.world.ambush_encounter.enemies)
 	if training.world.channel_guards:
 		opponents.append_array(training.world.channel_guards.enemies)
 	if training.world.dynamic_encounters:
@@ -102,7 +106,7 @@ func _process(_delta: float) -> void:
 			var p = opponent2.global_position + Vector3.UP * 2.4
 			var front = not camera.is_position_behind(p)
 			var px = camera.unproject_position(p) if front else Vector2(-1000,-1000)
-			b.rows.visible = opponent2.health > 0 and opponent2.engaged and front and Rect2(Vector2.ZERO,viewport).has_point(px) and opponent2.line_clear(training.player.global_position)
+			b.rows.visible = opponent2.visible and opponent2.hitbox.enabled and opponent2.health > 0 and opponent2.engaged and front and Rect2(Vector2.ZERO,viewport).has_point(px) and opponent2.line_clear(training.player.global_position)
 			b.bar.value = opponent2.health
 			b.bar.max_value = opponent2.health_component.max_health
 			b.title.text = opponent2.display_name + (" · 抬手预告" if opponent2.phase == "telegraph" else " · %d/%d" % [int(opponent2.health),int(opponent2.health_component.max_health)])

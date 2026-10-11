@@ -230,12 +230,13 @@ func restore_history() -> void:
 	if world.lamp_training: world.lamp_training.restore_history()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
 	if world.pressure_encounter: world.pressure_encounter.restore_history()
+	if world.ambush_encounter: world.ambush_encounter.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
-	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.pressure_encounter == null or world.pressure_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
+	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.pressure_encounter == null or world.pressure_encounter.can_save()) and (world.ambush_encounter == null or world.ambush_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
 func commit() -> bool:
 	state.selected_equipment = player.pending_weapon if player.switch_timer > 0 else player.weapon_mode
@@ -336,6 +337,7 @@ func recovery_duration() -> float:
 func interrupt(_reason: String) -> void:
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
 	if world.channel_guards and _reason in ["death", "load", "recovery"]: world.channel_guards.interrupt()
+	if world.ambush_encounter and _reason in ["death", "load", "recovery"]: world.ambush_encounter.interrupt()
 	if world.pressure_encounter and _reason in ["death", "load", "recovery"]: world.pressure_encounter.interrupt()
 	if world.bridge_encounter and _reason in ["death", "load", "recovery"]: world.bridge_encounter.interrupt()
 	if world.dynamic_encounters and _reason in ["death", "load", "recovery"]: world.dynamic_encounters.interrupt()
@@ -413,6 +415,7 @@ func advance_player(delta: float) -> void:
 		var registry = {target: target_hitbox, monster: monster.hitbox}
 		if world.bridge_encounter: registry.merge(world.bridge_encounter.registry())
 		if world.pressure_encounter: registry.merge(world.pressure_encounter.registry())
+		if world.ambush_encounter: registry.merge(world.ambush_encounter.registry())
 		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
 		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
@@ -512,6 +515,7 @@ func recover_at_checkpoint() -> void:
 	if not world.meadow_slice: monster.reset_encounter()
 	if world.bridge_encounter: world.bridge_encounter.restore_history()
 	if world.pressure_encounter: world.pressure_encounter.restore_history()
+	if world.ambush_encounter: world.ambush_encounter.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	sim_phase = "idle"

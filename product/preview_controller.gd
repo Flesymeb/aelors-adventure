@@ -37,6 +37,7 @@ var element_abilities: Node3D
 var channel_guards: Node3D
 var chapter_pillar: Node3D
 var route_clue: Node3D
+var ambush_encounter: Node3D
 var pressure_encounter: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
@@ -57,6 +58,9 @@ var failure_armed := false
 var failure_pending: Button
 var failure_busy := false
 
+
+func create_lamp_training() -> Node3D:
+	return preload("res://lamp_training.gd").new()
 
 func create_element_abilities() -> Node3D:
 	return preload("res://element_abilities.gd").new()
@@ -122,7 +126,7 @@ func _ready() -> void:
 	add_child(bow_training)
 	bow_training.configure(self)
 	dialogue_state.bow_granted.connect(bow_training.grant_bow)
-	lamp_training = preload("res://lamp_training.gd").new()
+	lamp_training = create_lamp_training()
 	lamp_training.process_mode = Node.PROCESS_MODE_PAUSABLE
 	lamp_training.name = "LampTraining"
 	add_child(lamp_training)
@@ -155,6 +159,11 @@ func _ready() -> void:
 		route_clue.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(route_clue)
 		route_clue.configure(self)
+		ambush_encounter = preload("res://combat/Map02Ambush.tscn").instantiate()
+		ambush_encounter.name = "Map02Ambush"
+		ambush_encounter.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(ambush_encounter)
+		ambush_encounter.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE

@@ -4,6 +4,8 @@ var route_ready := false
 var route_samples := 0
 var pressure_route_samples := 0
 var pressure_route_ready := false
+var ambush_route_ready := false
+var ambush_route_samples := 0
 
 func _ready() -> void:
 	meadow_slice = true
@@ -23,6 +25,9 @@ func _ready() -> void:
 	chapter_pillar.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(chapter_pillar)
 	chapter_pillar.configure(self)
+
+func create_lamp_training() -> Node3D:
+	return preload("res://world/map02_lamp.gd").new()
 
 func create_element_abilities() -> Node3D:
 	return preload("res://world/map02_element_abilities.gd").new()
@@ -48,7 +53,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not ground.place(self, player, xz): xz = ground.ENTRY; continue
-		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded: continue
+		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded or not ambush_encounter.grounded: continue
 		# Qualify support and standing volume along the scoped approach, not an
 		# invisible replacement floor. The retained collision remains authoritative.
 		route_samples = 0
@@ -73,8 +78,14 @@ func _place_player() -> void:
 		for i in 6:
 			if ground.place(self, stance, ground.PRESSURE_FLANK[1].lerp(ground.RECORD_APPROACH, float(i)/5.0)) and pressure_encounter.standing_clear(stance): clue_route_samples += 1
 		pressure_route_ready = pressure_route_ready and clue_route_samples == 6
+		ambush_route_samples = 0
+		var ambush_points: Array[Vector2] = [ground.RECORD_APPROACH, ground.AMBUSH_ROUTE_START, ground.AMBUSH_APPROACH, ground.AMBUSH_FLANK, ground.AMBUSH_ANCHORS[0], ground.AMBUSH_ANCHORS[1]]
+		for i in ambush_points.size() - 1:
+			for j in 6:
+				if ground.place(self, stance, ambush_points[i].lerp(ambush_points[i+1], float(j)/5.0)) and pressure_encounter.standing_clear(stance): ambush_route_samples += 1
+		ambush_route_ready = ambush_route_samples == 30
 		stance.queue_free()
-		route_ready = route_samples == 20 and pressure_route_ready
+		route_ready = route_samples == 20 and pressure_route_ready and ambush_route_ready
 		if not route_ready:
 			entry_failed.emit("草甸道路无法安全通行。已保留上一处落脚点。")
 			return
@@ -92,5 +103,7 @@ func _mcp_state() -> Dictionary:
 	result.route_samples = route_samples
 	result.pressure_route_ready = pressure_route_ready
 	result.pressure_route_samples = pressure_route_samples
+	result.ambush_route_ready = ambush_route_ready
+	result.ambush_route_samples = ambush_route_samples
 	result.checkpoint = "CP02"
 	return result

@@ -3727,7 +3727,7 @@
     "host-active-bus-capture-listening-required"
    ],
    "requirement_ids": [
-    "R19"
+    "R15"
    ],
    "budget": {
     "gameplay_ms": 21000,

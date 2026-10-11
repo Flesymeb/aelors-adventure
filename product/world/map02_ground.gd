@@ -11,6 +11,10 @@ const PRESSURE_FLANK := [Vector2(4, 57), Vector2(4, 61)]
 const RETURN := Vector2(-3, 25)
 const ROUTE_RECORD := Vector2(6, 66)
 const RECORD_APPROACH := Vector2(4, 65)
+const AMBUSH_APPROACH := Vector2(3, 70)
+const AMBUSH_ROUTE_START := Vector2(3, 65)
+const AMBUSH_FLANK := Vector2(3, 74)
+const AMBUSH_ANCHORS := [Vector2(4, 75), Vector2(7, 76)]
 
 static func in_bounds(xz: Vector2) -> bool:
 	return xz.is_finite() and xz.x >= -1100 and xz.x <= 700 and xz.y >= -1300 and xz.y <= 500

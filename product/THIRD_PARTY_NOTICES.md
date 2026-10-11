@@ -183,6 +183,24 @@ EnemyNonMeleeComponent lifecycle; MIT attribution remains in
 tip sweep instead of the upstream unswept projectile. Cat sensing was inspected
 as a mechanism comparison and no Cat code was copied.
 
+## E03 lamp ambushers
+
+`assets/ambush/ambusher_a.gltf` is Quaternius Ultimate Monsters' Demon;
+`assets/ambush/ambusher_b.gltf` is that pack's Orc. Both are CC0-1.0,
+https://quaternius.com/packs/ultimatemonsters.html. Their adjacent
+`.gltf.receipt.json` records retain the registered source members and
+materialization provenance. The original supplied CC0 notice is retained at
+`assets/training/License.txt`; its heading names Ultimate Platformer Pack,
+while the acquisition records identify the Ultimate Monsters source.
+
+Both actors retain their source rigs, materials and embedded animation clips.
+`combat/map02_ambusher_adapter.gd` adapts the retained Snaiel enemy driver,
+EnemyActions, health, hitbox and posed fist components. Snaiel and Beehave code
+remain under the MIT notices in `combat/snaiel/LICENSES.txt`; these code
+licenses are separate from the Quaternius media's CC0 dedication. Lamp reveal,
+recognition, rush timing, placement, reward and save behavior are product
+adaptations. This attribution adds no rights claim for other retained media.
+
 ## CH01 guard approach illustrations
 
 Three generated paintings are bound in assets/cinematics/guard_approach.
