@@ -62,7 +62,7 @@ static func observer_lifecycle_checks() -> Dictionary:
 	# These are real observation implementations with no _ready invocation,
 	# world construction, playback or save writes in the isolated fixture.
 	var checks := {}
-	for path in ["ui/game_entry_router.gd", "ui/illustrated_opening.gd", "ui/chapter_transition.gd", "ui/title_settings.gd", "ui/menu_audio.gd", "world/map02_entry.gd"]:
+	for path in ["ui/game_entry_router.gd", "ui/illustrated_opening.gd", "ui/chapter_transition.gd", "ui/title_settings.gd", "ui/menu_audio.gd", "world/map02_entry.gd", "world/chapter_pillar.gd"]:
 		var observer: Node = load("res://" + path).new()
 		var initial: Dictionary = observer._mcp_state()
 		var repeated: Dictionary = observer._mcp_state()
@@ -79,6 +79,8 @@ static func observer_lifecycle_checks() -> Dictionary:
 			checks.menu_streams_unavailable = initial.music_position == null and initial.music_paused == null and initial.voice_paused == null
 		if path == "ui/title_settings.gd":
 			checks.settings_focus_unavailable = initial.focus_name == null and pending.focus_name == null
+		if path == "world/chapter_pillar.gd":
+			checks.pillar_unavailable = initial.active == null and initial.player_distance == null and initial.player_in_range == null and initial.interaction_eligible == null and pending.interaction_eligible == null
 	checks.merge(detached_audio_checks())
 	return checks
 

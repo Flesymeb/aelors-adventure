@@ -119,4 +119,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _mcp_state() -> Dictionary:
-	return {"grounded":grounded,"active":return_passage or state.passage_missing_conditions().is_empty(),"destination":"河谷聚落" if return_passage else "林缘草甸","missing_conditions":state.passage_missing_conditions(),"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position)}
+	# Observe the same ordinary interaction boundary without grounding, saving,
+	# entering travel or granting prerequisites. Missing owners stay unavailable.
+	var state_ready := is_instance_valid(state) and not state.is_queued_for_deletion()
+	var world_ready := is_instance_valid(world) and not world.is_queued_for_deletion()
+	var player_ready: bool = world_ready and is_instance_valid(world.player) and not world.player.is_queued_for_deletion()
+	var ready := is_inside_tree() and is_node_ready() and not is_queued_for_deletion() and grounded and state_ready and player_ready
+	var missing: Variant = state.passage_missing_conditions() if state_ready else null
+	var active: Variant = return_passage or missing.is_empty() if state_ready else null
+	var distance: Variant = world.player.global_position.distance_to(global_position) if ready else null
+	var owners_ready: bool = ready and is_instance_valid(world.training) and is_instance_valid(world.bow_training) and is_instance_valid(world.entry_router)
+	var eligible: Variant = null
+	if owners_ready:
+		eligible = active and distance < 2.5 and world.pause_owners.is_empty() and not world.training.player_locked() and world.training.can_save() and world.bow_training.can_save()
+	return {"ready":ready,"grounded":grounded,"active":active,"destination":"河谷聚落" if return_passage else "林缘草甸","missing_conditions":missing,"missing_count":missing.size() if state_ready else null,"player_distance":distance,"player_in_range":distance < 2.5 if ready else null,"interaction_eligible":eligible,"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position) if ready else null}

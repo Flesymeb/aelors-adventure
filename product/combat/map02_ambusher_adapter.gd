@@ -61,11 +61,52 @@ func _sample_contact() -> void:
 	super()
 
 func _mcp_state() -> Dictionary:
-	if not is_node_ready(): return {"ready":false,"phase":null,"revealed":null}
+	var bindings := _binding_observation()
+	if not is_inside_tree() or not is_node_ready() or is_queued_for_deletion():
+		bindings.merge({"ready":false,"phase":null,"revealed":null})
+		return bindings
 	var result := super()
 	result.revealed = encounter.state.e03_revealed
 	result.recognition_remaining = encounter.recognition_remaining
 	result.locked_direction = locked_direction
 	result.rush_obstructed = rush_obstructed
 	result.stable_id = stable_id
+	result.merge(bindings)
+	return result
+
+func _binding_observation() -> Dictionary:
+	# Read the instantiated replacement and configured recipients, not MODELS
+	# constants or detached load results. Never configure or play from a probe.
+	var result := {"binding_ready":false,"model_resource":null,"model_path":null,"skeleton_path":null,"bone_count":null,"skinned_mesh_count":null,"skin_bind_count":null,"skin_skeleton_path":null,"animation_player_path":null,"animation_root_path":null,"animation_driver_resource":null,"animation_tree_active":null,"active_clip":null,"active_clip_position":null,"contact_source_path":null,"contact_socket_path":null,"contact_bone":null,"contact_bone_index":null,"contact_attached":null}
+	if not is_inside_tree() or not is_node_ready() or is_queued_for_deletion(): return result
+	if not is_instance_valid(model) or not is_instance_valid(character) or not is_instance_valid(animator) or not is_instance_valid(source): return result
+	var rig: Skeleton3D = character.skeleton
+	var socket: BoneAttachment3D = character.contact_socket
+	if not is_instance_valid(rig) or not is_instance_valid(socket) or not is_instance_valid(character.anim_tree): return result
+	result.binding_ready = true
+	result.model_resource = model.scene_file_path
+	result.model_path = str(model.get_path())
+	result.skeleton_path = str(rig.get_path())
+	result.bone_count = rig.get_bone_count()
+	result.skinned_mesh_count = 0
+	# Preserve absence rather than assuming a skin is assigned to this rig.
+	for mesh in model.find_children("*", "MeshInstance3D", true, false):
+		if mesh.skin == null: continue
+		result.skinned_mesh_count += 1
+		if result.skin_bind_count == null:
+			result.skin_bind_count = mesh.skin.get_bind_count()
+			var skin_rig := mesh.get_node_or_null(mesh.skeleton)
+			result.skin_skeleton_path = str(skin_rig.get_path()) if skin_rig else null
+	result.animation_player_path = str(animator.get_path())
+	var animation_root := animator.get_node_or_null(animator.root_node)
+	result.animation_root_path = str(animation_root.get_path()) if animation_root else null
+	result.animation_driver_resource = character.get_script().resource_path
+	result.animation_tree_active = character.anim_tree.active
+	result.active_clip = character.current_clip()
+	result.active_clip_position = character.current_position()
+	result.contact_source_path = str(source.get_path())
+	result.contact_socket_path = str(socket.get_path())
+	result.contact_bone = socket.bone_name
+	result.contact_bone_index = rig.find_bone(socket.bone_name)
+	result.contact_attached = source.get_parent() == socket and socket.get_parent() == rig
 	return result

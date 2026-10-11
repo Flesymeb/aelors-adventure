@@ -127,6 +127,94 @@ static func _ambush_binding_facts(path: String) -> Dictionary:
 	instance.free()
 	return facts
 
+static func live_ambush_checks(encounter: Node) -> Dictionary:
+	# Opt-in inspection of an existing fixture or ordinary encounter. This never
+	# attaches/configures an actor, advances a frame, plays a clip or writes state.
+	var checks := {}
+	var actors: Array[Dictionary] = []
+	if not is_instance_valid(encounter) or not encounter.is_inside_tree() or not encounter.is_node_ready():
+		return {"available": false, "reason": "encounter_absent_or_unready", "checks": checks, "actors": actors}
+	var enemies: Variant = encounter.get("enemies")
+	if not enemies is Array:
+		return {"available": false, "reason": "encounter_enemies_unavailable", "checks": checks, "actors": actors}
+	checks.two_existing_actors = enemies.size() == AMBUSH_MEDIA.size()
+	var all_available: bool = bool(checks.two_existing_actors)
+	for index in AMBUSH_MEDIA.size():
+		var path: String = AMBUSH_MEDIA[index]
+		var actor: Node = enemies[index] if index < enemies.size() and enemies[index] is Node else null
+		var facts := {"owner": path, "available": false, "reason": "actor_absent_or_unready"}
+		if not is_instance_valid(actor) or not actor is CharacterBody3D or not actor.is_inside_tree() or not actor.is_node_ready() or not actor.has_method("_binding_observation"):
+			all_available = false
+			actors.append(facts)
+			continue
+		# Detached native structure is a comparison reference, never live adoption
+		# evidence. It is loaded before the consecutive observer-purity boundary.
+		var detached := _ambush_binding_facts(path)
+		var before := _ambush_read_snapshot(encounter, actor)
+		var observed: Dictionary = actor.call("_binding_observation")
+		var repeated: Dictionary = actor.call("_binding_observation")
+		var after := _ambush_read_snapshot(encounter, actor)
+		facts.merge({"available": bool(observed.get("binding_ready", false)),
+			"reason": "" if observed.get("binding_ready", false) else "live_binding_unready",
+			"actor_path": str(actor.get_path()), "observer": observed, "detached": detached}, true)
+		checks[path + "_observer_repeated"] = observed == repeated
+		checks[path + "_observer_read_only"] = before == after
+		if not facts.available:
+			all_available = false
+			actors.append(facts)
+			continue
+		var model: Node3D = actor.get("model")
+		var character: Node = actor.get("character")
+		var animator: AnimationPlayer = actor.get("animator")
+		var source: Node3D = actor.get("source")
+		var skeleton: Skeleton3D = model.find_child("Skeleton3D", true, false)
+		var socket: BoneAttachment3D = character.get("contact_socket")
+		var tree: AnimationTree = character.get("anim_tree")
+		var skinned_meshes := 0
+		var skin_binds: Variant = null
+		var skin_rig_path: Variant = null
+		var all_skins_use_rig := true
+		for mesh in model.find_children("*", "MeshInstance3D", true, false):
+			if mesh.skin == null: continue
+			skinned_meshes += 1
+			var mesh_rig: Node = mesh.get_node_or_null(mesh.skeleton)
+			all_skins_use_rig = all_skins_use_rig and mesh_rig == skeleton
+			if skin_binds == null:
+				skin_binds = mesh.skin.get_bind_count()
+				skin_rig_path = str(mesh_rig.get_path()) if mesh_rig else null
+		var animation_root: Node = animator.get_node_or_null(animator.root_node)
+		var live_clips_present := true
+		for clip in AMBUSH_CLIPS:
+			live_clips_present = live_clips_present and animator.has_animation(clip)
+		checks[path + "_model_correspondence"] = observed.model_resource == path and model.scene_file_path == path and observed.model_path == str(model.get_path())
+		checks[path + "_rig_correspondence"] = skeleton != null and character.get("skeleton") == skeleton and observed.skeleton_path == str(skeleton.get_path()) and observed.bone_count == skeleton.get_bone_count() and observed.bone_count == detached.bone_count
+		checks[path + "_skin_correspondence"] = all_skins_use_rig and skinned_meshes > 0 and skinned_meshes == detached.skinned_meshes and observed.skinned_mesh_count == skinned_meshes and observed.skin_bind_count == skin_binds and observed.skin_skeleton_path == skin_rig_path
+		checks[path + "_driver_correspondence"] = animator == character.get("anim_player") and animator == model.find_child("AnimationPlayer", true, false) and observed.animation_player_path == str(animator.get_path()) and animation_root == model and observed.animation_root_path == str(model.get_path()) and observed.animation_driver_resource == character.get_script().resource_path and tree.get_node_or_null(tree.anim_player) == animator and tree.get_node_or_null(tree.root_node) == model and observed.animation_tree_active == tree.active
+		checks[path + "_clip_correspondence"] = live_clips_present and observed.active_clip == character.call("current_clip") and observed.active_clip_position == character.call("current_position") and detached.missing_clips.is_empty() and animator.has_animation(str(observed.active_clip))
+		checks[path + "_contact_correspondence"] = socket.get_parent() == skeleton and source.get_parent() == socket and observed.contact_attached and observed.contact_source_path == str(source.get_path()) and observed.contact_socket_path == str(socket.get_path()) and observed.contact_bone == socket.bone_name and observed.contact_bone_index == skeleton.find_bone(socket.bone_name) and socket.bone_name == "LowerArm.R" and detached.contact_bone_present and detached.palm_bone_present
+		actors.append(facts)
+	return {"available": all_available, "checks": checks, "actors": actors,
+		"qualification": "read_only_existing_instances_diagnostic; ordinary_earning_and_rendered_binding_unverified"}
+
+static func _ambush_read_snapshot(encounter: Node, actor: Node) -> Dictionary:
+	var state: Object = encounter.get("state")
+	var character: Node = actor.get("character")
+	var animator: AnimationPlayer = actor.get("animator")
+	var source: Node3D = actor.get("source")
+	return {"reward_history": state.get("reward_history").duplicate(true) if state else null,
+		"mf01_acquired": state.get("mf01_acquired") if state else null,
+		"e03_revealed": state.get("e03_revealed") if state else null,
+		"recognition_remaining": encounter.get("recognition_remaining"),
+		"health": actor.get("health"), "phase": actor.get("phase"),
+		"transform": (actor as Node3D).global_transform,
+		"velocity": actor.get("velocity"),
+		"clip": character.call("current_clip") if is_instance_valid(character) else null,
+		"clip_position": character.call("current_position") if is_instance_valid(character) else null,
+		"assigned_animation": animator.assigned_animation if is_instance_valid(animator) else null,
+		"playing": animator.is_playing() if is_instance_valid(animator) else null,
+		"attack_instance": source.get("instance") if is_instance_valid(source) else null,
+		"damage_window": source.get("can_damage") if is_instance_valid(source) else null}
+
 static func _import_facts(owner: String) -> Dictionary:
 	var recipe := ConfigFile.new()
 	var result := recipe.load(owner + ".import")
