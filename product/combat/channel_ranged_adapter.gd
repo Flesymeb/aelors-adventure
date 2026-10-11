@@ -20,6 +20,18 @@ var player_contacts := 0
 var last_projectile_result: Dictionary = {}
 var navigation_region: NavigationRegion3D
 var navigation_ready := false
+# Read-only scalar projections retain the real ranged timeline as their owner.
+# A detached/unready actor has no timeline to observe.
+var ranged_executing: Variant:
+	get: return action.executing_action if is_instance_valid(action) and not action.is_queued_for_deletion() else null
+var ranged_can_perform: Variant:
+	get: return action.can_perform_action if is_instance_valid(action) and not action.is_queued_for_deletion() else null
+var ranged_cooldown_remaining: Variant:
+	get: return action.cooldown if is_instance_valid(action) and not action.is_queued_for_deletion() else null
+var ranged_stage: Variant:
+	get: return action.stage if is_instance_valid(action) and not action.is_queued_for_deletion() else null
+var hurt_pose: Variant:
+	get: return presentation.current_animation if is_instance_valid(presentation) and not presentation.is_queued_for_deletion() else null
 var health: float:
 	get: return health_component.health if health_component else 36.0
 @onready var health_component: SnaielHealth = $HealthComponent
@@ -219,7 +231,10 @@ func _death() -> void:
 	dead.emit()
 
 func _mcp_state() -> Dictionary:
-	return {"id":stable_id,"health":health,"max_health":36,"phase":phase,"engaged":engaged,"navigation_ready":navigation_ready,"shots_fired":shots_fired,"cover_contacts":cover_contacts,"player_contacts":player_contacts,"last_projectile_result":last_projectile_result,"pose":presentation._mcp_state(),"action_instance":action.instance,"action_time":action.elapsed,"home":str(home)}
+	var action_available := is_instance_valid(action) and not action.is_queued_for_deletion()
+	var pose_available := is_instance_valid(presentation) and not presentation.is_queued_for_deletion()
+	return {"id":stable_id,"health":health,"max_health":36,"phase":phase,"engaged":engaged,"navigation_ready":navigation_ready,"shots_fired":shots_fired,"cover_contacts":cover_contacts,"player_contacts":player_contacts,"last_projectile_result":last_projectile_result,"pose":presentation._mcp_state() if pose_available else null,"action_instance":action.instance if action_available else null,"action_time":action.elapsed if action_available else null,"home":str(home),
+		"hurt_remaining":hurt_remaining,"hurt_pose":hurt_pose,"ranged_executing":ranged_executing,"ranged_can_perform":ranged_can_perform,"ranged_cooldown_remaining":ranged_cooldown_remaining,"ranged_stage":ranged_stage}
 
 func receive_contact(damage_source: SnaielDamageSource, point: Vector3) -> Dictionary:
 	return hitbox.contact(damage_source, point)

@@ -31,6 +31,7 @@ var notifications: Array[Dictionary] = []
 var equipment_back: PanelContainer
 var shortcut_row: HBoxContainer
 var shortcut_slots: Dictionary = {}
+var map_page: Control
 var journal: Control
 
 func _ready() -> void:
@@ -147,10 +148,19 @@ func _ready() -> void:
 	journal.state = state
 	journal.audio = world.menu_audio
 	var journal_layer := CanvasLayer.new()
+	journal_layer.name = "InformationPages"
 	journal_layer.layer = 24
 	add_child(journal_layer)
 	journal_layer.add_child(journal)
 	journal.hide()
+	map_page = preload("res://ui/menu_foundation/main_menu.tscn").instantiate()
+	map_page.set_script(preload("res://ui/map_page.gd"))
+	map_page.name = "RouteMap"
+	map_page.world = world
+	map_page.state = state
+	map_page.audio = world.menu_audio
+	journal_layer.add_child(map_page)
+	map_page.hide()
 
 func label(parent: Node) -> Label:
 	var item := Label.new()
@@ -272,7 +282,7 @@ func _process(delta: float) -> void:
 	tracker.position = Vector2(view.x - minf(430 * scale_now, view.x * 0.43) - 20, life_back.position.y + life_back.size.y + 12)
 	tracker.custom_minimum_size.x = minf(430 * scale_now, view.x * 0.43)
 	tracker.size.x = tracker.custom_minimum_size.x
-	tracker_title.text = "任务日志 [J]    " + ("展开 [H]" if state.tracker_collapsed else "收起 [H]")
+	tracker_title.text = "地图 [M] · 日志 [J]    " + ("展开 [H]" if state.tracker_collapsed else "收起 [H]")
 	tracker_title.add_theme_font_size_override("font_size", int(14 * scale_now))
 	tracker_text.visible = not state.tracker_collapsed
 	tracker_text.text = short_action(state.tracked_entry().action)
@@ -286,6 +296,7 @@ func _process(delta: float) -> void:
 		if world.lamp_training and world.lamp_training.interaction_prompt() != "": hint = world.lamp_training.interaction_prompt()
 		if world.bridge_actions and world.bridge_actions.interaction_prompt() != "": hint = world.bridge_actions.interaction_prompt()
 		if world.pressure_encounter and world.pressure_encounter.interaction_prompt() != "": hint = world.pressure_encounter.interaction_prompt()
+		if world.route_clue and world.route_clue.interaction_prompt() != "": hint = world.route_clue.interaction_prompt()
 		if hint == "" and not world.meadow_slice and world.isha.can_interact(world.player): hint = "[E] 与伊莎交谈"
 	for pair in [["1","sword","巡路剑",state.sword_owned],["2","bow","巡路弓",state.bow_owned],["3","lamp","旧灯",state.lamp_owned]]:
 		var slot: Dictionary = shortcut_slots[pair[1]]

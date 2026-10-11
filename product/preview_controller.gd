@@ -36,6 +36,7 @@ var lamp_training: Node3D
 var element_abilities: Node3D
 var channel_guards: Node3D
 var chapter_pillar: Node3D
+var route_clue: Node3D
 var pressure_encounter: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
@@ -149,6 +150,11 @@ func _ready() -> void:
 		pressure_encounter.victory_supply_xz = ground_policy.PRESSURE_FLANK[0]
 		add_child(pressure_encounter)
 		pressure_encounter.configure(self)
+		route_clue = preload("res://world/map02_route_clue.gd").new()
+		route_clue.name = "MF01RouteRecord"
+		route_clue.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(route_clue)
+		route_clue.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -302,6 +308,7 @@ func _open_controls() -> void:
 	previous_mouse_mode = Input.mouse_mode
 	_set_pause_owner("controls", true)
 	if gameplay_hud.journal.visible: gameplay_hud.journal.suspend_for_menu()
+	if gameplay_hud.map_page.visible: gameplay_hud.map_page.suspend_for_menu()
 	if inventory_panel and inventory_panel.visible: inventory_panel.suspend_for_menu()
 	if skill_panel and skill_panel.visible: skill_panel.suspend_for_menu()
 	dialogue.nested_menu = dialogue.opened
@@ -377,6 +384,7 @@ func _load_opening(slot: int) -> void:
 		return
 	player.prepare_restored_camera(float(restored.yaw))
 	training.restore_history()
+	if route_clue: route_clue.restore_history()
 	if bridge_actions: bridge_actions.restore_history()
 	if channel_guards: channel_guards.restore_history()
 	gameplay_hud.restore_view()
@@ -461,6 +469,7 @@ func _close_controls() -> void:
 	controls_panel.hide()
 	get_viewport().disable_3d = false
 	if gameplay_hud.journal.suspended: gameplay_hud.journal.resume_from_menu()
+	if gameplay_hud.map_page.suspended: gameplay_hud.map_page.resume_from_menu()
 	if inventory_panel and inventory_panel.suspended: inventory_panel.resume_from_menu()
 	if skill_panel and skill_panel.suspended: skill_panel.resume_from_menu()
 	_set_pause_owner("controls", false)
@@ -484,13 +493,21 @@ func handle_controls_input(event: InputEvent) -> bool:
 	if pause_owners.has("guard_interlude") or pause_owners.has("chapter_travel") or pause_owners.has("entry"):
 		# Let the interlude and its GUI own Esc, Space and navigation; do not
 		# open a nested world menu or a save/action shortcut over the painting.
-		return event is InputEventKey and event.keycode in [KEY_F10,KEY_F5,KEY_E,KEY_I,KEY_J,KEY_K]
+		return event is InputEventKey and event.keycode in [KEY_F10,KEY_F5,KEY_E,KEY_I,KEY_J,KEY_K,KEY_M]
 	for panel in [inventory_panel, skill_panel]:
 		if panel and panel.visible and not controls_panel.visible:
 			if event is InputEventKey and event.pressed and not event.echo:
 				if event.keycode in [KEY_ESCAPE, KEY_I if panel == inventory_panel else KEY_K]: panel.close_panel(); return true
 				if event.keycode == KEY_F10: _open_controls(); return true
 			return false
+	if gameplay_hud and gameplay_hud.map_page.visible and not controls_panel.visible:
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode in [KEY_M, KEY_ESCAPE]: gameplay_hud.map_page.close_panel(); return true
+			if event.keycode == KEY_F10: _open_controls(); return true
+			if event.keycode == KEY_F5:
+				_save_opening(gameplay_hud.failed_slot if gameplay_hud.failed_slot >= 0 else 0)
+				return true
+		return false
 	if gameplay_hud and gameplay_hud.journal.visible and not controls_panel.visible:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode in [KEY_J, KEY_ESCAPE]:
@@ -519,6 +536,9 @@ func handle_controls_input(event: InputEvent) -> bool:
 				if dialogue_state.inventory.use_item(dialogue_state.quick_item): training.commit(); training.tell("物品已使用")
 				else: training.tell("物品不可用 · I 查看背包")
 			return true
+		if event.keycode == KEY_M:
+			gameplay_hud.map_page.open_panel()
+			return true
 		if event.keycode == KEY_J:
 			gameplay_hud.journal.open_journal()
 			return true
@@ -541,6 +561,7 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and route_clue and route_clue.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and pressure_encounter and pressure_encounter.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bridge_actions and bridge_actions.interact(): return true
 			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true
@@ -802,6 +823,7 @@ func _return_to_title() -> void:
 func _finish_recovery() -> void:
 	gameplay_hud.restore_view()
 	if gameplay_hud.journal.visible or gameplay_hud.journal.suspended: gameplay_hud.journal.close_journal()
+	if gameplay_hud.map_page.visible or gameplay_hud.map_page.suspended: gameplay_hud.map_page.close_panel()
 	for panel in [inventory_panel,skill_panel]:
 		if panel and (panel.visible or panel.suspended): panel.close_panel()
 	var focus := get_viewport().gui_get_focus_owner()

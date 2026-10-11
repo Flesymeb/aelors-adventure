@@ -113,6 +113,13 @@ Poly Haven, Lantern 01 — https://polyhaven.com/a/Lantern_01 — CC0-1.0. Origi
 ## Permanent clue interaction
 Nodragem Action Adventure, revision `efc171fd37682811c9efe0df83b02e9102d4f5f5`, project CC0 license retained in `interaction/nodragem/LICENSE`. The selected SwitchComponent and ShortSwitch source units are adapted into permanent reveal activation with optional animation; investigation and rewards remain product-owned in DialogueState/LampTraining.
 
+MF01 reuses that permanent switch through `world/map02_route_clue.gd`, with
+acquisition and persistence owned by DialogueState. Its fixed sign is the retained
+Emaceart chapel-sign prefab already used by LampTraining; no new model transfer
+or license is asserted. The map and journal reuse Maaack page/focus components,
+the retained journal icon, themed frames and serif fonts. The route diagram and
+MF01 text are product adaptations; they do not grant later chapter progression.
+
 ## RPG item and ability icons
 
 Icons by Delapouite, https://game-icons.net, CC BY 3.0,

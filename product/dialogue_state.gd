@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -53,6 +53,7 @@ var current_map := GROUND.MAP_ID
 var cp02_claimed := false
 var pressure_supply_claimed := false
 var meadow_branch_supply_claimed := false
+var mf01_acquired := false
 const MAP02 := "meadow-entry-v1"
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
@@ -270,6 +271,17 @@ func pressure_defeated() -> bool:
 func pressure_remaining() -> int:
 	return PRESSURE_IDS.filter(func(id): return not reward_history.has(id)).size()
 
+func acquire_mf01() -> bool:
+	if mf01_acquired or current_map != MAP02 or not cp02_claimed or not pressure_defeated() or health <= 0 or recovery_pending: return false
+	mf01_acquired = true
+	tracked_quest = "route_record"
+	progression_changed.emit()
+	return true
+
+func mf01_information() -> String:
+	if not mf01_acquired: return "押送路线尚未调查。击败 E02 守卫后，调查岩石后方的固定路碑。"
+	return "它们从农田绕进了林缘，这些标记能对上路边的地形。\n从草甸灯台沿泥路前行，越过两名路障守卫。岩石掩体挡住弓守箭线；绕到岩石右侧，再向前到树线旁的固定路碑。\n返程：沿岩石右侧退回路障，再沿泥路回灯台。路碑独立于尸体，清理战场不会移除记录。\n后续押送痕迹仍待追踪，四位村民尚未获救。"
+
 func settle_pressure(point: Vector3, drop: Dictionary, id: String) -> bool:
 	if id not in PRESSURE_IDS or current_map != MAP02 or not cp02_claimed or not departure_available() or not roadblock_defeated() or reward_history.has(id) or not point.is_finite(): return false
 	if not drop.is_empty() and (drop.get("id", "") not in ["healing", "lifeflame"] or drop.get("quantity", 0) != 1): return false
@@ -434,7 +446,7 @@ func objective() -> String:
 	if current_map == MAP02:
 		if not roadblock_defeated(): return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining()
 		if not pressure_defeated(): return "E02 押送守卫（剩余 %d/2） · 沿林路前行，利用岩石挡箭；可退回灯台" % pressure_remaining()
-		return "E02 已清除 · " + ("领取一次胜利补给；" if pressure_supply_available() else "胜利补给已领取；") + "押送路线的线索仍待调查"
+		return "E02 已清除 · " + ("领取一次胜利补给；" if pressure_supply_available() else "胜利补给已领取；") + ("MF01 已记录 · M 查看农田至林缘路线，J 查看记录；后续痕迹仍待追踪" if mf01_acquired else "岩石后方固定路碑 · 按 E 调查 MF01")
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
 	if not practice_hit: return "剑练习 · 用剑击中赫斯旁的草靶"
@@ -657,6 +669,8 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if e02_earned and not e01_complete: return "存档押送守卫前置无效"
 	if config.get_value("post_bow", "pressure_supply_claimed", false) and not e02_complete: return "存档胜利补给无效"
 	if config.get_value("post_bow", "meadow_branch_supply_claimed", false) and (not claimed or not e01_complete or bridge_facts.bridge_first_action != "rescue" or not bridge_facts.bridge_later_supply_due): return "存档分支补给无效"
+	if not config.get_value("post_bow", "mf01_acquired", false) is bool: return "存档路线记录无效"
+	if config.get_value("post_bow", "mf01_acquired", false) and (not claimed or not e02_complete): return "存档路线记录前置无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -766,6 +780,8 @@ func quest_entries() -> Array[Dictionary]:
 		if pressure_supply_claimed: steps.append("一次胜利恢复补给已领取")
 		if meadow_branch_supply_claimed: steps.append("罗恩的救人分支补给已交付")
 		rows.append({"id":"pressure", "title":"押送路线", "complete":pressure_defeated(), "context":"一名近卫掩护弓守。沿林路利用岩石阻断箭线，近身或用弓反击；退回灯台可脱离。战胜守卫后线索仍须调查。", "action":objective(), "steps":steps})
+	if cp02_claimed:
+		rows.append({"id":"route_record", "title":"农田至林缘 · MF01", "complete":false, "context":mf01_information(), "action":"M 查看路线 · 四位村民仍待救援" if mf01_acquired else "击败押送守卫，调查岩石后方的固定路碑", "steps":["固定路线记录已取得 · 保存后可继续查阅"] if mf01_acquired else []})
 	return rows
 
 func tracked_entry() -> Dictionary:

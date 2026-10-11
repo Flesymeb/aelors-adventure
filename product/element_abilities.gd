@@ -17,6 +17,17 @@ var burns: Array[Dictionary] = []
 var stagger_immunity: Dictionary = {}
 var next_instance = 10000
 var practice_hits = {"fire":0,"lightning":0}
+var e02_ranged_lightning_immunity_remaining: Variant:
+	get:
+		# Resolve the current live E02 actor; never cache a disposable identity or
+		# prune immunity while observing. Zero means available without immunity.
+		if not is_instance_valid(world) or world.is_queued_for_deletion(): return null
+		var pressure = world.get("pressure_encounter")
+		if not is_instance_valid(pressure) or pressure.is_queued_for_deletion(): return null
+		for enemy in pressure.enemies:
+			if not is_instance_valid(enemy) or enemy.is_queued_for_deletion() or not enemy.is_node_ready(): continue
+			if enemy.stable_id == "map02_e02_ranged": return stagger_immunity.get(enemy.get_instance_id(),0.0)
+		return null
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -282,6 +293,7 @@ func _mcp_state() -> Dictionary:
 			"target_queued_for_deletion": status.target.is_queued_for_deletion()
 		})
 	return {"phase":phase,"cast":cast,"clock":clock,"cooldowns":cooldowns.duplicate(),"projectiles":projectiles.size(),"burns":burns.size(),"practice_hits":practice_hits.duplicate(),"grounded":grounded,
+		"e02_ranged_lightning_immunity_remaining":e02_ranged_lightning_immunity_remaining,
 		"projectile_states":projectile_states,"burn_states":burn_states,
 		"process_frame":Engine.get_process_frames(),"physics_frame":Engine.get_physics_frames(),
 		"tree_paused":get_tree().paused,"pause_owners":world.pause_owners.keys()}

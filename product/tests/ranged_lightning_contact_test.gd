@@ -15,12 +15,14 @@ class ContactTraining extends Node:
 class ContactWorld extends Node3D:
 	var player: CharacterBody3D
 	var training: ContactTraining
+	var pressure_encounter: Node3D
 
 class ContactEncounter extends Node3D:
 	var world: ContactWorld
 	var grounded := true
 	var allowed := true
 	var defeats := 0
+	var enemies: Array[Node] = []
 	func combat_allowed() -> bool: return allowed
 	func attack_slot_available(_enemy: Node) -> bool: return false
 	func settle_defeat(_enemy: Node) -> void: defeats += 1
@@ -28,6 +30,12 @@ class ContactEncounter extends Node3D:
 static func lightning_contact_checks(parent: Node, actor_script: GDScript = null) -> Dictionary:
 	# Explicit disposable real-adapter fixture. This tests Snaiel settlement and
 	# reaction/timeline integration; it cannot establish ordinary cast/audio QA.
+	var checks := {}
+	var unavailable: CharacterBody3D = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
+	if actor_script: unavailable.set_script(actor_script)
+	var unavailable_state: Dictionary = unavailable._mcp_state()
+	checks.unready_observation_null = unavailable_state.pose == null and unavailable_state.action_instance == null and unavailable_state.action_time == null and unavailable_state.ranged_executing == null and unavailable_state.ranged_can_perform == null and unavailable_state.ranged_cooldown_remaining == null and unavailable_state.ranged_stage == null and unavailable_state.hurt_pose == null
+	unavailable.free()
 	var stage := ContactWorld.new()
 	stage.process_mode = Node.PROCESS_MODE_DISABLED
 	parent.add_child(stage)
@@ -41,14 +49,17 @@ static func lightning_contact_checks(parent: Node, actor_script: GDScript = null
 	stage.training.add_child(stage.training.feedback)
 	var encounter := ContactEncounter.new()
 	encounter.world = stage
+	stage.pressure_encounter = encounter
 	stage.add_child(encounter)
 	var enemy: CharacterBody3D = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
 	if actor_script: enemy.set_script(actor_script)
+	if actor_script == preload("res://combat/map02_ranged_adapter.gd"): enemy.stable_id = "map02_e02_ranged"
 	# Processing stays disabled, while manual recovery ticks retain a real
 	# physics-space body instead of triggering DISABLE_MODE_REMOVE.
 	enemy.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
 	enemy.encounter = encounter
 	encounter.add_child(enemy)
+	encounter.enemies.append(enemy)
 	enemy.home = Vector3(0,50,0)
 	enemy.position = enemy.home
 	enemy.navigation_ready = true
@@ -57,18 +68,25 @@ static func lightning_contact_checks(parent: Node, actor_script: GDScript = null
 	abilities.player = stage.player
 	stage.add_child(abilities)
 	abilities.cooldowns.lightning = 8.0
+	checks.immunity_unavailable_without_actor = abilities.e02_ranged_lightning_immunity_remaining == (0.0 if enemy.stable_id == "map02_e02_ranged" else null)
 	var original: Callable = enemy.handler.reaction
 	var reactions: Array[int] = [0]
 	var traced: Callable = func(result: Dictionary):
 		reactions[0] += 1
 		original.call(result)
 	enemy.handler.reaction = traced
-	var checks := {"real_reaction_bound":original.is_valid()}
+	checks.real_reaction_bound = original.is_valid()
 	checks.draw_started = enemy.action.perform_action() and enemy.phase == "telegraph"
 	var src: SnaielDamageSource = abilities.source(22)
 	abilities.settle(enemy,src,enemy.global_position,"lightning")
 	checks.single_damage_and_hurt = enemy.health == 14 and stage.training.contacts == 1 and stage.training.hp_loss == 22 and reactions[0] == 1 and enemy.phase == "hurt" and is_equal_approx(enemy.hurt_remaining,0.4)
 	checks.draw_interrupted_pose = not enemy.action.executing_action and enemy.action.stage == "idle" and enemy.presentation.current_animation == "Hit_Chest" and enemy.presentation.bow_state == "idle"
+	var observed_hurt: Dictionary = enemy._mcp_state()
+	checks.hurt_observation = observed_hurt.hurt_remaining == enemy.hurt_remaining and observed_hurt.hurt_pose == "Hit_Chest" and observed_hurt.ranged_executing == false and observed_hurt.ranged_stage == "idle" and observed_hurt.ranged_cooldown_remaining == enemy.action.cooldown
+	checks.hurt_observation_read_only = observed_hurt == enemy._mcp_state() and stage.training.contacts == 1 and enemy.handler.reaction == traced
+	if enemy.stable_id == "map02_e02_ranged":
+		checks.immunity_observation = abilities.e02_ranged_lightning_immunity_remaining == 2.0
+		checks.immunity_observation_read_only = abilities.e02_ranged_lightning_immunity_remaining == 2.0 and abilities.stagger_immunity.get(enemy.get_instance_id()) == 2.0
 	checks.callback_restored = enemy.handler.reaction == traced
 	abilities.settle(enemy,src,enemy.global_position,"lightning")
 	checks.duplicate_source_ignored = enemy.health == 14 and stage.training.contacts == 1 and reactions[0] == 1
@@ -85,6 +103,7 @@ static func lightning_contact_checks(parent: Node, actor_script: GDScript = null
 	if enemy.has_method("can_save"): checks.inherited_active_combat_blocks_save = not enemy.can_save()
 	enemy.action.tick(2.1,false)
 	checks.weapon_control_restored = enemy.action.can_perform_action and enemy.action.perform_action() and enemy.phase == "telegraph"
+	checks.recovery_observation = enemy.ranged_executing == true and enemy.ranged_stage == "telegraph" and enemy.hurt_remaining == 0 and enemy.hurt_pose == enemy.presentation.current_animation
 	enemy.navigation_ready = true
 	src = abilities.source(2)
 	abilities.settle(enemy,src,enemy.global_position,"fire")

@@ -48,7 +48,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not ground.place(self, player, xz): xz = ground.ENTRY; continue
-		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded: continue
+		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded: continue
 		# Qualify support and standing volume along the scoped approach, not an
 		# invisible replacement floor. The retained collision remains authoritative.
 		route_samples = 0
@@ -69,6 +69,10 @@ func _place_player() -> void:
 			for j in 5:
 				if ground.place(self, stance, points[i].lerp(points[i+1], float(j)/4.0)) and pressure_encounter.standing_clear(stance): pressure_route_samples += 1
 		pressure_route_ready = pressure_route_samples == 25
+		var clue_route_samples := 0
+		for i in 6:
+			if ground.place(self, stance, ground.PRESSURE_FLANK[1].lerp(ground.RECORD_APPROACH, float(i)/5.0)) and pressure_encounter.standing_clear(stance): clue_route_samples += 1
+		pressure_route_ready = pressure_route_ready and clue_route_samples == 6
 		stance.queue_free()
 		route_ready = route_samples == 20 and pressure_route_ready
 		if not route_ready:

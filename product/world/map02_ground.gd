@@ -9,6 +9,8 @@ const PRESSURE_COVER := Vector2(8, 58)
 const PRESSURE_APPROACH := Vector2(8, 53)
 const PRESSURE_FLANK := [Vector2(4, 57), Vector2(4, 61)]
 const RETURN := Vector2(-3, 25)
+const ROUTE_RECORD := Vector2(6, 66)
+const RECORD_APPROACH := Vector2(4, 65)
 
 static func in_bounds(xz: Vector2) -> bool:
 	return xz.is_finite() and xz.x >= -1100 and xz.x <= 700 and xz.y >= -1300 and xz.y <= 500

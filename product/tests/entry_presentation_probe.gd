@@ -3,6 +3,7 @@ extends Node
 var controls_absent: Dictionary = {}
 var pending_teardown: Dictionary = {}
 var checks: Dictionary = {}
+var departure_lifecycle: Dictionary = {}
 var sampled := false
 
 func _ready() -> void:
@@ -11,6 +12,7 @@ func _ready() -> void:
 	controls_absent = lifecycle.before
 	pending_teardown = lifecycle.pending_teardown
 	checks.lifecycle = lifecycle.checks
+	departure_lifecycle = lifecycle.departure
 	checks.guard_logic = preload("res://tests/channel_guard_test.gd").run()
 	checks.travel_logic = preload("res://tests/chapter_travel_test.gd").run()
 	checks.roadblock_logic = preload("res://tests/map02_roadblock_test.gd").run()
@@ -30,4 +32,4 @@ static func observation_boundaries() -> Dictionary:
 	return result
 
 func _mcp_state() -> Dictionary:
-	return {"sampled":sampled,"controls_absent":controls_absent,"pending_teardown":pending_teardown,"checks":checks}
+	return {"sampled":sampled,"controls_absent":controls_absent,"pending_teardown":pending_teardown,"departure_lifecycle":departure_lifecycle,"checks":checks}

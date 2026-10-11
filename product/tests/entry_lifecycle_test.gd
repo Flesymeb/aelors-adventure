@@ -15,7 +15,48 @@ static func run(_holder: Node) -> Dictionary:
 		"pending_teardown": world.is_queued_for_deletion() and pending.ready == false and pending.controls_visible == null,
 		"unavailable_state": before.preferences == null and before.objective == null and pending.tree_paused == null}
 	checks.merge(observer_lifecycle_checks())
-	return {"checks": checks, "before": before, "pending_teardown": pending}
+	var departure: Dictionary = departure_lifecycle_checks()
+	checks.merge(departure.checks)
+	return {"checks": checks, "before": before, "pending_teardown": pending, "departure": departure}
+
+
+static func departure_lifecycle_checks() -> Dictionary:
+	# Actual callbacks, detached and disabled: no product startup/save/audio.
+	var router: Node = preload("res://ui/game_entry_router.gd").new()
+	var world: Node = preload("res://preview_controller.gd").new()
+	var transition: Node = preload("res://ui/chapter_transition.gd").new()
+	router.world = world
+	router.source_world = world
+	router.transition = transition
+	router.destination_map = preload("res://world/map02_ground.gd").MAP02_ID
+	router.route = "travel_story"
+	var direct_before: Dictionary = transition._mcp_state()
+	var world_before: Dictionary = world._mcp_state()
+	var before: Dictionary = router._mcp_state()
+	var unchanged: bool = before == router._mcp_state() and direct_before == transition._mcp_state() and world_before == world._mcp_state()
+	world.process_mode = Node.PROCESS_MODE_DISABLED
+	transition.process_mode = Node.PROCESS_MODE_DISABLED
+	world.queue_free()
+	transition.queue_free()
+	var direct_pending: Dictionary = transition._mcp_state()
+	var world_pending: Dictionary = world._mcp_state()
+	var pending: Dictionary = router._mcp_state()
+	# Free immediately to exercise invalid handles, then leave the persistent
+	# owner alive. Both before and pending callbacks use the real scripts.
+	world.free()
+	transition.free()
+	var absent: Dictionary = router._mcp_state()
+	var checks := {
+		"departure_initial_projection": before.departure_phase == direct_before.phase and before.departure_transition_ready == false,
+		"departure_actual_world_callback": before.departure_controls_present == world_before.controls_ready and before.departure_control_ready == false,
+		"departure_read_only": unchanged and router.route == "travel_story",
+		"departure_pending_direct_unready": direct_pending.ready == false and world_pending.ready == false,
+		"departure_pending_null": pending.departure_phase == null and pending.departure_transition_ready == null and pending.departure_control_ready == null,
+		"departure_invalid_handles_null": absent.departure_phase == null and absent.departure_world_ready == null and absent.departure_controls_present == null,
+		"departure_owner_boundary_survives": absent.route == "travel_story" and absent.departure_destination == before.departure_destination and absent.departure_transition_present == false and absent.departure_source_present == false,
+		"departure_no_state_assumption": before.departure_current_map == null and absent.departure_cp02_claimed == null and absent.departure_lives == null}
+	router.free()
+	return {"checks":checks,"before":before,"direct_before":direct_before,"world_before":world_before,"pending":pending,"direct_pending":direct_pending,"world_pending":world_pending,"absent":absent}
 
 static func observer_lifecycle_checks() -> Dictionary:
 	# These are real observation implementations with no _ready invocation,
@@ -82,6 +123,8 @@ static func live_read_checks(router: Node) -> Dictionary:
 	var choices: Array = state.confirmed_choices.duplicate(true)
 	var route: String = router.route
 	var observed: Dictionary = router._mcp_state()
+	var departure_before: Dictionary = router._departure_observation()
+	var departure_after: Dictionary = router._departure_observation()
 	var audio_before: Dictionary = router.audio._mcp_state()
 	var audio_after: Dictionary = router.audio._mcp_state()
 	var checks := {"router_ready_shape": observed.ready == true and observed.route == route,
@@ -89,6 +132,8 @@ static func live_read_checks(router: Node) -> Dictionary:
 		"preferences_unchanged": state.preference_snapshot() == preferences,
 		"history_unchanged": state.training_snapshot() == history and state.confirmed_choices == choices,
 		"route_unchanged": router.route == route,
+		"departure_read_only": departure_before == departure_after,
+		"departure_nullable_shape": [null, true, false].has(departure_before.departure_transition_ready) and [null, true, false].has(departure_before.departure_control_ready),
 		"playback_not_reset": audio_after.music_position >= audio_before.music_position and audio_after.music_playing == audio_before.music_playing,
 		"audio_pause_unchanged": audio_after.music_paused == audio_before.music_paused and audio_after.voice_paused == audio_before.voice_paused and audio_after.last_cue == audio_before.last_cue}
 	if is_instance_valid(router.opening):

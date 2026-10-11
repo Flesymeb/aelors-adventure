@@ -115,7 +115,7 @@ func refresh_entries() -> void:
 		selection = ""
 		paragraph(quest_list, "已学操作可随时回看")
 		detail_heading.text = "行路与战斗"
-		details.text = "%s / %s / %s / %s 移动\n鼠标环视 · 滚轮拉近 / 拉远\n%s 切肩 · %s 切换视角\nJ 日志 · H 折叠目标 · Esc 暂停 · I 背包 · K 能力\n\n靠近人物后按 E 交谈。\n取得巡路剑后：左键挥剑，右键防御，适时按 E 振刀。\n取得巡路弓后：右键瞄准，按住左键蓄力，松开射箭；瞄准中滚轮不改变自由观察距离。\n\n旧灯：3 装备、F 显形、E 调查。元素：4 火焰、5 雷电。6 使用所设物品。\n完成练习后提示会收起；罗恩可以免费补箭。" % [world.player.key_prompt("forward"), world.player.key_prompt("left"), world.player.key_prompt("back"), world.player.key_prompt("right"), world.player.key_prompt("shoulder"), world.player.key_prompt("perspective")]
+		details.text = "%s / %s / %s / %s 移动\n鼠标环视 · 滚轮拉近 / 拉远\n%s 切肩 · %s 切换视角\nM 地图 · J 日志 · H 折叠目标 · Esc 暂停 · I 背包 · K 能力\n\n靠近人物后按 E 交谈。\n取得巡路剑后：左键挥剑，右键防御，适时按 E 振刀。\n取得巡路弓后：右键瞄准，按住左键蓄力，松开射箭；瞄准中滚轮不改变自由观察距离。\n\n旧灯：3 装备、F 显形、E 调查。元素：4 火焰、5 雷电。6 使用所设物品。\n完成练习后提示会收起；罗恩可以免费补箭。" % [world.player.key_prompt("forward"), world.player.key_prompt("left"), world.player.key_prompt("back"), world.player.key_prompt("right"), world.player.key_prompt("shoulder"), world.player.key_prompt("perspective")]
 		track_button.disabled = true
 	else:
 		var visible_rows: Array[Dictionary] = []

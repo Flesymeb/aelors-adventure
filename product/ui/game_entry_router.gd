@@ -260,7 +260,35 @@ func _mcp_state() -> Dictionary:
 	# needed to compare it with AdventureState; do not create another history.
 	for key in ["opening_completed", "logical_node", "q01_accepted", "experience", "sword_owned", "bow_owned", "lamp_owned", "lives", "arrows", "selected_equipment"]:
 		observation["previous_" + key] = previous_history.get(key)
+	observation.merge(_departure_observation())
 	return observation
+
+func _departure_observation() -> Dictionary:
+	# Project the current authorities; never retain a disposable node snapshot.
+	# The router keeps destination/route through teardown; absent dependencies
+	# are explicitly unavailable rather than a remembered successful boundary.
+	var live: bool = not is_queued_for_deletion()
+	var transition_live: bool = live and is_instance_valid(transition) and not transition.is_queued_for_deletion()
+	var world_live: bool = live and is_instance_valid(world) and not world.is_queued_for_deletion()
+	var state_live: bool = live and is_instance_valid(state) and not state.is_queued_for_deletion()
+	var presentation: Dictionary = transition._mcp_state() if transition_live else {}
+	var gameplay: Dictionary = world._mcp_state() if world_live else {}
+	return {
+		"departure_destination": destination_map if live and destination_map != "" else null,
+		"departure_transition_present": transition_live,
+		"departure_source_present": live and is_instance_valid(source_world) and not source_world.is_queued_for_deletion(),
+		"departure_phase": presentation.get("phase"),
+		"departure_transition_ready": presentation.get("ready"),
+		"departure_skipped": presentation.get("skipped"),
+		"departure_inputs_armed": presentation.get("inputs_armed"),
+		"departure_world_ready": gameplay.get("ready"),
+		"departure_controls_present": gameplay.get("controls_ready"),
+		"departure_product_paused": gameplay.get("product_paused"),
+		"departure_control_ready": (route == "world" and player_ready and gameplay.get("ready", false) and gameplay.get("player_ready", false) and gameplay.get("controls_ready", false) and not gameplay.get("product_paused", true)) if world_live else null,
+		"departure_current_map": state.current_map if state_live else null,
+		"departure_equipment": state.selected_equipment if state_live else null,
+		"departure_cp02_claimed": state.cp02_claimed if state_live else null,
+		"departure_lives": state.lives if state_live else null}
 
 func restore_map(slot: int) -> void:
 	# Existing history-reader validation and title entry remain the only load owner.
