@@ -1,0 +1,11 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="PackedScene" path="res://combat/snaiel/scenes/entities/BaseEnemy.tscn" id="1"]
+[ext_resource type="Script" path="res://combat/warden_enemy_adapter.gd" id="2"]
+[ext_resource type="Script" path="res://assets/bosses/warden_animation_driver.gd" id="3"]
+[ext_resource type="PackedScene" path="res://assets/bosses/warden_actor.glb" id="4"]
+[node name="Warden" instance=ExtResource("1")]
+script = ExtResource("2")
+actor_source = ExtResource("4")
+
+[node name="CharacterAnimations" parent="."]
+script = ExtResource("3")

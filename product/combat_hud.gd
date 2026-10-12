@@ -6,6 +6,9 @@ var enemy: VBoxContainer
 var enemy_name: Label
 var enemy_hp: ProgressBar
 var bridge_bars: Dictionary = {}
+var boss_rows: VBoxContainer
+var boss_name: Label
+var boss_hp: ProgressBar
 
 func _ready() -> void:
 	layer = 5
@@ -29,6 +32,15 @@ func _ready() -> void:
 	enemy.add_child(enemy_name)
 	enemy_hp = meter(Color(0.75, 0.18, 0.11), 24)
 	enemy.add_child(enemy_hp)
+	boss_rows = VBoxContainer.new()
+	boss_rows.add_theme_stylebox_override("panel",frame())
+	root.add_child(boss_rows)
+	boss_name = Label.new()
+	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_rows.add_child(boss_name)
+	boss_hp = meter(Color(0.65,0.12,0.2),240)
+	boss_hp.custom_minimum_size.x = 360
+	boss_rows.add_child(boss_hp)
 
 func frame() -> StyleBoxTexture:
 	var style = StyleBoxTexture.new()
@@ -58,6 +70,16 @@ func _process(_delta: float) -> void:
 	var state: Node = training.state
 	root.visible = training.world.pause_owners.is_empty()
 	var viewport = get_viewport().get_visible_rect().size
+	var boss: Node = training.world.get("warden_encounter")
+	boss_rows.visible = boss != null and boss.phase in ["battle","reveal"]
+	if boss_rows.visible:
+		boss_hp.max_value = boss.actor.health_component.max_health
+		boss_hp.value = boss.actor.health
+		boss_name.text = "锁印看守 · %d / %d" % [int(boss.actor.health),int(boss_hp.max_value)]
+		if boss.actor.phase == "telegraph": boss_name.text += " · 震荡：离开或闪避" if boss.actor.attack_kind == "wave" else " · 正面重击：可振刀"
+		boss_name.add_theme_font_size_override("font_size",int(20*minf(state.text_scale,1.5)))
+		boss_rows.size = boss_rows.get_combined_minimum_size()
+		boss_rows.position = Vector2((viewport.x-boss_rows.size.x)*0.5,viewport.y*0.15)
 	# Teaching/reward/restoration notices share the themed gameplay notification lane.
 	status.text = ""
 	var opponent: CharacterBody3D = training.monster

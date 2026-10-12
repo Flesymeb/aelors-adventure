@@ -170,6 +170,9 @@ static func live_read_checks(router: Node) -> Dictionary:
 	var history: Dictionary = state.training_snapshot().duplicate(true)
 	var choices: Array = state.confirmed_choices.duplicate(true)
 	var route: String = router.route
+	var tree_paused: bool = router.get_tree().paused
+	var mouse_mode: int = Input.mouse_mode
+	var focused: Control = router.get_viewport().gui_get_focus_owner()
 	var observed: Dictionary = router._mcp_state()
 	var departure_before: Dictionary = router._departure_observation()
 	var departure_after: Dictionary = router._departure_observation()
@@ -188,6 +191,7 @@ static func live_read_checks(router: Node) -> Dictionary:
 		var opening: Node = router.opening
 		var before: Dictionary = opening._mcp_state()
 		var after: Dictionary = opening._mcp_state()
+		checks.router_opening_matches_leaf = observed.opening == before
 		checks.opening_ready_shape = before.ready == true and before.beat is int and before.image is String
 		checks.opening_clock_unchanged = before.elapsed == after.elapsed and before.beat_elapsed == after.beat_elapsed and before.finished == after.finished
 		checks.opening_pause_unchanged = before.pause_owners == after.pause_owners and before.timeline_paused == after.timeline_paused
@@ -204,4 +208,5 @@ static func live_read_checks(router: Node) -> Dictionary:
 	checks.preferences_unchanged = state.preference_snapshot() == preferences
 	checks.history_unchanged = state.training_snapshot() == history and state.confirmed_choices == choices
 	checks.route_unchanged = router.route == route
+	checks.pause_input_ownership_preserved = router.get_tree().paused == tree_paused and Input.mouse_mode == mouse_mode and router.get_viewport().gui_get_focus_owner() == focused
 	return {"checks": checks, "route": route}

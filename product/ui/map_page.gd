@@ -49,6 +49,7 @@ class RouteDiagram extends Control:
 		var font := get_theme_default_font()
 		var ink := Color(0.2,0.15,0.08)
 		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口已净化 · 石阶" if state.ln02_purified else "入口结界 · 双供能"]]
+		if state.ln02_purified: marks.append([Vector2(0.60,0.015),"看守院 · 锁印已解除" if state.warden_lock_released else "看守院 · 检查装置" if state.warden_defeated else "看守院"])
 		if state.ln02_revealed:
 			marks.append_array([[Vector2(0.25,0.27),"北侧 · 已切断" if state.ln02_north_cut else "北侧 · 螺旋供能"],[Vector2(0.25,0.51),"南侧 · 已切断" if state.ln02_south_cut else "南侧 · 箭纹供能"]])
 		draw_polyline(PackedVector2Array([size*marks[1][0],size*marks[0][0],size*Vector2(0.5,0.32),size*marks[2][0]]),ink,3,true)
@@ -81,7 +82,7 @@ func _ready() -> void:
 func refresh() -> void:
 	# Give scaled labels their own vertical space; the retained page scrolls.
 	diagram.custom_minimum_size.y = 310 * state.text_scale
-	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + "\n两院营救区域仍被封锁。" if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
+	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + ("\n右侧石阶通往看守院；四位村民仍需逐人营救。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
 	diagram.queue_redraw()
 	reflow(self)
 

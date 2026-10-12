@@ -22,6 +22,11 @@ var portraits: Array[TextureRect] = []
 var advance_button: Button
 var sound: AudioStreamPlayer
 var panel_content: VBoxContainer
+const COUNTERPART_PORTRAITS := {
+	"isha": preload("res://assets/dialogue/isha_portrait.tres"),
+	"hers": preload("res://assets/dialogue/hers_portrait.tres"),
+	"ronen": preload("res://assets/dialogue/ronen_portrait.tres")
+}
 
 func _ready() -> void:
 	root = $Root
@@ -187,8 +192,7 @@ func _show_node(full := false) -> void:
 		choice_buttons.append(button)
 	advance_button.visible = definitions.is_empty() or not reveal_complete
 	if portraits.size() == 2:
-		var counterpart_path: String = "res://assets/dialogue/ronen_portrait.png" if state.dialogue_kind == "ronen" else ("res://assets/dialogue/hers_portrait.png" if state.dialogue_kind == "hers" else "res://assets/dialogue/isha_portrait.tres")
-		portraits[1].texture = load(counterpart_path) if ResourceLoader.exists(counterpart_path) else null
+		portraits[1].texture = COUNTERPART_PORTRAITS.get(state.dialogue_kind, COUNTERPART_PORTRAITS.isha)
 	for i in portraits.size():
 		portraits[i].modulate = Color.WHITE if (i == 1) == (node.speaker != "艾洛") else Color(0.6, 0.6, 0.6)
 	_layout()
@@ -291,7 +295,7 @@ func _mcp_state() -> Dictionary:
 	for button in choice_buttons:
 		choice_layout.append({"text": button.text, "disabled": button.disabled, "focused": button.has_focus(), "rect": _rect_observation(button.get_global_rect())})
 	var minimum := panel_content.get_combined_minimum_size()
-	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.text, "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "panel_rect": _rect_observation(panel.get_global_rect()), "reading_minimum": [minimum.x, minimum.y], "scroll_rect": _rect_observation(reading_scroll.get_global_rect()), "scroll_vertical": reading_scroll.scroll_vertical, "choices": choice_layout}
+	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.text, "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "counterpart_portrait_path": portraits[1].texture.resource_path if portraits.size() == 2 and portraits[1].texture else "", "player_portrait_active": portraits.size() == 2 and portraits[0].modulate == Color.WHITE, "counterpart_portrait_active": portraits.size() == 2 and portraits[1].modulate == Color.WHITE, "panel_rect": _rect_observation(panel.get_global_rect()), "reading_minimum": [minimum.x, minimum.y], "scroll_rect": _rect_observation(reading_scroll.get_global_rect()), "scroll_vertical": reading_scroll.scroll_vertical, "choices": choice_layout}
 
 func _rect_observation(rect: Rect2) -> Dictionary:
 	return {"position": [rect.position.x, rect.position.y], "size": [rect.size.x, rect.size.y]}

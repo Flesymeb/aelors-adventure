@@ -163,7 +163,7 @@ func resolve_practice_contact(_source: SnaielDamageSource, point: Vector3) -> Di
 
 func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dictionary:
 	var before: float = state.health
-	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false))
+	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false),not source.get_meta("unblockable",false),not source.get_meta("unparryable",false))
 	if outcome == "parry": source.get_parried()
 	return {"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_before": before, "hp_after": state.health, "hp_loss": before - state.health}
 
@@ -234,9 +234,11 @@ func restore_history() -> void:
 	if world.line_encounter: world.line_encounter.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
+	if world.get("warden_encounter"): world.warden_encounter.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
+	if world.get("warden_encounter") and not world.warden_encounter.can_save(): return false
 	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.pressure_encounter == null or world.pressure_encounter.can_save()) and (world.ambush_encounter == null or world.ambush_encounter.can_save()) and (world.line_encounter == null or world.line_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
 func commit() -> bool:
@@ -336,6 +338,7 @@ func recovery_duration() -> float:
 	return 0.5 if combo == 2 else 0.35
 
 func interrupt(_reason: String) -> void:
+	if world.get("warden_encounter") and _reason in ["death","load","recovery"]: world.warden_encounter.interrupt()
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
 	if world.channel_guards and _reason in ["death", "load", "recovery"]: world.channel_guards.interrupt()
 	if world.ambush_encounter and _reason in ["death", "load", "recovery"]: world.ambush_encounter.interrupt()
@@ -421,6 +424,7 @@ func advance_player(delta: float) -> void:
 		if world.line_encounter: registry.merge(world.line_encounter.registry())
 		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
+		if world.get("warden_encounter"): registry.merge(world.warden_encounter.registry())
 		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
 		# Hold the completed guard pose; do not restart it every frame.
@@ -432,7 +436,7 @@ func stop_on_contact(seconds: float) -> void:
 	player.animation_player.speed_scale = 0
 	sword_events.timeline.speed_scale = 0
 
-func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false) -> String:
+func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false, blockable = true, parryable = true) -> String:
 	last_hp_loss = 0
 	if player_locked(): return "unavailable"
 	if protection > 0: return "protected"
@@ -454,12 +458,12 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 			last_outcome = "dodge"
 		else: return "miss"
 	elif not in_range: return "miss"
-	elif blocking and front and parry_window > 0:
+	elif parryable and blocking and front and parry_window > 0:
 		last_outcome = "parry"
 		parry_window = 0
 		stop_on_contact(0.055)
 		feedback.impact(player.global_position + Vector3.UP, "◇ 振刀", 0, "parry")
-	elif blocking and front:
+	elif blockable and blocking and front:
 		last_outcome = "block"
 		last_hp_loss = 0 if simulated else minf(state.health, amount * 0.3)
 		feedback.impact(player.global_position + Vector3.UP, "◇ 格挡", last_hp_loss, "block")
@@ -509,7 +513,7 @@ func settle_death() -> void:
 	# One terminal cue carries the same clamped loss as the lethal outcome.
 	feedback.impact(player.global_position + Vector3.UP, "倒下", last_hp_loss, "death")
 	commit()
-	tell("命数 -1 · 剩余 %d · 返回河谷村庄灯台" % state.lives, 4)
+	tell("命数 -1 · 剩余 %d · 返回%s" % [state.lives,state.checkpoint_name()], 4)
 
 func recover_at_checkpoint() -> void:
 	if state.lives <= 0:
@@ -522,6 +526,7 @@ func recover_at_checkpoint() -> void:
 	if world.line_encounter: world.line_encounter.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
+	if world.get("warden_encounter"): world.warden_encounter.restore_history()
 	sim_phase = "idle"
 	hers.idle()
 	player.traversal.reset()

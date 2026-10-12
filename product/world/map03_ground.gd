@@ -9,6 +9,7 @@ const NORTH := Vector2(-4, -4)
 const SOUTH := Vector2(-4, 0)
 const DEVICE := Vector2(1.5, -5)
 const OPEN_ROUTE := [Vector2(4,-5), Vector2(4,-6), Vector2(4,-8.7), Vector2(4,-11)]
+const WARDEN_APPROACH := Vector2(4,-9)
 const RECORD_APPROACH := Vector2(2.5, -3)
 const ROUTE := [ENTRY, Vector2(0,0), Vector2(2.5,-3), Vector2(-2.5,-3), Vector2(-4,3), RETURN]
 

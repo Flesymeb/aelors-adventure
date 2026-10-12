@@ -297,7 +297,7 @@ func _process(_delta: float) -> void:
 		failure_armed = true
 	# Retain product pause intent after restart or an external debug step.
 	# Leave external freezes alone when there is no product pause owner.
-	if not pause_owners.is_empty() and not get_tree().paused:
+	if pause_owners.keys().any(func(owner): return owner != "warden_reveal") and not get_tree().paused:
 		get_tree().paused = true
 	if weapon_label and player:
 		var view_name := "FIRST PERSON" if player.first_person else ("LEFT SHOULDER" if player.shoulder_side < 0 else "RIGHT SHOULDER")
@@ -324,11 +324,29 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 	if enabled: pause_owners[owner_id] = true
 	else: pause_owners.erase(owner_id)
 	var now_paused := not pause_owners.is_empty()
+	_sync_dialogue_world_labels()
 	if now_paused != was_paused:
 		if now_paused and is_instance_valid(line_encounter): line_encounter.interrupt()
 		player.set_controls_open(now_paused)
 		get_tree().paused = now_paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if now_paused else Input.MOUSE_MODE_CAPTURED
+
+
+func _sync_dialogue_world_labels() -> void:
+	# Dialogue owns the foreground even while its nested settings/save panel is
+	# open. Suspend nearby training cues at their presentation owner; pausing a
+	# Label3D's process does not stop its rendering through transparent portraits.
+	var hidden_by_dialogue := pause_owners.has("dialogue")
+	for module in [training, bow_training]:
+		if not is_instance_valid(module): continue
+		for label in module.find_children("*", "Label3D", true, false):
+			if hidden_by_dialogue:
+				if not label.has_meta("dialogue_cue_visibility"):
+					label.set_meta("dialogue_cue_visibility", label.visible)
+				label.hide()
+			elif label.has_meta("dialogue_cue_visibility"):
+				label.visible = bool(label.get_meta("dialogue_cue_visibility"))
+				label.remove_meta("dialogue_cue_visibility")
 
 
 func _open_controls() -> void:
