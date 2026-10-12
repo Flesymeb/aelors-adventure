@@ -14,12 +14,13 @@ static func run(_holder: Node) -> Dictionary:
 		"read_only": before == unchanged,
 		"pending_teardown": world.is_queued_for_deletion() and pending.ready == false and pending.controls_visible == null,
 		"unavailable_state": before.preferences == null and before.objective == null and pending.tree_paused == null}
-	checks.merge(observer_lifecycle_checks())
+	var observers: Dictionary = observer_lifecycle_checks()
+	checks.merge(observers.checks)
 	var isha: Dictionary = isha_observer_checks()
 	checks.merge(isha.checks)
 	var departure: Dictionary = departure_lifecycle_checks()
 	checks.merge(departure.checks)
-	return {"checks": checks, "before": before, "pending_teardown": pending, "departure": departure, "isha": isha}
+	return {"checks": checks, "before": before, "pending_teardown": pending, "departure": departure, "isha": isha, "observers": observers.observations, "audio": observers.audio}
 
 
 static func isha_observer_checks() -> Dictionary:
@@ -108,13 +109,17 @@ static func observer_lifecycle_checks() -> Dictionary:
 	# These are real observation implementations with no _ready invocation,
 	# world construction, playback or save writes in the isolated fixture.
 	var checks := {}
+	var observations := {}
 	for path in ["ui/game_entry_router.gd", "ui/illustrated_opening.gd", "ui/chapter_transition.gd", "ui/title_settings.gd", "ui/menu_audio.gd", "world/map02_entry.gd", "world/chapter_pillar.gd"]:
 		var observer: Node = load("res://" + path).new()
+		var direct_before: Dictionary = direct_owner_fields(observer)
 		var initial: Dictionary = observer._mcp_state()
 		var repeated: Dictionary = observer._mcp_state()
+		var direct_after: Dictionary = direct_owner_fields(observer)
 		observer.process_mode = Node.PROCESS_MODE_DISABLED
 		observer.queue_free()
 		var pending: Dictionary = observer._mcp_state()
+		observations[path] = {"direct_before": direct_before, "initial": initial, "repeated": repeated, "direct_after": direct_after, "pending": pending, "direct_pending": direct_owner_fields(observer)}
 		checks[path + "_initial_shape"] = initial.has("ready") and initial.ready == false
 		checks[path + "_read_only"] = initial == repeated
 		checks[path + "_pending_teardown"] = observer.is_queued_for_deletion() and pending.ready == false
@@ -127,8 +132,9 @@ static func observer_lifecycle_checks() -> Dictionary:
 			checks.settings_focus_unavailable = initial.focus_name == null and pending.focus_name == null
 		if path == "world/chapter_pillar.gd":
 			checks.pillar_unavailable = initial.active == null and initial.player_distance == null and initial.player_in_range == null and initial.interaction_eligible == null and pending.interaction_eligible == null
-	checks.merge(detached_audio_checks())
-	return checks
+	var audio: Dictionary = detached_audio_checks()
+	checks.merge(audio.checks)
+	return {"checks": checks, "observations": observations, "audio": audio.observations}
 
 static func detached_audio_checks() -> Dictionary:
 	# Exercise real assigned dependencies and freed handles without entering the
@@ -147,25 +153,32 @@ static func detached_audio_checks() -> Dictionary:
 	observer.music.bus = "Music"
 	observer.voice = AudioStreamPlayer.new()
 	observer.voice.bus = "Effects"
+	var direct_before: Dictionary = direct_owner_fields(observer)
 	var before: Dictionary = observer._mcp_state()
 	var repeated: Dictionary = observer._mcp_state()
+	var direct_after: Dictionary = direct_owner_fields(observer)
 	observer.music.free()
 	observer.voice.free()
 	var freed_streams: Dictionary = observer._mcp_state()
 	observer.state.free()
 	var freed_state: Dictionary = observer._mcp_state()
 	observer.free()
-	return {"detached_audio_read_only": before == repeated,
+	return {"checks": {"detached_audio_read_only": before == repeated,
 		"detached_audio_not_started": before.ready == false and before.music_playing == false and before.playing == false,
 		"detached_audio_routes": before.music_bus == expected_music_bus and before.voice_bus == expected_voice_bus,
 		"detached_audio_bus_registry_unchanged": AudioServer.bus_count == bus_count and AudioServer.get_bus_index("Music") == music_bus_index and AudioServer.get_bus_index("Effects") == effects_bus_index,
 		"freed_streams_unavailable": freed_streams.ready == false and freed_streams.music_position == null and freed_streams.music_paused == null and freed_streams.voice_paused == null,
-		"freed_audio_state_unavailable": freed_state.ready == false and freed_state.muted == null}
+		"freed_audio_state_unavailable": freed_state.ready == false and freed_state.muted == null}, "observations": {"direct_before": direct_before, "before": before, "repeated": repeated, "direct_after": direct_after, "freed_streams": freed_streams, "freed_state": freed_state}}
 
 static func live_read_checks(router: Node) -> Dictionary:
 	# Opt-in check of the actual current entry boundary. Do not call the mutable
 	# adventure_snapshot() helper or apply preferences while measuring reads.
+	if not is_instance_valid(router):
+		return {"ready": false, "reason": "entry unavailable", "checks": {}, "observations": {}}
+	if not router.is_inside_tree() or not router.is_node_ready() or router.is_queued_for_deletion() or not is_instance_valid(router.state) or router.state.is_queued_for_deletion() or not is_instance_valid(router.audio) or router.audio.is_queued_for_deletion():
+		return {"ready": false, "reason": "live entry/state/audio unavailable", "checks": {}, "observations": {"direct": direct_owner_fields(router)}}
 	var state: Node = router.state
+	var direct_before: Dictionary = direct_owner_fields(router)
 	var preferences: Dictionary = state.preference_snapshot()
 	var history: Dictionary = state.training_snapshot().duplicate(true)
 	var choices: Array = state.confirmed_choices.duplicate(true)
@@ -178,6 +191,7 @@ static func live_read_checks(router: Node) -> Dictionary:
 	var departure_after: Dictionary = router._departure_observation()
 	var audio_before: Dictionary = router.audio._mcp_state()
 	var audio_after: Dictionary = router.audio._mcp_state()
+	var observations := {"direct_before": direct_before, "router": observed, "departure_before": departure_before, "departure_after": departure_after, "audio_before": audio_before, "audio_after": audio_after, "settings": {}}
 	var checks := {"router_ready_shape": observed.ready == true and observed.route == route,
 		"audio_ready_shape": audio_before.ready == true and audio_before.music_bus == "Music" and audio_before.voice_bus == "Effects",
 		"preferences_unchanged": state.preference_snapshot() == preferences,
@@ -189,8 +203,10 @@ static func live_read_checks(router: Node) -> Dictionary:
 		"audio_pause_unchanged": audio_after.music_paused == audio_before.music_paused and audio_after.voice_paused == audio_before.voice_paused and audio_after.last_cue == audio_before.last_cue}
 	if is_instance_valid(router.opening):
 		var opening: Node = router.opening
+		var opening_direct_before: Dictionary = direct_owner_fields(opening)
 		var before: Dictionary = opening._mcp_state()
 		var after: Dictionary = opening._mcp_state()
+		observations.opening = {"direct_before": opening_direct_before, "before": before, "after": after, "direct_after": direct_owner_fields(opening)}
 		checks.router_opening_matches_leaf = observed.opening == before
 		checks.opening_ready_shape = before.ready == true and before.beat is int and before.image is String
 		checks.opening_clock_unchanged = before.elapsed == after.elapsed and before.beat_elapsed == after.beat_elapsed and before.finished == after.finished
@@ -200,8 +216,10 @@ static func live_read_checks(router: Node) -> Dictionary:
 	for node in router.find_children("*", "Control", true, false):
 		var script: Script = node.get_script()
 		if script == null or script.resource_path != "res://ui/title_settings.gd": continue
+		var settings_direct_before: Dictionary = direct_owner_fields(node)
 		var before: Dictionary = node._mcp_state()
 		var after: Dictionary = node._mcp_state()
+		observations.settings[str(node.get_path())] = {"direct_before": settings_direct_before, "before": before, "after": after, "direct_after": direct_owner_fields(node)}
 		checks.settings_ready_shape = before.ready == true and before.preferences is Dictionary and before.bindings is Dictionary
 		checks.settings_read_only = before == after
 	# Compare after every observer has run, including nested opening/settings.
@@ -209,4 +227,59 @@ static func live_read_checks(router: Node) -> Dictionary:
 	checks.history_unchanged = state.training_snapshot() == history and state.confirmed_choices == choices
 	checks.route_unchanged = router.route == route
 	checks.pause_input_ownership_preserved = router.get_tree().paused == tree_paused and Input.mouse_mode == mouse_mode and router.get_viewport().gui_get_focus_owner() == focused
-	return {"checks": checks, "route": route}
+	observations.direct_after = direct_owner_fields(router)
+	return {"ready": true, "checks": checks, "route": route, "observations": observations}
+
+static func direct_owner_fields(owner: Node) -> Dictionary:
+	# Independent raw reads in the opted-in fixture: no observer methods, bus
+	# application, timeline advancement, snapshot mutation, playback or file I/O.
+	var result := {"sample_us": Time.get_ticks_usec(), "bus_count": AudioServer.bus_count, "buses": {}}
+	for bus in ["Master", "Music", "Effects"]:
+		var index := AudioServer.get_bus_index(bus)
+		var data := {"index": index}
+		if index >= 0:
+			data.merge({"volume_db": AudioServer.get_bus_volume_db(index), "muted": AudioServer.is_bus_mute(index), "bypassed": AudioServer.is_bus_bypassing_effects(index), "send": str(AudioServer.get_bus_send(index)), "effects": []})
+			for effect_index in AudioServer.get_bus_effect_count(index):
+				var effect := AudioServer.get_bus_effect(index, effect_index)
+				data.effects.append({"name": effect.resource_name, "enabled": AudioServer.is_bus_effect_enabled(index, effect_index), "gain_db": effect.volume_db if effect is AudioEffectAmplify else null})
+		result.buses[bus] = data
+	if not is_instance_valid(owner): return result
+	result.merge({"inside_tree": owner.is_inside_tree(), "node_ready": owner.is_node_ready(), "queued_for_deletion": owner.is_queued_for_deletion()})
+	var script: Script = owner.get_script()
+	var script_path: String = script.resource_path
+	# The disposable adventure overrides persistence through a router subclass.
+	# Walk actual inheritance rather than losing direct baselines for that owner.
+	while script_path not in ["res://ui/game_entry_router.gd", "res://ui/title_settings.gd", "res://ui/menu_audio.gd", "res://ui/illustrated_opening.gd"] and script.get_base_script() != null:
+		script = script.get_base_script()
+		script_path = script.resource_path
+	var state: Node
+	if script_path == "res://ui/game_entry_router.gd":
+		state = owner.state
+		result.merge({"route": owner.route, "initialized": owner.initialized, "player_ready": owner.player_ready, "previous_history": owner.previous_history.duplicate(true), "tree_paused": owner.get_tree().paused if owner.is_inside_tree() else null})
+		result.audio = direct_owner_fields(owner.audio) if is_instance_valid(owner.audio) else null
+		result.opening = direct_owner_fields(owner.opening) if is_instance_valid(owner.opening) else null
+	elif script_path == "res://ui/title_settings.gd":
+		state = owner.host.state if is_instance_valid(owner.host) else null
+		result.merge({"group": owner.group, "capturing": owner.capturing})
+	elif script_path == "res://ui/menu_audio.gd" or script_path == "res://ui/illustrated_opening.gd":
+		state = owner.state
+		var channels := ["music", "voice"] if script_path == "res://ui/menu_audio.gd" else ["music", "ambience", "cue"]
+		result.streams = {}
+		for channel in channels:
+			var player: AudioStreamPlayer = owner.get(channel)
+			result.streams[channel] = {"bus": str(player.bus), "playing": player.playing, "paused": player.stream_paused, "position": player.get_playback_position(), "volume_db": player.volume_db} if is_instance_valid(player) and not player.is_queued_for_deletion() else null
+		if script_path == "res://ui/menu_audio.gd": result.last_cue = owner.last_cue
+		else:
+			result.merge({"beat_index": owner.beat, "beat_elapsed": owner.elapsed, "elapsed": owner.total_elapsed, "finished": owner.finished, "inputs_armed": owner.inputs_armed, "skip_hold": owner.skip_hold, "pause_menu_present": is_instance_valid(owner.pause_menu) and not owner.pause_menu.is_queued_for_deletion()})
+	result.state_available = is_instance_valid(state) and not state.is_queued_for_deletion()
+	if result.state_available:
+		result.preferences = {}
+		for key in state.PREFERENCE_DEFAULTS: result.preferences[key] = state.get(key)
+		result.preference_error = state.preference_error
+		result.history = {}
+		for key in state.TRAINING_KEYS: result.history[key] = state.get(key)
+		for key in state.POST_DEFAULTS: result.history[key] = state.get(key)
+		result.history = result.history.duplicate(true)
+		result.confirmed_choices = state.confirmed_choices.duplicate(true)
+		result.opening_completed = state.opening_completed
+	return result

@@ -8,3 +8,5 @@ extends Resource
 @export var contact_time = 0.15
 @export var recovery = 0.35
 @export var strike_delay = 0.0
+@export var airborne = false
+@export var landing_recovery = 0.22

@@ -3,6 +3,13 @@ extends Node3D
 ## Snaiel melee/hitboxes own attack windows, instances and contact settlement.
 const DAMAGES = [12.0, 15.0, 20.0]
 const CLIPS = ["sword/Sword_Regular_A", "sword/Sword_Regular_B", "sword/Sword_Regular_C"]
+const AERIAL_INDEX = 3
+const AERIAL_DAMAGE = 24.0
+var aerial_active = false
+var aerial_used = false
+var aerial_landed = false
+var aerial_recovery_left = 0.0
+var aerial_animation_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 const GROUND = preload("res://forest_ground.gd")
 const CP01 = GROUND.SPAWN
 const PRACTICE_XZ = GROUND.PRACTICE
@@ -105,6 +112,7 @@ func bind_player_combat() -> void:
 		strategy.damage_attributes.health = DAMAGES[index]
 		strategy.recovery = 0.5 if index == 2 else 0.35
 		strategies.append(strategy)
+	strategies.append(aerial_strategy())
 	sword_events.configure(strategies)
 	sword_melee = SnaielMelee.new()
 	sword_melee.name = "SwordMelee"
@@ -134,6 +142,17 @@ func bind_player_combat() -> void:
 	add_child(environment_hitbox)
 	sword_melee.obstruction_hitbox = environment_hitbox
 
+static func aerial_strategy() -> SnaielMeleeAttack:
+	var aerial = SnaielMeleeAttack.new()
+	aerial.attack_name = "sword/Aerial_Heavy"
+	aerial.airborne = true
+	aerial.damage_attributes.health = AERIAL_DAMAGE
+	# Retained UAL2 overhead: source 2.1..3.45 at 2.4x, one down-cut.
+	aerial.anticipation = 0.18
+	aerial.contact_time = 0.13
+	aerial.recovery = 1.35 / 2.4 - 0.31
+	return aerial
+
 func sword_stage(stage: String) -> void:
 	clock = 0
 	if stage == "anticipation": phase = "anticipation"
@@ -142,10 +161,14 @@ func sword_stage(stage: String) -> void:
 		feedback.swing()
 	elif stage == "recovery":
 		phase = "recovery"
+		if aerial_active: return
 		player.current_animation = ""
 		if combo < 2: player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
 
 func sword_finished() -> void:
+	if aerial_active:
+		phase = "air_recovery"
+		return
 	if buffered and combo < 2 and not player_locked():
 		combo += 1
 		start_swing()
@@ -170,7 +193,7 @@ func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dict
 func resolved_enemy_contact(result: Dictionary) -> void:
 	var defeated: bool = result.outcome == "defeat"
 	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit", result)
-	if result.source_id == sword_source.get_instance_id() and combo == 2: stop_on_contact(0.045)
+	if result.source_id == sword_source.get_instance_id() and (combo == 2 or aerial_active): stop_on_contact(0.045)
 
 func ground_module() -> void:
 	if world.meadow_slice:
@@ -300,15 +323,25 @@ func player_locked() -> bool:
 	return state.lives <= 0 or phase == "death" or hurt_time > 0
 
 func motion_restricted() -> bool:
-	return phase in ["anticipation", "contact", "recovery"] or blocking
+	return phase in ["anticipation", "contact", "recovery", "air_recovery", "landing_recovery"] or blocking
 
 func pose_owned() -> bool:
 	return motion_restricted() or player_locked() or hit_stop > 0
 
 func request_attack() -> void:
 	if player.abilities and player.abilities.busy(): return
-	if player_locked() or player.controls_open or player.switch_timer > 0 or not player.is_on_floor() or player.traversal.action != "" or player.traversal.posture != "standing": return
+	if player_locked() or player.controls_open or player.switch_timer > 0 or player.traversal.action != "" or player.traversal.posture != "standing": return
 	if not state.sword_owned or player.weapon_mode != "sword": return
+	if not player.is_on_floor():
+		if phase != "idle" or aerial_used or player.traversal.step_grace > 0.0 or player.traversal.air_time <= 0.0: return
+		if not player.animation_player.has_animation(player.AERIAL_CLIP): return
+		aerial_active = true
+		aerial_used = true
+		aerial_landed = false
+		combo = AERIAL_INDEX
+		start_swing()
+		return
+	if aerial_active: return
 	if phase == "recovery" and clock >= recovery_duration() - 0.2 and combo < 2:
 		buffered = true
 		return
@@ -329,13 +362,32 @@ func start_swing() -> void:
 	player.visual.rotation.y = atan2(facing.x, facing.z)
 	player.current_animation = ""
 	# Imported clip contact is compressed to the product's 0.35s attack interval.
-	var length: float = player.animation_player.get_animation(CLIPS[combo]).length
-	player._play_animation(CLIPS[combo], length / 0.35)
+	if aerial_active:
+		aerial_animation_process = player.animation_player.callback_mode_process
+		player.animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
+		player._play_animation(player.AERIAL_CLIP, player.AERIAL_PLAYBACK_SPEED)
+		player.animation_player.advance(0.0)
+	else:
+		var length: float = player.animation_player.get_animation(CLIPS[combo]).length
+		player._play_animation(CLIPS[combo], length / 0.35)
 	sword_source.global_position = player.global_position
 	sword_melee.attack(combo, true, false)
 
 func recovery_duration() -> float:
 	return 0.5 if combo == 2 else 0.35
+
+func sword_landed() -> void:
+	aerial_used = false
+	if not aerial_active: return
+	# Landing never starts a second segment. It closes even a late strike.
+	sword_melee.interrupt_attack()
+	player.animation_player.callback_mode_process = aerial_animation_process
+	aerial_landed = true
+	phase = "landing_recovery"
+	clock = 0
+	aerial_recovery_left = sword_events.attacks[AERIAL_INDEX].landing_recovery
+	player.current_animation = ""
+	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
 	if world.get("warden_encounter") and _reason in ["death","load","recovery"]: world.warden_encounter.interrupt()
@@ -349,6 +401,13 @@ func interrupt(_reason: String) -> void:
 	player.reset_archery()
 	if world.bow_training and _reason in ["death", "load", "recovery"]: world.bow_training.clear_transients()
 	buffered = false
+	if aerial_active and player.animation_player:
+		player.animation_player.callback_mode_process = aerial_animation_process
+	aerial_active = false
+	aerial_landed = false
+	aerial_recovery_left = 0
+	# Hurt/switch/dodge cannot buy a second strike in the same airborne arc.
+	if _reason in ["death", "load", "recovery"]: aerial_used = false
 	blocking = false
 	parry_window = 0
 	if sword_melee: sword_melee.interrupt_attack()
@@ -414,6 +473,14 @@ func advance_player(delta: float) -> void:
 			sword_events.timeline.speed_scale = 1
 		return
 	if player.traversal.action != "" and phase != "idle": interrupt("dodge")
+	if aerial_active and phase == "landing_recovery":
+		clock += delta
+		aerial_recovery_left = maxf(0.0, aerial_recovery_left - delta)
+		if aerial_recovery_left <= 0:
+			aerial_active = false
+			phase = "idle"
+			player.current_animation = ""
+		return
 	if phase in ["anticipation", "contact", "recovery"]: clock += delta
 	if sword_source.can_damage:
 		sword_source.global_position = player.global_position
@@ -425,7 +492,12 @@ func advance_player(delta: float) -> void:
 		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
 		if world.get("warden_encounter"): registry.merge(world.warden_encounter.registry())
-		sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
+		if aerial_active:
+			# Contact follows the retained hand mount and blade's local +Y axis.
+			# No body-centred aerial sphere or landing shockwave can award a hit.
+			sword_melee.sweep(player, player.sword_holder.global_position, player.sword_holder.global_basis.y.normalized(), registry, 3, true)
+		else:
+			sword_melee.sweep(player, player.global_position + Vector3.UP * 0.95, player.visual.global_basis.z.normalized(), registry, 3)
 	if blocking and player.animation_player.current_animation == "sword/Sword_Block":
 		# Hold the completed guard pose; do not restart it every frame.
 		if player.animation_player.current_animation_position >= 0.5: player.animation_player.pause()
@@ -654,7 +726,7 @@ func collect_remnant() -> void:
 	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
+	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.

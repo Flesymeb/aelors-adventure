@@ -148,13 +148,13 @@ func _receive_attacking_finished() -> void:
 	stop_attacking()
 
 # Product contact geometry adapter. HitboxComponent exclusively settles instances.
-func sweep(body: CharacterBody3D, origin: Vector3, forward: Vector3, recipients: Dictionary, mask: int) -> void:
+func sweep(body: CharacterBody3D, origin: Vector3, forward: Vector3, recipients: Dictionary, mask: int, weapon_contact = false) -> void:
 	var space = body.get_world_3d().direct_space_state
 	var shape = SphereShape3D.new()
 	shape.radius = 0.65
 	var query = PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
-	query.transform = Transform3D(Basis.IDENTITY, origin + forward * 0.85)
+	query.transform = Transform3D(Basis.IDENTITY, origin + forward * (0.4 if weapon_contact else 0.85))
 	query.collision_mask = mask
 	query.exclude = [body.get_rid()]
 	for hit in space.intersect_shape(query, 8):
@@ -169,7 +169,7 @@ func sweep(body: CharacterBody3D, origin: Vector3, forward: Vector3, recipients:
 			if source.can_damage: recipients[victim].contact(source, point)
 
 	if obstruction_hitbox:
-		var ray = PhysicsRayQueryParameters3D.create(origin, origin + forward * 1.5, mask, [body.get_rid()])
+		var ray = PhysicsRayQueryParameters3D.create(origin, origin + forward * (0.8 if weapon_contact else 1.5), mask, [body.get_rid()])
 		var wall = space.intersect_ray(ray)
 		if not wall.is_empty() and not recipients.has(wall.collider):
 			for path in weapons.values():

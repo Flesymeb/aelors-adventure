@@ -24,6 +24,11 @@ var abilities: Node
 var owns_lamp := false
 var combat: Node
 const SWORD_ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
+const AERIAL_CLIP := "sword/Aerial_Heavy"
+const AERIAL_SOURCE_START := 2.1
+const AERIAL_SOURCE_END := 3.45
+const AERIAL_PLAYBACK_SPEED := 2.4
+var sword_press_held := false
 
 # One source for dispatch, held input, controls UI and gameplay prompts.
 const CONTROL_DEFAULTS := {
@@ -163,6 +168,7 @@ func _ready() -> void:
 			var library: AnimationLibrary = extra.get_node("AnimationPlayer").get_animation_library("").duplicate(true)
 			animation_player.add_animation_library("sword", library)
 			extra.free()
+			_bind_aerial_sword_segment(library)
 		_attach_weapons()
 		_apply_skin()
 		_setup_archery()
@@ -338,6 +344,7 @@ func track_modal_input(event: InputEvent) -> void:
 
 func set_controls_open(open: bool) -> void:
 	_block_held_controls()
+	sword_press_held = false
 	controls_open = open
 	reset_archery()
 	# The world pause freezes the action clock, contact and parry window.
@@ -426,6 +433,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton:
 		if not event.pressed:
 			blocked_mouse.erase(event.button_index)
+			if event.button_index == MOUSE_BUTTON_LEFT: sword_press_held = false
 		elif controls_open:
 			blocked_mouse[event.button_index] = true
 	if get_parent().has_method("handle_controls_input") and get_parent().handle_controls_input(event):
@@ -462,7 +470,11 @@ func _input(event: InputEvent) -> void:
 			else:
 				release_bow()
 		elif event.pressed:
-			_attack()
+			if not sword_press_held:
+				sword_press_held = true
+				_attack()
+		else:
+			sword_press_held = false
 
 
 func _notification(what: int) -> void:
@@ -678,6 +690,9 @@ func _update_bow_visual() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_camera_shake(delta)
+	# Native release can arrive during a paused/focus boundary. Reconcile only
+	# the released physical button; a held click never rearms an attack.
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT): sword_press_held = false
 	if controls_open:
 		return
 	if combat:
@@ -708,7 +723,7 @@ func _physics_process(delta: float) -> void:
 	var grounded_before: bool = is_on_floor() or traversal.step_grace > 0.0
 	var fall_speed := velocity.y
 	if grounded_before:
-		if control_held("jump") and traversal.posture == "standing" and traversal.action == "":
+		if control_held("jump") and traversal.posture == "standing" and traversal.action == "" and (combat == null or not combat.motion_restricted()):
 			cancel_aim()
 			velocity.y = JUMP_SPEED
 			traversal.step_grace = 0.0
@@ -722,6 +737,8 @@ func _physics_process(delta: float) -> void:
 	traversal.move_with_steps(delta)
 	if is_on_floor() and not grounded_before and fall_speed < -1.0 and traversal.air_time > 0.08:
 		traversal.landing_timer = 0.28 if fall_speed < -8.0 else 0.18
+	if combat and is_on_floor() and not grounded_before:
+		combat.sword_landed()
 	if is_on_floor():
 		traversal.air_time = 0.0
 	else:
@@ -803,6 +820,39 @@ func _update_animation(moving: bool) -> void:
 	else:
 		_play_animation("Sword_Idle" if weapon_mode == "sword" else "Idle")
 
+
+func _bind_aerial_sword_segment(library: AnimationLibrary) -> void:
+	# UAL2's final overhead cut only; exclude the preceding two strikes.
+	# Preserve the licensed source animation and its rig paths unchanged.
+	if not library.has_animation("Sword_Heavy_Combo") or skeleton == null: return
+	var source: Animation = library.get_animation("Sword_Heavy_Combo")
+	var clip: Animation = source.duplicate(true)
+	clip.length = AERIAL_SOURCE_END - AERIAL_SOURCE_START
+	clip.loop_mode = Animation.LOOP_NONE
+	var pelvis: int = skeleton.find_bone("pelvis")
+	var parent_basis: Basis = skeleton.get_bone_global_rest(skeleton.get_bone_parent(pelvis)).basis
+	var anchor: Vector3 = parent_basis * skeleton.get_bone_rest(pelvis).origin
+	for track in clip.get_track_count():
+		var type: int = source.track_get_type(track)
+		if type not in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]: continue
+		for key in range(clip.track_get_key_count(track) - 1, -1, -1): clip.track_remove_key(track, key)
+		var times: Array[float] = [AERIAL_SOURCE_START, AERIAL_SOURCE_END]
+		for key in source.track_get_key_count(track):
+			var time: float = source.track_get_key_time(track, key)
+			if time > AERIAL_SOURCE_START and time < AERIAL_SOURCE_END: times.append(time)
+		for time in times:
+			var value: Variant
+			if type == Animation.TYPE_POSITION_3D:
+				value = source.position_track_interpolate(track, time)
+				if str(source.track_get_path(track)).ends_with(":pelvis"):
+					# Body physics owns translation, as in the retained roll adapter.
+					var world_value: Vector3 = parent_basis * value
+					value = parent_basis.inverse() * Vector3(anchor.x, world_value.y, anchor.z)
+			elif type == Animation.TYPE_ROTATION_3D: value = source.rotation_track_interpolate(track, time)
+			else: value = source.scale_track_interpolate(track, time)
+			clip.track_insert_key(track, time - AERIAL_SOURCE_START, value)
+		clip.track_set_interpolation_loop_wrap(track, false)
+	library.add_animation("Aerial_Heavy", clip)
 
 func _play_animation(name: String, speed: float = 1.0) -> void:
 	if animation_player == null or current_animation == name:
@@ -912,6 +962,12 @@ func _mcp_state() -> Dictionary:
 	# suppression separately from physically held buttons. No input dispatch.
 	var combat_state: Dictionary = observation.combat
 	observation.merge({"attack_instance": combat_state.get("attack_instance", 0),
+		"attack_clip": str(animation_player.current_animation) if animation_player else "",
+		"attack_clip_position": animation_player.current_animation_position if animation_player else 0.0,
+		"attack_clip_playing": animation_player.is_playing() if animation_player else false,
+		"aerial_active": combat_state.get("aerial_active", false),
+		"aerial_used": combat_state.get("aerial_used", false),
+		"damage_window": combat_state.get("damage_window", false),
 		"switch_timer": switch_timer, "grounded": is_on_floor(),
 		"combat_locked": combat.player_locked() if combat else false,
 		"traversal_action": traversal.action if traversal else "", "posture": traversal.posture if traversal else "standing",
