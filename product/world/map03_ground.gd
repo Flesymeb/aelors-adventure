@@ -37,11 +37,11 @@ static func place(world: Node3D, body: Node3D, xz: Vector2) -> bool:
 	var hit := support(world,xz,excludes)
 	if hit.is_empty(): return false
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.38
-	capsule.height = 1.8
+	capsule.radius = float(body.get_meta("ground_radius",0.38))
+	capsule.height = float(body.get_meta("ground_height",1.8))
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = capsule
-	query.transform.origin = hit.position + Vector3.UP * 1.0
+	query.transform.origin = hit.position + Vector3.UP * (capsule.height * 0.5 + 0.12)
 	query.collision_mask = 1
 	query.exclude = excludes
 	if not world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): return false
@@ -64,5 +64,20 @@ static func route_clear(world: Node3D, xz: Vector2) -> bool:
 	query.shape = capsule
 	query.transform.origin = hit.position + Vector3.UP * 1.65
 	query.collision_mask = 1
+	query.exclude = exclusions
+	return world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
+
+static func creature_clear(world: Node3D, xz: Vector2, radius: float, height: float, excludes: Array) -> bool:
+	var hit := support(world,xz,excludes)
+	if hit.is_empty(): return false
+	var shape := CapsuleShape3D.new()
+	shape.radius = radius
+	shape.height = maxf(height,radius*2)
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform.origin = hit.position + Vector3.UP * (shape.height*0.5 + 0.12)
+	query.collision_mask = 1
+	var exclusions: Array[RID] = []
+	exclusions.assign(excludes)
 	query.exclude = exclusions
 	return world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()

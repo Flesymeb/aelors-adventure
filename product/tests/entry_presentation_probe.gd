@@ -1,5 +1,9 @@
 extends Node
 ## Opt-in scene only. No title hook, progression bypass or player-save writes.
+@export_enum("aggregate", "settings_audio", "opening_router") var probe_selection := "aggregate"
+var selection_error := ""
+var settings_audio_lifecycle: Dictionary = {}
+var opening_router_lifecycle: Dictionary = {}
 var controls_absent: Dictionary = {}
 var pending_teardown: Dictionary = {}
 var checks: Dictionary = {}
@@ -10,6 +14,24 @@ var sampled := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# This argument is interpreted only by the explicitly launched probe scene.
+	# Production entry never loads this script or consumes the selector.
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--entry-probe="):
+			probe_selection = argument.trim_prefix("--entry-probe=")
+	if probe_selection == "settings_audio":
+		settings_audio_lifecycle = preload("res://tests/entry_lifecycle_test.gd").settings_audio_lifecycle_checks()
+		checks.lifecycle = settings_audio_lifecycle.checks
+		sampled = true
+		return
+	if probe_selection == "opening_router":
+		opening_router_lifecycle = preload("res://tests/entry_lifecycle_test.gd").opening_router_lifecycle_checks()
+		checks.lifecycle = opening_router_lifecycle.checks
+		sampled = true
+		return
+	if probe_selection != "aggregate":
+		selection_error = "Unknown entry probe selection"
+		return
 	var lifecycle: Dictionary = preload("res://tests/entry_lifecycle_test.gd").run(self)
 	controls_absent = lifecycle.before
 	pending_teardown = lifecycle.pending_teardown
@@ -36,7 +58,7 @@ static func observation_boundaries() -> Dictionary:
 	return result
 
 func _mcp_state() -> Dictionary:
-	return {"sampled":sampled,"controls_absent":controls_absent,"pending_teardown":pending_teardown,"departure_lifecycle":departure_lifecycle,"observer_lifecycle":observer_lifecycle,"audio_lifecycle":audio_lifecycle,"checks":checks}
+	return {"sampled":sampled,"selection":probe_selection,"selection_error":selection_error,"settings_audio_lifecycle":settings_audio_lifecycle,"opening_router_lifecycle":opening_router_lifecycle,"controls_absent":controls_absent,"pending_teardown":pending_teardown,"departure_lifecycle":departure_lifecycle,"observer_lifecycle":observer_lifecycle,"audio_lifecycle":audio_lifecycle,"checks":checks}
 
 static func qualify_live_inputs(router: Node) -> Dictionary:
 	# Call only in an opted-in probe or from the runtime reader. No commands,

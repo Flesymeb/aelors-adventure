@@ -30,8 +30,44 @@ func _ready() -> void:
 	router.name = "WardenDiagnostic"
 	add_child(router)
 
+class PhaseEncounter extends Node3D:
+	var cues := 0
+	func enter_pressure_phase() -> void: cues += 1
+
+static func binding_checks() -> Dictionary:
+	var native: Node3D = preload("res://assets/bosses/warden_actor.glb").instantiate()
+	var animator: AnimationPlayer = native.find_child("AnimationPlayer",true,false)
+	var skeleton: Skeleton3D = native.find_child("Skeleton3D",true,false)
+	var checks := {"native_complete":skeleton != null and native.find_children("*","MeshInstance3D",true,false).size() == 2,
+		"native_boulder_bone":skeleton.find_bone("Boulder.r_12") >= 0,
+		"native_clips":animator.has_animation("Idle") and animator.has_animation("Walk") and animator.has_animation("Attack1") and animator.has_animation("Attack3") and animator.has_animation("Defence3") and animator.has_animation("IdlePieces")}
+	for key in ["Idle","Walk","Attack1","Attack3","Defence3","IdlePieces"]:
+		var clip: Animation = animator.get_animation(key)
+		for track in clip.get_track_count():
+			var path: NodePath = clip.track_get_path(track)
+			var node: Node = animator.get_node(animator.root_node).get_node_or_null(NodePath(path.get_concatenated_names()))
+			checks[key+"_native_track_root"] = checks.get(key+"_native_track_root",true) and node == skeleton and skeleton.find_bone(path.get_subname(0)) >= 0
+	var death: Animation = preload("res://assets/bosses/warden_animation_driver.gd").reversed_clip(animator.get_animation("IdlePieces"))
+	checks.native_death_reverse = is_equal_approx(death.length,6.25) and death.get_track_count()==28
+	for track in death.get_track_count():
+		var source: Animation = animator.get_animation("IdlePieces")
+		checks["death_reverses_track_"+str(track)] = death.track_get_key_value(track,0)==source.track_get_key_value(track,source.track_get_key_count(track)-1)
+	var actor: Node = preload("res://assets/bosses/warden_actor.tscn").instantiate()
+	var encounter := PhaseEncounter.new()
+	actor.encounter = encounter
+	actor.health_component = actor.get_node("HealthComponent")
+	actor.health_component.max_health = 240
+	actor.health_component.health = 121
+	checks.no_early_phase = not actor.enter_pressure_if_needed() and encounter.cues==0
+	actor.health_component.health = 120
+	checks.threshold_once_without_heal = actor.enter_pressure_if_needed() and actor.health==120 and actor.pressure_phase and not actor.next_wave and encounter.cues==1
+	actor.health_component.health = 60
+	checks.phase_not_replayed = not actor.enter_pressure_if_needed() and actor.health==60 and actor.pressure_changes==1 and encounter.cues==1
+	actor.free(); encounter.free(); native.free()
+	return checks
+
 static func run() -> Dictionary:
-	var checks := {}
+	var checks := binding_checks()
 	var state: Node = CIRCUIT.prepared()
 	checks.blocked_before_ln02 = not state.defeat_warden() and not state.inspect_warden_device()
 	state.reveal_ln02(); state.cut_ln02_supply("south"); state.cut_ln02_supply("north"); state.purify_ln02()

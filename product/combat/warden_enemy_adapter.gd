@@ -7,7 +7,13 @@ const WAVE_RADIUS := 1.8
 var encounter: Node3D
 var stable_id := "warden"
 var display_name := "锁印看守"
-var next_wave := false
+var next_wave := true
+var pressure_phase := false
+var pressure_changes := 0
+const BODY_HEIGHT := 2.5
+const BODY_RADIUS := 0.68
+const VISUAL_CLEARANCE := 1.35
+const BOULDER_RADIUS := 0.48
 var attack_kind := ""
 var wave_source: SnaielDamageSource
 var attacks_started := 0
@@ -23,6 +29,7 @@ func _ready() -> void:
 	enabled_policy = func(): return encounter.combat_allowed() and navigation_ready and not encounter.state.warden_defeated
 	ground_query = func(point: Vector3):
 		if point.x < 1.25 or point.x > 6.25 or point.z > -8.5 or point.z < -14.6: return {}
+		if not encounter.world.ground_policy.creature_clear(encounter.world,Vector2(point.x,point.z),VISUAL_CLEARANCE,BODY_HEIGHT,[get_rid(),target.get_rid()]): return {}
 		return encounter.world.ground_policy.support(encounter.world,Vector2(point.x,point.z),[get_rid(),target.get_rid()])
 	contact_policy = func(damage_source,point): return encounter.world.training.player_hitbox.contact(damage_source,point)
 	result_listener = encounter.world.training.resolved_enemy_contact
@@ -30,25 +37,27 @@ func _ready() -> void:
 	var old_model: Node = $Model
 	remove_child(old_model)
 	old_model.free()
-	var presentation: Node3D = preload("res://actors/npc_presentation.tscn").instantiate()
+	# Instance the complete native creature. Its AnimationPlayer, skeleton,
+	# skin, materials and embedded image remain within the imported hierarchy.
+	var presentation: Node3D = actor_source.instantiate()
 	presentation.name = "Model"
-	presentation.model_scene = actor_source
-	presentation.appearance = preload("res://assets/bosses/warden_appearance.tres")
-	presentation.configure_equipment(true,false,"sword")
 	add_child(presentation)
 	super()
-	# Complete Ranger head/eyes, paired authored pauldrons and native sword mount.
-	source.reparent(presentation.sword_holder,false)
-	source.position = Vector3(0,0.55,0)
-	melee.weapons = {&"fist":melee.get_path_to(source)}
-	# Mature proportions; imported rig lengths and rest transforms remain intact.
-	model.scale = Vector3.ONE * 1.05
+	# BaseEnemy calibrates mesh bounds to 1.72m. Native skin inverse binds
+	# already compensate the importer skeleton offset; its rest-mesh AABB
+	# offset must not be applied a second time to the animated creature.
+	var size_ratio := BODY_HEIGHT / 1.72
+	model.scale *= size_ratio
 	model.position = Vector3.ZERO
-	model_height = 1.92
+	model_height = BODY_HEIGHT
+	set_meta("ground_radius",VISUAL_CLEARANCE)
+	set_meta("ground_height",BODY_HEIGHT)
 	collision_layer = 3
 	$Collision.shape = $Collision.shape.duplicate()
-	$Collision.shape.height = 1.92
-	$Collision.position.y = 0.96
+	$Collision.shape.height = BODY_HEIGHT
+	$Collision.shape.radius = BODY_RADIUS
+	$Collision.position.y = BODY_HEIGHT * 0.5
+	navigation_agent.radius = BODY_RADIUS
 	health_component.max_health = 240
 	health_component.health = 240
 	var strategy := SnaielMeleeAttack.new()
@@ -86,6 +95,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not encounter.combat_allowed(): return
+	enter_pressure_if_needed()
 	if attack_kind == "wave" and health > 0:
 		_refresh_navigation()
 		velocity = Vector3.ZERO
@@ -94,7 +104,8 @@ func _physics_process(delta: float) -> void:
 		if wave_clock >= 1.3 and not wave_settled:
 			wave_settled = true
 			phase = "attack"
-			character.play("Punch",1.4,true)
+			character.set_speed(1.0)
+			character.anim_player.speed_scale = 1.0 / 0.65
 			encounter.play_effect("shockwave")
 			wave_source.instance += 1
 			wave_source.can_damage = true
@@ -116,7 +127,7 @@ func _physics_process(delta: float) -> void:
 
 func tick_attack(board: SnaielBlackboard) -> int:
 	if melee.attacking: return SnaielBehaviorNode.RUNNING
-	if not engaged or not board.get_value("perceives_player") or board.get_value("target_dist") > (WAVE_RADIUS if next_wave else 1.15): return SnaielBehaviorNode.FAILURE
+	if not engaged or not board.get_value("perceives_player") or board.get_value("target_dist") > (WAVE_RADIUS if next_wave else HEAVY_REACH): return SnaielBehaviorNode.FAILURE
 	attacks_started += 1
 	locked_direction = board.get_value("target_dir")
 	attack_origin = global_position
@@ -130,7 +141,7 @@ func tick_attack(board: SnaielBlackboard) -> int:
 		wave_clock = 0
 		wave_settled = false
 		phase = "telegraph"
-		character.play("Punch",0.12,true)
+		character.play("Wave",0.65,true)
 		warning_material.set_shader_parameter("sector",0.0)
 		warning_material.set_shader_parameter("warning_color",Color(0.8,0.2,1,0.85))
 	else:
@@ -148,6 +159,9 @@ func wave_contains(point: Vector3) -> bool:
 
 func on_attack_stage(stage: String) -> void:
 	super(stage)
+	# Native Attack1's boulder crosses the frontal lane at 1.48-1.72s.
+	# Anticipation advances to its 1.30s wind-up, then strike runs at 1x.
+	if stage == "anticipation": character.set_speed(1.30 / 1.15)
 	if stage == "recovery": telegraph.hide()
 
 func _sample_contact() -> void:
@@ -155,7 +169,29 @@ func _sample_contact() -> void:
 	var delta_to: Vector3 = target.global_position-global_position
 	delta_to.y = 0
 	if delta_to.length() > HEAVY_REACH or locked_direction.dot(delta_to.normalized()) < 0.5: return
-	super()
+	var point: Vector3 = source.global_position
+	if source.can_damage and contact_policy.is_valid():
+		var shape := SphereShape3D.new()
+		shape.radius = BOULDER_RADIUS
+		var query := PhysicsShapeQueryParameters3D.new()
+		query.shape = shape
+		query.transform.origin = point
+		query.collision_mask = target.collision_layer
+		query.exclude = [get_rid()]
+		for hit in get_world_3d().direct_space_state.intersect_shape(query,8):
+			if hit.collider == target and line_clear(target.global_position): contact_policy.call(source,point)
+		# Sweep the same posed boulder volume, rather than a body-centered sector.
+		var motion: Vector3 = point - previous_fist
+		if motion.length() > 0.01:
+			query.transform.origin = previous_fist
+			query.motion = motion
+			var fractions := get_world_3d().direct_space_state.cast_motion(query)
+			if fractions[0] < 1 and line_clear(target.global_position):
+				query.motion = Vector3.ZERO
+				query.transform.origin = previous_fist + motion * minf(1.0,fractions[1]+0.001)
+				for hit in get_world_3d().direct_space_state.intersect_shape(query,8):
+					if hit.collider == target: contact_policy.call(source,query.transform.origin)
+	previous_fist = point
 
 func _attack_finished() -> void:
 	attack_kind = ""
@@ -169,13 +205,27 @@ func interrupt_action() -> void:
 	if wave_source: wave_source.can_damage = false
 	if telegraph: telegraph.hide()
 
-func reset_encounter() -> void:
+func enter_pressure_if_needed() -> bool:
+	if pressure_phase or health <= 0 or health > health_component.max_health * 0.5: return false
+	pressure_phase = true
+	pressure_changes += 1
 	next_wave = false
+	encounter.enter_pressure_phase()
+	return true
+
+func on_hurt(result: Dictionary) -> void:
+	super(result)
+	enter_pressure_if_needed()
+
+func reset_encounter() -> void:
+	next_wave = true
+	pressure_phase = false
+	pressure_changes = 0
 	reset_unit(encounter.state.warden_defeated,false)
 	if not encounter.state.warden_defeated: collision_layer = 3
 	if not is_instance_valid(navigation_region): build_navigation()
 
 func _mcp_state() -> Dictionary:
 	var result := super()
-	result.merge({"boss":true,"attack_kind":attack_kind,"attacks_started":attacks_started,"heavy_started":heavy_started,"waves_started":waves_started,"wave_clock":wave_clock,"wave_radius":WAVE_RADIUS,"heavy_reach":HEAVY_REACH,"warning_visible":telegraph.visible if telegraph else false})
+	result.merge({"boss":true,"creature_source":"res://assets/bosses/warden_actor.glb","pressure_phase":pressure_phase,"pressure_changes":pressure_changes,"next_wave":next_wave,"body_radius":BODY_RADIUS,"body_height":BODY_HEIGHT,"visual_clearance":VISUAL_CLEARANCE,"boulder_radius":BOULDER_RADIUS,"attack_kind":attack_kind,"attacks_started":attacks_started,"heavy_started":heavy_started,"waves_started":waves_started,"wave_clock":wave_clock,"wave_radius":WAVE_RADIUS,"heavy_reach":HEAVY_REACH,"warning_visible":telegraph.visible if telegraph else false})
 	return result

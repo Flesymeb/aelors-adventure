@@ -22,6 +22,8 @@ var owns_score := false
 var victory_pending := false
 var victory_time := 0.0
 var skip_armed := false
+var pressure_cues := 0
+var pressure_music_mix := 0.0
 var reveal_panel: PanelContainer
 var reveal_caption: Label
 
@@ -115,6 +117,10 @@ func _process(delta: float) -> void:
 	var paused: bool = not world.pause_owners.is_empty()
 	var reveal_paused: bool = phase == "reveal" and (world.pause_owners.size() != 1 or not world.pause_owners.has("warden_reveal"))
 	music.stream_paused = paused
+	if phase == "battle" and not paused:
+		pressure_music_mix = move_toward(pressure_music_mix,1.0 if actor.pressure_phase else 0.0,delta)
+		music.volume_db = lerpf(-22,-18,pressure_music_mix)
+		music.pitch_scale = lerpf(1.0,1.06,pressure_music_mix)
 	cue.stream_paused = reveal_paused if phase == "reveal" else paused
 	effects.stream_paused = paused
 	if phase == "reveal":
@@ -150,9 +156,10 @@ func begin_reveal() -> void:
 	world._set_pause_owner("warden_reveal",true)
 	actor.process_mode = Node.PROCESS_MODE_PAUSABLE
 	actor.character.anim_tree.active = false
-	actor.animator.play("Wave",-1,0.8)
-	reveal_camera.global_position = actor.home + Vector3(1.5,1.8,3)
-	reveal_camera.look_at(actor.home+Vector3.UP*1.05)
+	actor.animator.speed_scale = 1.0
+	actor.animator.play("warden/Reveal",-1,6.25 / 3.2)
+	reveal_camera.global_position = actor.home + Vector3(1.5,2.2,4.2)
+	reveal_camera.look_at(actor.home+Vector3.UP*1.25)
 	reveal_camera.current = true
 	claim_score()
 	play_cue("reveal")
@@ -174,6 +181,12 @@ func finish_reveal() -> void:
 	cue.stop()
 	music.play()
 
+func enter_pressure_phase() -> void:
+	if phase != "battle" or pressure_cues != 0: return
+	pressure_cues += 1
+	play_cue("pressure")
+	world.training.tell("锁印看守 · 石核躁动：重击后接震荡，留意每次收招。",4)
+
 func claim_score() -> void:
 	if owns_score: return
 	owns_score = true
@@ -187,7 +200,7 @@ func release_score() -> void:
 
 func play_cue(kind: String) -> void:
 	cue.stream = preload("res://assets/dialogue/sounds/Audio/confirmation_001.ogg") if kind == "victory" else preload("res://assets/training/impact.ogg")
-	cue.pitch_scale = 0.55 if kind == "reveal" else 1.0
+	cue.pitch_scale = 0.55 if kind == "reveal" else (0.72 if kind == "pressure" else 1.0)
 	cue.play()
 
 func play_effect(kind: String) -> void:
@@ -226,6 +239,10 @@ func interrupt() -> void:
 	reveal_panel.hide()
 	phase = "victory" if state.warden_defeated else "waiting"
 	victory_pending = false
+	pressure_cues = 0
+	pressure_music_mix = 0.0
+	music.volume_db = -22
+	music.pitch_scale = 1.0
 	actor.reset_encounter()
 
 func restore_history() -> void:
@@ -238,4 +255,4 @@ func _exit_tree() -> void:
 		world._set_pause_owner("warden_reveal",false)
 
 func _mcp_state() -> Dictionary:
-	return {"grounded":grounded,"arena_samples":arena_samples,"phase":phase,"reveal_elapsed":reveal_elapsed,"reveal_starts":reveal_starts,"battle_starts":battle_starts,"victory_commits":victory_commits,"victory_pending":victory_pending,"defeated":state.warden_defeated if state else null,"lock_released":state.warden_lock_released if state else null,"emergency_tool":state.emergency_release_tool if state else null,"music_playing":music.playing if music else null,"music_paused":music.stream_paused if music else null,"score_owned":owns_score,"can_save":can_save()}
+	return {"pressure_cues":pressure_cues,"pressure_music_mix":pressure_music_mix,"grounded":grounded,"arena_samples":arena_samples,"phase":phase,"reveal_elapsed":reveal_elapsed,"reveal_starts":reveal_starts,"battle_starts":battle_starts,"victory_commits":victory_commits,"victory_pending":victory_pending,"defeated":state.warden_defeated if state else null,"lock_released":state.warden_lock_released if state else null,"emergency_tool":state.emergency_release_tool if state else null,"music_playing":music.playing if music else null,"music_paused":music.stream_paused if music else null,"score_owned":owns_score,"can_save":can_save()}

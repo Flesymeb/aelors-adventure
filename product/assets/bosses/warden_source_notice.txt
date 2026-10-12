@@ -1,0 +1,11 @@
+Drugdör The Golem Animated — Phons
+https://sketchfab.com/3d-models/drugdor-the-golem-animated-19c1855bdb2c4cdc89da2cfb64da48cf
+Author: Phons — https://sketchfab.com/Phons
+Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+Native model, rig, skin, embedded texture/materials and nine animations.
+Product adaptation: native animation aliases; assembly played backward for
+collapse/death; locomotion horizontal root anchoring; grounded 2.5m scale;
+Boulder.r_12 contact attachment. No humanoid rig/clip retargeting.
+Snaiel combat recipient APIs, physics, health and contact owners retain their
+original attribution and MIT notice in combat/snaiel/LICENSES.txt.

@@ -1,5 +1,98 @@
 extends RefCounted
 ## Explicit diagnostic only; never attached to the normal entry path.
+static func settings_audio_lifecycle_checks() -> Dictionary:
+	# Assign disposable dependencies while detached. Never enter the tree,
+	# register buses, apply/load preferences, or start/pause/seek playback.
+	var state: Node = preload("res://dialogue_state.gd").new()
+	var host: Control = preload("res://ui/title_menu.gd").new()
+	host.state = state
+	var settings: Node = preload("res://ui/title_settings.gd").new()
+	settings.host = host
+	var audio: Node = preload("res://ui/menu_audio.gd").new()
+	audio.state = state
+	audio.music = AudioStreamPlayer.new()
+	audio.voice = AudioStreamPlayer.new()
+	var before := {"settings": boundary_comparison(settings), "audio": boundary_comparison(audio)}
+	settings.queue_free()
+	audio.queue_free()
+	var pending := {"settings": boundary_comparison(settings), "audio": boundary_comparison(audio)}
+	var checks: Dictionary = lifecycle_comparison_checks(before, pending)
+	checks.settings_preferences_available = before.settings.before.preferences is Dictionary
+	checks.settings_preferences_preserved = before.settings.direct_before.preferences == pending.settings.direct_after.preferences
+	checks.settings_focus_unavailable = before.settings.before.focus_name == null and pending.settings.before.focus_name == null
+	checks.audio_not_started = before.audio.before.music_playing == false and before.audio.before.playing == false
+	checks.audio_preferences_preserved = before.audio.direct_before.preferences == pending.audio.direct_after.preferences
+	checks.audio_registry_preserved = before.audio.direct_before.buses == pending.audio.direct_after.buses and before.audio.direct_before.bus_count == pending.audio.direct_after.bus_count
+	var result := {"selection": "settings_audio", "pre_ready": before, "pending_teardown": pending, "checks": checks}
+	audio.music.free()
+	audio.voice.free()
+	settings.free()
+	audio.free()
+	host.free()
+	state.free()
+	return result
+
+static func opening_router_lifecycle_checks() -> Dictionary:
+	# The real router/opening callbacks run against detached state. No startup,
+	# rollback/history write, playback advancement or opening completion occurs.
+	var state: Node = preload("res://dialogue_state.gd").new()
+	var router: Node = preload("res://ui/game_entry_router.gd").new()
+	var opening: Node = preload("res://ui/illustrated_opening.gd").new()
+	router.state = state
+	router.opening = opening
+	opening.state = state
+	opening.router = router
+	var before := {"router": boundary_comparison(router), "opening": boundary_comparison(opening)}
+	router.queue_free()
+	opening.queue_free()
+	var pending := {"router": boundary_comparison(router), "opening": boundary_comparison(opening)}
+	var checks: Dictionary = lifecycle_comparison_checks(before, pending)
+	checks.opening_timeline_preserved = before.opening.direct_before.elapsed == pending.opening.direct_after.elapsed and before.opening.direct_before.beat_elapsed == pending.opening.direct_after.beat_elapsed and before.opening.direct_before.beat_index == pending.opening.direct_after.beat_index
+	checks.opening_unavailable = before.opening.before.beat == null and before.opening.before.image == null and pending.opening.before.beat == null
+	checks.opening_streams_unavailable = before.opening.before.music_playing == null and pending.opening.before.music_playing == null
+	checks.router_history_preserved = before.router.direct_before.history == pending.router.direct_after.history and before.router.direct_before.previous_history == pending.router.direct_after.previous_history and before.router.direct_before.confirmed_choices == pending.router.direct_after.confirmed_choices
+	checks.router_preferences_preserved = before.router.direct_before.preferences == pending.router.direct_after.preferences
+	checks.opening_history_preserved = before.opening.direct_before.history == pending.opening.direct_after.history and before.opening.direct_before.opening_completed == pending.opening.direct_after.opening_completed
+	checks.router_not_initialized = before.router.direct_before.initialized == false and pending.router.direct_after.initialized == false
+	var result := {"selection": "opening_router", "pre_ready": before, "pending_teardown": pending, "checks": checks}
+	opening.free()
+	router.free()
+	state.free()
+	return result
+
+static func boundary_comparison(owner: Node) -> Dictionary:
+	# Each boundary retains raw measurements independently from assertions.
+	var direct_before: Dictionary = direct_owner_fields(owner)
+	var before: Dictionary = owner._mcp_state()
+	var after: Dictionary = owner._mcp_state()
+	return {"direct_before": direct_before, "before": before, "after": after, "direct_after": direct_owner_fields(owner)}
+
+static func lifecycle_comparison_checks(before: Dictionary, pending: Dictionary) -> Dictionary:
+	var checks := {}
+	for name in before:
+		for boundary in ["pre_ready", "pending_teardown"]:
+			var comparison: Dictionary = before[name] if boundary == "pre_ready" else pending[name]
+			var key: String = str(name) + "_" + boundary
+			checks[key + "_read_only"] = comparison.before == comparison.after
+			checks[key + "_owner_preserved"] = stable_raw_fields(comparison.direct_before) == stable_raw_fields(comparison.direct_after)
+			checks[key + "_unready"] = comparison.before.get("ready") == false and comparison.after.get("ready") == false
+			checks[key + "_detached"] = comparison.direct_before.inside_tree == false and comparison.direct_after.inside_tree == false
+			checks[key + "_queued_boundary"] = comparison.direct_before.queued_for_deletion == (boundary == "pending_teardown") and comparison.direct_after.queued_for_deletion == (boundary == "pending_teardown")
+	return checks
+
+static func stable_raw_fields(value: Variant) -> Variant:
+	# Timestamps remain in raw output, but are not owner-state mutations.
+	if value is Dictionary:
+		var result := {}
+		for key in value:
+			if key != "sample_us": result[key] = stable_raw_fields(value[key])
+		return result
+	if value is Array:
+		var result := []
+		for item in value: result.append(stable_raw_fields(item))
+		return result
+	return value
+
 static func run(_holder: Node) -> Dictionary:
 	var world := preload("res://preview_controller.gd").new()
 	var before: Dictionary = world._mcp_state()
@@ -236,9 +329,9 @@ static func direct_owner_fields(owner: Node) -> Dictionary:
 	var result := {"sample_us": Time.get_ticks_usec(), "bus_count": AudioServer.bus_count, "buses": {}}
 	for bus in ["Master", "Music", "Effects"]:
 		var index := AudioServer.get_bus_index(bus)
-		var data := {"index": index}
+		var data := {"index": index, "available": index >= 0, "volume_db": null, "muted": null, "bypassed": null, "send": null, "effects": null}
 		if index >= 0:
-			data.merge({"volume_db": AudioServer.get_bus_volume_db(index), "muted": AudioServer.is_bus_mute(index), "bypassed": AudioServer.is_bus_bypassing_effects(index), "send": str(AudioServer.get_bus_send(index)), "effects": []})
+			data.merge({"volume_db": AudioServer.get_bus_volume_db(index), "muted": AudioServer.is_bus_mute(index), "bypassed": AudioServer.is_bus_bypassing_effects(index), "send": str(AudioServer.get_bus_send(index)), "effects": []}, true)
 			for effect_index in AudioServer.get_bus_effect_count(index):
 				var effect := AudioServer.get_bus_effect(index, effect_index)
 				data.effects.append({"name": effect.resource_name, "enabled": AudioServer.is_bus_effect_enabled(index, effect_index), "gain_db": effect.volume_db if effect is AudioEffectAmplify else null})
@@ -271,7 +364,7 @@ static func direct_owner_fields(owner: Node) -> Dictionary:
 		if script_path == "res://ui/menu_audio.gd": result.last_cue = owner.last_cue
 		else:
 			result.merge({"beat_index": owner.beat, "beat_elapsed": owner.elapsed, "elapsed": owner.total_elapsed, "finished": owner.finished, "inputs_armed": owner.inputs_armed, "skip_hold": owner.skip_hold, "pause_menu_present": is_instance_valid(owner.pause_menu) and not owner.pause_menu.is_queued_for_deletion()})
-	result.state_available = is_instance_valid(state) and not state.is_queued_for_deletion()
+	result.merge({"state_available": is_instance_valid(state) and not state.is_queued_for_deletion(), "preferences": null, "preference_error": null, "history": null, "confirmed_choices": null, "opening_completed": null})
 	if result.state_available:
 		result.preferences = {}
 		for key in state.PREFERENCE_DEFAULTS: result.preferences[key] = state.get(key)
