@@ -1,0 +1,11 @@
+Crypt of Kings by Brett Murphy
+https://sketchfab.com/3d-models/crypt-of-kings-90219f1b776a42218f2441ca9f3f04c1
+CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+Adaptations: unit normalization, native triangle collision, moon/torch lighting,
+product entry/checkpoint, record and return interactions. Geometry/materials
+remain in the original self-contained crypt.glb. This is an authored crypt
+entrance slice, not the complete future two-courtyard rescue level.
+
+Retained Ranger, weapons, sign and chapter-pillar rocks keep their existing
+project notices. Nodragem ShortSwitch interaction keeps interaction/nodragem
+upstream CC0 terms; the product state and save adapters are separate.

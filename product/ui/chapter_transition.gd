@@ -29,6 +29,7 @@ var released := false
 var skipped := false
 var shorter := false
 var returning := false
+var destination_map := ""
 var tween: Tween
 var phase := "story"
 
@@ -54,7 +55,7 @@ func _ready() -> void:
 	add_child(cue)
 	var storyboard: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART+"storyboard.json"))
 	slides = storyboard.slides
-	chapter_title = storyboard.get("title", "第二章 · 林缘草甸")
+	chapter_title = "第三章 · 裂隙墓殿" if destination_map == state.MAP03 else "第一章 · 河谷聚落" if destination_map == state.GROUND.MAP_ID else "第二章 · 林缘草甸"
 	root = Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.theme = preload("res://ui/title_theme.tres")
@@ -118,8 +119,16 @@ func _ready() -> void:
 	_refresh_presentation()
 
 func _show_beat() -> void:
-	picture.texture = load(ART + ("passage.png" if returning else slides[beat].image))
+	picture.texture = load(ART + ("passage.png" if returning or destination_map == state.MAP03 else slides[beat].image))
 	captions.text = ("第一章 · 河谷聚落\n蓝光引你回到村庄灯台。" if returning else chapter_title + "\n" + slides[beat].caption)
+	if destination_map == state.MAP03:
+		captions.text = chapter_title + "\n" + ("四位村民仍待救援。蓝光通道通往墓殿的安全入口。" if beat < 2 else "CP03 · 墓殿灯台。先调查封锁外的仪式石碑；蓝光通道可返回草甸。")
+	elif world.active_map_id() == state.MAP03:
+		captions.text = chapter_title + "\n仪式记录与草甸进度已保留。返回林缘的稳定通道边界。"
+	if destination_map == state.MAP03 or world.active_map_id() == state.MAP03:
+		# Live retained actor/equipment remains visible through this chapter beat.
+		picture.hide()
+		world.get_viewport().disable_3d = false
 	if beat == 1: cue.play()
 
 func _layout() -> void:

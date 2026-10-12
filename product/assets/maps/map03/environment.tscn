@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/maps/map03/crypt.glb" id="1"]
+[sub_resource type="ProceduralSkyMaterial" id="sky"]
+sky_top_color = Color(0.015, 0.025, 0.07, 1)
+sky_horizon_color = Color(0.12, 0.18, 0.28, 1)
+ground_bottom_color = Color(0.015, 0.02, 0.03, 1)
+[sub_resource type="Sky" id="night"]
+sky_material = SubResource("sky")
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("night")
+ambient_light_source = 3
+ambient_light_color = Color(0.34, 0.47, 0.7, 1)
+ambient_light_energy = 0.65
+tonemap_mode = 2
+
+[node name="TombEnvironment" type="Node3D"]
+[node name="NativeCrypt" parent="." instance=ExtResource("1")]
+scale = Vector3(8.1613, 8.1613, 8.1613)
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+[node name="Moon" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -30, 0)
+light_color = Color(0.52, 0.67, 1, 1)
+light_energy = 0.85
+shadow_enabled = true

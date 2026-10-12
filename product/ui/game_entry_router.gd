@@ -121,7 +121,7 @@ func _construct_world(_resource: PackedScene) -> void:
 		if restored.is_empty():
 			_entry_failed("存档无法恢复。原进度已保留，请重试。")
 			return
-	var preview := load("res://world/map02_entry.tscn" if state.current_map == state.MAP02 else "res://Preview.tscn") as PackedScene
+	var preview := load(destination_resource(state.current_map)) as PackedScene
 	if not preview:
 		_entry_failed("冒险资源无法读取。请重试。")
 		return
@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 		if Time.get_ticks_msec() - travel_started_ms > 30000:
 			_travel_failed("落脚点尚未准备好，已返回上一处边界。")
 			return
-		if not transition.paused and player_ready and world.training.grounded and world.bow_training.grounded and world.bridge_encounter.grounded and not travel_finishing:
+		if not transition.paused and player_ready and world.destination_ready() and not travel_finishing:
 			travel_finishing = true
 			_finish_travel()
 		return
@@ -170,18 +170,14 @@ func _process(delta: float) -> void:
 			_entry_failed("安全落脚点未能准备好。请重试或返回标题。")
 			return
 		if not player_ready or _confirmation_held(): return
-		if not world.training.grounded or not world.bow_training.grounded:
-			return
-		if not world.bridge_encounter.grounded or not world.chapter_pillar.grounded:
-			return
+		if not world.destination_ready(): return
 		# Only promote a new/selected manual history after genuine safe readiness.
 		if entry_kind == "new" or entry_kind == "load":
 			if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:
 				_entry_failed("保存恢复进度失败。原存档仍保留，请重试。")
 				return
 		initialized = true
-		world.training.restore_history()
-		world.gameplay_hud.restore_view()
+		world.restore_destination_history()
 		if entry_kind == "new": world.gameplay_hud.notify("河谷村庄灯台已启用")
 		world._set_pause_owner("entry", false)
 		get_tree().paused = not world.pause_owners.is_empty()
@@ -288,6 +284,9 @@ func _departure_observation() -> Dictionary:
 		"departure_current_map": state.current_map if state_live else null,
 		"departure_equipment": state.selected_equipment if state_live else null,
 		"departure_cp02_claimed": state.cp02_claimed if state_live else null,
+		"departure_cp03_claimed": state.cp03_claimed if state_live else null,
+		"departure_record_read": state.ritual_record_read if state_live else null,
+		"destination_ready": world.destination_ready() if world_live else null,
 		"departure_lives": state.lives if state_live else null}
 
 func restore_map(slot: int) -> void:
@@ -296,14 +295,23 @@ func restore_map(slot: int) -> void:
 	enter_adventure("load", slot)
 
 func travel_to(map_id: String) -> bool:
-	if route != "world" or map_id == state.current_map or map_id not in [state.GROUND.MAP_ID, state.MAP02]: return false
+	if route != "world" or map_id == state.current_map or map_id not in [state.GROUND.MAP_ID, state.MAP02, state.MAP03]: return false
 	if not state.departure_available() or not state.departure_confirmed or state.conversation_active or state.lives <= 0: return false
-	if not world.pause_owners.is_empty() or not world.training.can_save() or not world.bow_training.can_save(): return false
+	if map_id == state.MAP03 and (state.current_map != state.MAP02 or not state.tomb_missing_conditions().is_empty()):
+		world.training.tell("墓殿通道尚未开放 · " + "、".join(state.tomb_missing_conditions()), 6)
+		return false
+	if state.current_map == state.MAP03 and map_id != state.MAP02: return false
+	if not world.travel_safe(): return false
 	if not preload("res://ui/chapter_transition.gd").available():
 		world.training.tell("通道暂时无法开启 · 请在村庄整顿后重试", 5)
 		return false
+	state.selected_equipment = world.player.weapon_mode
 	# Save the valid source boundary before a presentation or resource request.
 	if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK: return false
+	world.training.interrupt("travel")
+	world.bow_training.clear_transients()
+	world.element_abilities.clear_transients()
+	world.player.cancel_aim()
 	travel_history = state.adventure_snapshot()
 	source_world = world
 	destination_map = map_id
@@ -311,6 +319,7 @@ func travel_to(map_id: String) -> bool:
 	transition.world = source_world
 	transition.shorter = state.cp02_claimed
 	transition.returning = map_id == state.GROUND.MAP_ID
+	transition.destination_map = map_id
 	transition.black_boundary.connect(_load_destination)
 	route = "travel_story"
 	add_child(transition)
@@ -318,7 +327,7 @@ func travel_to(map_id: String) -> bool:
 
 func _load_destination() -> void:
 	if route != "travel_story": return
-	travel_resource = "res://world/map02_entry.tscn" if destination_map == state.MAP02 else "res://Preview.tscn"
+	travel_resource = destination_resource(destination_map)
 	var error := ResourceLoader.load_threaded_request(travel_resource, "PackedScene")
 	if error != OK:
 		_travel_failed("通道无法开启，已返回上一处落脚点。")
@@ -346,11 +355,11 @@ func _poll_travel() -> void:
 	source_world.process_mode = Node.PROCESS_MODE_DISABLED
 	_suspend_source_collision()
 	world = scene.instantiate()
-	world.name = "MeadowAdventure" if destination_map == state.MAP02 else "VillageAdventure"
+	world.name = "TombAdventure" if destination_map == state.MAP03 else "MeadowAdventure" if destination_map == state.MAP02 else "VillageAdventure"
 	world.dialogue_state = state
 	world.entry_router = self
 	# Boundary facts remain at the source until a grounded destination exists.
-	world.restored_position = {"position":Vector3.ZERO,"map_id":"", "yaw":PI if destination_map == state.MAP02 else 0.0}
+	world.restored_position = arrival_position(destination_map, state.current_map)
 	player_ready = false
 	travel_finishing = false
 	route = "travel_initializing"
@@ -368,8 +377,7 @@ func _finish_travel() -> void:
 	if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:
 		_travel_failed("无法保存新的落脚点，已返回上一处边界。")
 		return
-	world.training.restore_history()
-	world.gameplay_hud.restore_view()
+	world.restore_destination_history()
 	route = "travel_reveal"
 	await transition.reveal_arrival()
 	# Input consumed by skip/confirmation cannot become an attack on arrival.
@@ -417,7 +425,7 @@ func _travel_failed(message: String) -> void:
 func _suspend_source_collision() -> void:
 	source_collision_state.clear()
 	for node in source_world.find_children("*", "", true, false):
-		if node is CollisionObject3D or node == source_world.village.get_node_or_null("Terrain3D"):
+		if node is CollisionObject3D or (is_instance_valid(source_world.village) and node == source_world.village.get_node_or_null("Terrain3D")):
 			source_collision_state.append({"node":node,"layer":node.collision_layer,"mask":node.collision_mask})
 			node.collision_layer = 0
 			node.collision_mask = 0
@@ -432,3 +440,13 @@ func _restore_source_collision() -> void:
 func begin_new_adventure_from_world() -> void:
 	await return_to_title()
 	enter_adventure("new", 0)
+
+func destination_resource(map_id: String) -> String:
+	if map_id == state.MAP03: return "res://world/map03_entry.tscn"
+	if map_id == state.MAP02: return "res://world/map02_entry.tscn"
+	return "res://Preview.tscn"
+
+func arrival_position(map_id: String, from_map: String) -> Dictionary:
+	if map_id == state.MAP02 and from_map == state.MAP03:
+		return {"position":Vector3(6,0,113),"map_id":state.MAP02,"yaw":0.0}
+	return {"position":Vector3.ZERO,"map_id":"", "yaw":PI if map_id == state.MAP02 else 0.0}

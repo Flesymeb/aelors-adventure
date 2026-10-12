@@ -168,6 +168,7 @@ func reveal() -> bool:
 	return true
 
 func selected_target() -> String:
+	if grounded and available() and world.player.global_position.distance_to(passage.global_position) < 2.5: return "passage"
 	if reachable(supply): return "supply"
 	if reachable(location): return "location"
 	if reachable(clue): return "clue"
@@ -176,6 +177,7 @@ func selected_target() -> String:
 func interaction_prompt() -> String:
 	var target := selected_target()
 	if target == "": return ""
+	if target == "passage": return "[E] 前往裂隙墓殿" if state.tomb_missing_conditions().is_empty() else "[E] 查看墓殿通道所需条件"
 	if target == "clue": return "[E] 查阅通道线路 · [3] 旧灯 / [F] 显形"
 	if not state.ln01_revealed: return "[3] 旧灯 · [F] 显露螺旋与箭头线路"
 	if target == "supply": return "螺旋 · 供能已切断" if state.ln01_supply_cut else "[E] 切断螺旋供能 · 旧灯"
@@ -184,6 +186,10 @@ func interaction_prompt() -> String:
 func interact() -> bool:
 	var target := selected_target()
 	if target == "": return false
+	if target == "passage":
+		if not state.tomb_missing_conditions().is_empty(): world.training.tell("墓殿通道尚未开放 · " + "、".join(state.tomb_missing_conditions()),6)
+		elif world.entry_router: world.entry_router.travel_to(state.MAP03)
+		return true
 	if target == "clue": world.training.tell(state.ln01_information(),6); return true
 	if not state.ln01_revealed: world.training.tell("按 3 装备旧灯，再按 F 显露线路。",4); return true
 	if world.player.weapon_mode != "lamp": world.training.tell("按 3 装备旧灯，才能操作线路。",4); return true

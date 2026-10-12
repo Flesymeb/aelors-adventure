@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -61,6 +61,9 @@ var ln01_revealed := false
 var ln01_supply_cut := false
 var ln01_location_purified := false
 const MAP02 := "meadow-entry-v1"
+const MAP03 := "tomb-entry-v1"
+var cp03_claimed := false
+var ritual_record_read := false
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
 var bridge_first_action := ""
@@ -243,15 +246,40 @@ func departure_available() -> bool:
 	return lessons_complete() and bridge_resident_rescued and bridge_lamp_lit and guard_briefing_acknowledged and guards_defeated()
 
 func commit_arrival(map_id: String) -> bool:
-	if map_id not in [GROUND.MAP_ID, MAP02] or not departure_confirmed or not departure_available(): return false
+	if map_id not in [GROUND.MAP_ID, MAP02, MAP03] or not departure_confirmed or not departure_available(): return false
+	if map_id == MAP03 and not tomb_missing_conditions().is_empty(): return false
 	current_map = map_id
+	if map_id == MAP03 and not cp03_claimed:
+		cp03_claimed = true
+		lives = mini(5, lives + 1)
 	if map_id == MAP02 and not cp02_claimed:
 		cp02_claimed = true
 		lives = mini(5, lives + 1)
 	return true
 
+func tomb_missing_conditions() -> Array[String]:
+	var missing: Array[String] = []
+	if not cp02_claimed: missing.append("抵达林缘灯台")
+	if not roadblock_defeated(): missing.append("清除 E01 路障")
+	if not pressure_defeated(): missing.append("清除 E02 押送守卫")
+	if not mf01_acquired: missing.append("调查 MF01 路线记录")
+	if not e03_revealed or not ambush_defeated(): missing.append("显形并清除 E03 伏击")
+	if not line_defeated(): missing.append("清除 E04 林路防线")
+	if not mf02_acquired: missing.append("调查 MF02 墓殿方向")
+	if not ln01_revealed or not ln01_supply_cut or not ln01_location_purified: missing.append("用旧灯完成 LN01：显形、切断供能、净化定位")
+	return missing
+
+func acquire_ritual_record() -> bool:
+	if ritual_record_read or current_map != MAP03 or not cp03_claimed or health <= 0 or recovery_pending: return false
+	if not tomb_missing_conditions().is_empty(): return false
+	ritual_record_read = true
+	return true
+
+func ritual_information() -> String:
+	return "维恩需要村长奥伦指出最后封印的位置，仪式尚未完成。奥伦与三名村民仍待救援。没有隐藏倒计时。入口结界 LN02 尚未解除；看守、维恩、逐人营救与集合仍待完成。" if ritual_record_read else "墓殿入口的石碑保存着敌方仪式记录。先在封锁外调查，再决定营救路线。"
+
 func checkpoint_name() -> String:
-	return "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
+	return "裂隙墓殿灯台" if current_map == MAP03 else "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
 
 # The old singleton ID remains the first actor's earned history.
 const E01_IDS := ["map02_e01", "map02_e01_b"]
@@ -527,15 +555,16 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	if lives == 0: health = 0
 	var map_id := str(config.get_value("opening", "map_id", "village-v2"))
 	var saved: Vector3 = config.get_value("opening", "position", Vector3.ZERO)
-	current_map = MAP02 if map_id == MAP02 else GROUND.MAP_ID
-	var ground_policy = preload("res://world/map02_ground.gd") if current_map == MAP02 else GROUND
-	var xz: Vector2 = ground_policy.entry_xz(saved, current_map) if current_map == MAP02 else GROUND.restored_xz(saved, current_map)
+	current_map = map_id if map_id in [MAP02, MAP03] else GROUND.MAP_ID
+	var ground_policy = preload("res://world/map03_ground.gd") if current_map == MAP03 else preload("res://world/map02_ground.gd") if current_map == MAP02 else GROUND
+	var xz: Vector2 = ground_policy.entry_xz(saved, current_map) if current_map in [MAP02, MAP03] else GROUND.restored_xz(saved, current_map)
 	if map_id != GROUND.MAP_ID and encounter_defeated and not remnant_collected:
 		remnant_position = Vector3(GROUND.ENCOUNTER.x, 0, GROUND.ENCOUNTER.y)
 	persistence_error = ""
 	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": current_map}
 
 func objective() -> String:
+	if current_map == MAP03: return "墓殿入口 · 调查右侧仪式石碑（E）；左侧蓝光通道可返回草甸" if not ritual_record_read else "仪式记录已保存 · 四位村民仍待救援；入口结界与后续营救尚未完成。可经蓝光通道回草甸。"
 	if current_map == MAP02:
 		if not roadblock_defeated(): return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining()
 		if not pressure_defeated(): return "E02 押送守卫（剩余 %d/2） · 沿林路前行，利用岩石挡箭；可退回灯台" % pressure_remaining()
@@ -755,10 +784,10 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var claimed: Variant = config.get_value("post_bow", "cp02_claimed", false)
 	var current: Variant = config.get_value("post_bow", "current_map", GROUND.MAP_ID)
 	if not departure is bool or not claimed is bool or not current is String: return "存档章节无效"
-	if current not in [GROUND.MAP_ID, MAP02]: return "存档章节无效"
+	if current not in [GROUND.MAP_ID, MAP02, MAP03]: return "存档章节无效"
 	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
-	if (claimed or current == MAP02 or map_id == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
-	if (map_id == MAP02 or current == MAP02 or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
+	if (claimed or current in [MAP02, MAP03] or map_id in [MAP02, MAP03] or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
+	if (map_id in [MAP02, MAP03] or current in [MAP02, MAP03] or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
 	var e02_earned: bool = PRESSURE_IDS.any(func(id): return rewards.has(id))
 	var e02_complete: bool = PRESSURE_IDS.all(func(id): return rewards.has(id))
 	var e01_complete: bool = E01_IDS.all(func(id): return rewards.has(id))
@@ -786,6 +815,11 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var purified: bool = config.get_value("post_bow", "ln01_location_purified", false)
 	if (circuit_revealed or supply_cut or purified) and (not config.get_value("post_bow", "mf02_acquired", false) or not config.get_value("post_bow", "lamp_owned", false)): return "存档通道调查前置无效"
 	if supply_cut and not circuit_revealed or purified and not supply_cut: return "存档通道线路顺序无效"
+	var tomb_claimed: Variant = config.get_value("post_bow", "cp03_claimed", false)
+	var record_read: Variant = config.get_value("post_bow", "ritual_record_read", false)
+	if not tomb_claimed is bool or not record_read is bool: return "存档墓殿记录无效"
+	if (tomb_claimed or current == MAP03 or map_id == MAP03 or record_read) and (not claimed or not e01_complete or not e02_complete or not e03_complete or not line_complete or not revealed or not config.get_value("post_bow", "mf01_acquired", false) or not config.get_value("post_bow", "mf02_acquired", false) or not purified): return "存档墓殿前置无效"
+	if (current == MAP03 or map_id == MAP03 or record_read) and not tomb_claimed: return "存档墓殿检查点无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -827,9 +861,9 @@ func slot_preview(slot: int) -> Dictionary:
 	var facts := {"slot": slot, "reason": reason}
 	if reason != "": return facts
 	var config: ConfigFile = history.config
-	facts.chapter = "第二章 · 林缘草甸" if config.get_value("opening", "map_id", "") == MAP02 else "第一章 · 河谷聚落"
+	facts.chapter = "第三章 · 裂隙墓殿" if config.get_value("opening", "map_id", "") == MAP03 else "第二章 · 林缘草甸" if config.get_value("opening", "map_id", "") == MAP02 else "第一章 · 河谷聚落"
 	facts.time = Time.get_datetime_string_from_unix_time(FileAccess.get_modified_time(path)).replace("T", " ")
-	facts.checkpoint = "林缘草甸灯台" if config.get_value("opening", "map_id", "") == MAP02 else "河谷村庄灯台"
+	facts.checkpoint = "裂隙墓殿灯台" if config.get_value("opening", "map_id", "") == MAP03 else "林缘草甸灯台" if config.get_value("opening", "map_id", "") == MAP02 else "河谷村庄灯台"
 	facts.experience = int(config.get_value("opening", "experience", 0))
 	facts.lives = int(config.get_value("training", "lives", 3))
 	facts.arrows = int(config.get_value("training", "arrows", 0))
@@ -840,7 +874,7 @@ func slot_preview(slot: int) -> Dictionary:
 func quest_entries() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	rows.append({"id": "rescue", "title": "伊莎的请求", "complete": false,
-		"context": "伊莎的父亲和三位村民被怪物带走。出发前，先在河谷聚落做好准备。" if q01_accepted else "广场边的伊莎似乎需要帮助。靠近她，听听发生了什么。",
+		"context": ritual_information() if cp03_claimed else "伊莎的父亲和三位村民被怪物带走。出发前，先在河谷聚落做好准备。" if q01_accepted else "广场边的伊莎似乎需要帮助。靠近她，听听发生了什么。",
 		"action": objective(), "steps": ["答应伊莎的求援"] if q01_accepted else []})
 	if q01_accepted:
 		var steps: Array[String] = []
@@ -903,6 +937,8 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"line_record", "title":"墓殿方向与结界记号 · MF02", "complete":mf02_acquired, "context":mf02_information(), "action":"M 查阅墓殿方向 · 四位村民仍待救援" if mf02_acquired else "清除 E04，调查石旁固定标记", "steps":["固定标记已记录 · 保存后可继续查阅"] if mf02_acquired else []})
 	if mf02_acquired:
 		rows.append({"id":"ln01", "title":"林缘通道 · 解除结界", "complete":ln01_location_purified, "context":ln01_information(), "action":"旧灯显形 → 切断螺旋供能 → 净化箭头定位", "steps":["线路已显形" if ln01_revealed else "显露线路", "供能已切断" if ln01_supply_cut else "切断供能", "通道已稳定" if ln01_location_purified else "净化定位"]})
+	if cp03_claimed:
+		rows.append({"id":"ritual_record", "title":"墓殿入口 · 仪式记录", "complete":ritual_record_read, "context":ritual_information(), "action":objective(), "steps":["CP03 灯台已启用 · 首次加命已领取"] + (["仪式尚未完成 · 四位村民仍待救援"] if ritual_record_read else [])})
 	return rows
 
 func tracked_entry() -> Dictionary:

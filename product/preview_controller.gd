@@ -397,7 +397,7 @@ func _load_opening(slot: int) -> void:
 		else: _recovery_error("请返回标题读取此存档")
 		return
 	var old_position := player.global_position
-	if not training.place_on_ground(player, (preload("res://world/map02_ground.gd").entry_xz(restored.position, restored.get("map_id", "")) if meadow_slice else GROUND.restored_xz(restored.position, restored.get("map_id", "")))) and not training.place_on_ground(player, checkpoint_xz()):
+	if not training.place_on_ground(player, restored_xz(restored.position, restored.get("map_id", ""))) and not training.place_on_ground(player, checkpoint_xz()):
 		dialogue_state.restore_adventure(previous)
 		restoring_interface = false
 		_recovery_error("存档位置无法安全落地 · 请重试或选择新游戏。")
@@ -925,3 +925,16 @@ func checkpoint_xz() -> Vector2:
 
 func active_map_id() -> String:
 	return dialogue_state.MAP02 if meadow_slice else GROUND.MAP_ID
+
+func restored_xz(position: Vector3, map_id: String) -> Vector2:
+	return ground_policy.entry_xz(position, map_id) if meadow_slice else GROUND.restored_xz(position, map_id)
+
+func destination_ready() -> bool:
+	return is_instance_valid(player) and player.has_meta("spawn_position") and is_instance_valid(training) and training.grounded and is_instance_valid(bow_training) and bow_training.grounded and is_instance_valid(bridge_encounter) and bridge_encounter.grounded and is_instance_valid(chapter_pillar) and chapter_pillar.grounded
+
+func restore_destination_history() -> void:
+	training.restore_history()
+	gameplay_hud.restore_view()
+
+func travel_safe() -> bool:
+	return pause_owners.is_empty() and training.can_save() and bow_training.can_save() and not training.player_locked() and player.attack_timer <= 0 and player.switch_timer <= 0 and player.traversal.action == ""

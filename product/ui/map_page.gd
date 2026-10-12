@@ -13,6 +13,9 @@ class RouteDiagram extends Control:
 		var north := 120.0 if state.mf02_acquired else 80.0
 		return Vector2(size.x * (0.28 + xz.x / 35.0), 30 + (north - xz.y) / (north - 20.0) * (size.y - 70))
 	func _draw() -> void:
+		if state.current_map == state.MAP03:
+			_draw_tomb()
+			return
 		var ground = preload("res://world/map02_ground.gd")
 		var font: Font = get_theme_default_font()
 		var font_size := get_theme_default_font_size()
@@ -42,6 +45,16 @@ class RouteDiagram extends Control:
 				draw_circle(point(xz), 7, ink)
 				draw_circle(point(xz), 4, Color(1,0.9,0.5))
 
+	func _draw_tomb() -> void:
+		var font := get_theme_default_font()
+		var ink := Color(0.2,0.15,0.08)
+		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口结界 · 尚未解除"]]
+		draw_polyline(PackedVector2Array([size*marks[1][0],size*marks[0][0],size*Vector2(0.5,0.32),size*marks[2][0]]),ink,3,true)
+		for mark in marks:
+			var p: Vector2 = size*mark[0]
+			draw_circle(p,6,ink)
+			draw_string(font,p+Vector2(12,5),mark[1],HORIZONTAL_ALIGNMENT_LEFT,-1,get_theme_default_font_size(),ink)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -66,7 +79,7 @@ func _ready() -> void:
 func refresh() -> void:
 	# Give scaled labels their own vertical space; the retained page scrolls.
 	diagram.custom_minimum_size.y = 310 * state.text_scale
-	information.text = state.mf01_information() + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
+	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + "\n两院营救区域仍被封锁。" if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
 	diagram.queue_redraw()
 	reflow(self)
 
