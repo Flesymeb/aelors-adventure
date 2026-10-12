@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 51 |
+| Open | 52 |
 | Closed | 35 |
-| All | 86 |
+| All | 87 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 34 |
+| Active | 35 |
 | Verified closed | 26 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 65 |
+| All in this run | 66 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -61,7 +61,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening observation purity and lifecycle acceptance remain unverified. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Settings listening and opening lifecycle acceptance remain unverified. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,7 +80,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Hers and Ronen equipment dialogue still omit their counterpart portraits. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach portrait presence has partial support; complete identity and presentation acceptance remain unverified. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
@@ -98,16 +98,17 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | untitled issue |
 | `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
 | `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | The existing later rescue-route issue cannot be closed from entrance-fixture evidence. |
-| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | Earned meadow fragments and committed restoration remain unverified. |
+| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 ordinary acquisition and committed restoration remain unverified. |
 | `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | untitled issue |
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | Crowded channel combat still produces overlapping threat labels. |
 | `fps.runtime.candidate-error-3917fc09324e` | [#82](https://github.com/Flesymeb/aelors-adventure/issues/82) | CLOSED | Independently verified resolved at loop 42. |
 | `qa.e04-supply-earned-gap` | [#81](https://github.com/Flesymeb/aelors-adventure/issues/81) | OPEN | The E04 recovery-supply condition remains unobserved after ordinary earning. |
-| `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | An oversized element-practice label intrudes into the ordinary Ronen dialogue view. |
+| `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | Training-label obstruction and final cue recovery remain unqualified. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | OPEN | untitled issue |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | OPEN | untitled issue |
 | `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Diagnostic LN02 observations do not establish earned production-route or recovery acceptance. |
+| `warden-acceptance-unverified` | [#87](https://github.com/Flesymeb/aelors-adventure/issues/87) | OPEN | Earned Warden encounter and recovery acceptance remain unverified. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -115,7 +116,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 51 | 35 | 86 |
+| GitHub HoH namespace | 52 | 35 | 87 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -152,7 +153,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-45-e2074c8ab801` | `development_snapshot:attempt-75b91db3e5b3bdae4470aa6b` | NEEDS VISUAL QA |
+| `loop-45-e2074c8ab801` | `development_snapshot:attempt-75b91db3e5b3bdae4470aa6b` | BLOCKED |
 
 ### Project Planner
 
@@ -179,7 +180,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-45-e2074c8ab801` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `warden-acceptance-unverified` | MAJOR | INTERNAL | HIGH | Earned Warden encounter and recovery acceptance remain unverified. |
+| `mf01-earned-restoration-unverified` | MAJOR | INTERNAL | HIGH | MF01 ordinary acquisition and committed restoration remain unverified. |
+| `equipment-dialogue-qualification-unverified` | MAJOR | INTERNAL | HIGH | Coach portrait presence has partial support; complete identity and presentation acceptance remain unverified. |
+| `training-label-recovery-unverified` | MINOR | INTERNAL | MEDIUM | Training-label obstruction and final cue recovery remain unqualified. |
+| `retained-observer-acceptance-unverified` | MAJOR | INTERNAL | HIGH | Settings listening and opening lifecycle acceptance remain unverified. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -2462,5 +2478,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-45-e2074c8ab801`
 - Latest warm start: `loop-45-8792688162d9`
 - Last published: `loop-45-e2074c8ab801`
-- Best verified: `loop-44-8792688162d9`
+- Best verified: `loop-45-e2074c8ab801`
 - Generated by the HoH host from immutable run evidence.
