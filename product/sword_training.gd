@@ -5,6 +5,10 @@ const DAMAGES = [12.0, 15.0, 20.0]
 const CLIPS = ["sword/Sword_Regular_A", "sword/Sword_Regular_B", "sword/Sword_Regular_C"]
 const AERIAL_INDEX = 3
 const AERIAL_DAMAGE = 24.0
+const FINISHER_INDEX = 4
+const FINISHER_DAMAGE = 28.0
+var finisher_buffered = false
+var finisher_animation_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 var aerial_active = false
 var aerial_used = false
 var aerial_landed = false
@@ -113,6 +117,7 @@ func bind_player_combat() -> void:
 		strategy.recovery = 0.5 if index == 2 else 0.35
 		strategies.append(strategy)
 	strategies.append(aerial_strategy())
+	strategies.append(finisher_strategy())
 	sword_events.configure(strategies)
 	sword_melee = SnaielMelee.new()
 	sword_melee.name = "SwordMelee"
@@ -153,6 +158,31 @@ static func aerial_strategy() -> SnaielMeleeAttack:
 	aerial.recovery = 1.35 / 2.4 - 0.31
 	return aerial
 
+static func finisher_strategy() -> SnaielMeleeAttack:
+	var finisher = SnaielMeleeAttack.new()
+	finisher.attack_name = "sword/Grounded_Finisher"
+	finisher.damage_attributes.health = FINISHER_DAMAGE
+	# First UAL2 heavy cut at source speed, then exposed end-pose recovery.
+	finisher.anticipation = 0.4
+	finisher.contact_time = 0.2
+	finisher.recovery = 0.7
+	return finisher
+
+func clear_attack_buffers() -> void:
+	buffered = false
+	finisher_buffered = false
+
+func can_link_finisher() -> bool:
+	return phase == "recovery" and combo in [0, 1] and clock >= recovery_duration() - 0.2 and clock <= recovery_duration() and not buffered and not finisher_buffered
+
+func finisher_eligible() -> bool:
+	return not player_locked() and not player.controls_open and player.switch_timer <= 0 and player.traversal.action == "" and player.traversal.posture == "standing" and state.sword_owned and player.weapon_mode == "sword" and player.is_on_floor() and not aerial_active and not (player.abilities and player.abilities.busy())
+
+func request_finisher() -> void:
+	if not can_link_finisher() or not finisher_eligible(): return
+	if not player.animation_player.has_animation(player.FINISHER_CLIP): return
+	finisher_buffered = true
+
 func sword_stage(stage: String) -> void:
 	clock = 0
 	if stage == "anticipation": phase = "anticipation"
@@ -166,9 +196,18 @@ func sword_stage(stage: String) -> void:
 		if combo < 2: player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
 
 func sword_finished() -> void:
+	if combo == FINISHER_INDEX:
+		player.animation_player.callback_mode_process = finisher_animation_process
 	if aerial_active:
 		phase = "air_recovery"
 		return
+	if finisher_buffered:
+		var eligible = finisher_eligible()
+		clear_attack_buffers()
+		if eligible:
+			combo = FINISHER_INDEX
+			start_swing()
+			return
 	if buffered and combo < 2 and not player_locked():
 		combo += 1
 		start_swing()
@@ -193,7 +232,7 @@ func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dict
 func resolved_enemy_contact(result: Dictionary) -> void:
 	var defeated: bool = result.outcome == "defeat"
 	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit", result)
-	if result.source_id == sword_source.get_instance_id() and (combo == 2 or aerial_active): stop_on_contact(0.045)
+	if result.source_id == sword_source.get_instance_id() and (combo == 2 or combo == FINISHER_INDEX or aerial_active): stop_on_contact(0.045)
 
 func ground_module() -> void:
 	if world.meadow_slice:
@@ -283,6 +322,8 @@ func tell(message: String, seconds = 2.6, event_id := "") -> void:
 
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
+	if finisher_buffered: return "终结技已衔接 · 等待轻击收招"
+	if finisher_eligible() and can_link_finisher(): return "[%s] 重击终结 · 更强一击，收招更长" % player.key_prompt("heavy")
 	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0: return "◇ 靠近拾取经验残响 · +10 XP"
 	if hers.can_interact(player): return "[E] 与赫斯交谈" if not state.sword_owned else ("[E] 复练训练怪 · 无额外奖励" if state.bow_owned and state.remnant_collected else "[E] 练习 / 重试振刀")
 	return ""
@@ -317,7 +358,7 @@ func grant_sword() -> void:
 	player.request_weapon("sword")
 	hers.demonstrate()
 	commit()
-	tell("取得巡路剑 · 1 拔剑 · 试击草靶", 5, "sword_acquired")
+	tell("取得巡路剑 · 1 拔剑 · 左键轻击后收招末段按 %s 重击终结" % player.key_prompt("heavy"), 5, "sword_acquired")
 
 func player_locked() -> bool:
 	return state.lives <= 0 or phase == "death" or hurt_time > 0
@@ -342,7 +383,7 @@ func request_attack() -> void:
 		start_swing()
 		return
 	if aerial_active: return
-	if phase == "recovery" and clock >= recovery_duration() - 0.2 and combo < 2:
+	if phase == "recovery" and clock >= recovery_duration() - 0.2 and combo < 2 and not finisher_buffered:
 		buffered = true
 		return
 	if phase != "idle": return
@@ -355,7 +396,7 @@ func start_swing() -> void:
 	parry_window = 0
 	phase = "anticipation"
 	clock = 0
-	buffered = false
+	clear_attack_buffers()
 	if sword_melee: sword_melee.interrupt_attack()
 	var facing = -player.camera.global_basis.z
 	facing.y = 0
@@ -367,6 +408,11 @@ func start_swing() -> void:
 		player.animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 		player._play_animation(player.AERIAL_CLIP, player.AERIAL_PLAYBACK_SPEED)
 		player.animation_player.advance(0.0)
+	elif combo == FINISHER_INDEX:
+		finisher_animation_process = player.animation_player.callback_mode_process
+		player.animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
+		player._play_animation(player.FINISHER_CLIP, 1.0)
+		player.animation_player.advance(0.0)
 	else:
 		var length: float = player.animation_player.get_animation(CLIPS[combo]).length
 		player._play_animation(CLIPS[combo], length / 0.35)
@@ -374,7 +420,7 @@ func start_swing() -> void:
 	sword_melee.attack(combo, true, false)
 
 func recovery_duration() -> float:
-	return 0.5 if combo == 2 else 0.35
+	return sword_events.attacks[combo].recovery
 
 func sword_landed() -> void:
 	aerial_used = false
@@ -400,7 +446,9 @@ func interrupt(_reason: String) -> void:
 	if world.dynamic_encounters and _reason in ["death", "load", "recovery"]: world.dynamic_encounters.interrupt()
 	player.reset_archery()
 	if world.bow_training and _reason in ["death", "load", "recovery"]: world.bow_training.clear_transients()
-	buffered = false
+	clear_attack_buffers()
+	if combo == FINISHER_INDEX and player.animation_player:
+		player.animation_player.callback_mode_process = finisher_animation_process
 	if aerial_active and player.animation_player:
 		player.animation_player.callback_mode_process = aerial_animation_process
 	aerial_active = false
@@ -726,7 +774,7 @@ func collect_remnant() -> void:
 	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
+	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.

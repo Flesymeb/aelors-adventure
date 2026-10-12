@@ -28,6 +28,10 @@ const AERIAL_CLIP := "sword/Aerial_Heavy"
 const AERIAL_SOURCE_START := 2.1
 const AERIAL_SOURCE_END := 3.45
 const AERIAL_PLAYBACK_SPEED := 2.4
+const FINISHER_CLIP := "sword/Grounded_Finisher"
+const FINISHER_SOURCE_START := 0.0
+const FINISHER_SOURCE_END := 1.0
+var heavy_press_held := false
 var sword_press_held := false
 
 # One source for dispatch, held input, controls UI and gameplay prompts.
@@ -35,13 +39,14 @@ const CONTROL_DEFAULTS := {
 	"roll": KEY_B, "dodge": KEY_ALT, "shoulder": KEY_TAB,
 	"jump": KEY_SPACE, "sprint": KEY_SHIFT, "forward": KEY_W,
 	"back": KEY_S, "left": KEY_A, "right": KEY_D,
-	"crouch": KEY_C, "prone": KEY_Z, "perspective": KEY_V,
+	"crouch": KEY_C, "prone": KEY_Z, "perspective": KEY_V, "heavy": KEY_T,
 }
 const CONTROL_LABELS := {
 	"roll": "Roll", "dodge": "Dodge", "shoulder": "Switch shoulder",
 	"jump": "Jump", "sprint": "Sprint (hold)", "forward": "Move forward",
 	"back": "Move back", "left": "Move left", "right": "Move right",
 	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
+	"heavy": "Sword finisher (late light recovery)",
 }
 # E/F retain interaction/lamp ownership, including while their systems are locked.
 const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_I, KEY_K,
@@ -169,6 +174,7 @@ func _ready() -> void:
 			animation_player.add_animation_library("sword", library)
 			extra.free()
 			_bind_aerial_sword_segment(library)
+			_bind_sword_segment(library, "Grounded_Finisher", FINISHER_SOURCE_START, FINISHER_SOURCE_END)
 		_attach_weapons()
 		_apply_skin()
 		_setup_archery()
@@ -345,13 +351,14 @@ func track_modal_input(event: InputEvent) -> void:
 func set_controls_open(open: bool) -> void:
 	_block_held_controls()
 	sword_press_held = false
+	heavy_press_held = false
 	controls_open = open
 	reset_archery()
 	# The world pause freezes the action clock, contact and parry window.
 	# Only discard buffered future input; opening a menu is not a combat reset.
 	if combat:
-		if open: combat.buffered = false
-		elif combat.blocking and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		combat.clear_attack_buffers()
+		if not open and combat.blocking and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 			combat.set_block(false)
 	# AnimationPlayer inherits the player's pausable process mode. Let the
 	# world pause suspend it without play() resetting a custom attack speed.
@@ -428,6 +435,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		if not event.pressed:
 			blocked_keys.erase(event.keycode)
+			if event.keycode == effective_bindings["heavy"]: heavy_press_held = false
 		elif controls_open:
 			blocked_keys[event.keycode] = true
 	elif event is InputEventMouseButton:
@@ -451,6 +459,11 @@ func _input(event: InputEvent) -> void:
 		# The owner already consumes capture and navigation keys. Allow its
 		# focused GUI buttons to receive unconsumed keyboard and pointer input.
 		# Gameplay actions and unhandled input remain gated by controls_open.
+		return
+	if event is InputEventKey and event.keycode == effective_bindings["heavy"]:
+		if event.pressed and not event.echo and not heavy_press_held and _control_pressed(event, "heavy"):
+			heavy_press_held = true
+			if combat and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED: combat.request_finisher()
 		return
 	if event is InputEventMouseButton and blocked_mouse.has(event.button_index):
 		return
@@ -822,12 +835,16 @@ func _update_animation(moving: bool) -> void:
 
 
 func _bind_aerial_sword_segment(library: AnimationLibrary) -> void:
-	# UAL2's final overhead cut only; exclude the preceding two strikes.
+	_bind_sword_segment(library, "Aerial_Heavy", AERIAL_SOURCE_START, AERIAL_SOURCE_END)
+
+
+func _bind_sword_segment(library: AnimationLibrary, clip_name: String, source_start: float, source_end: float) -> void:
+	# Extract one cut; physics owns horizontal translation, pose retains height.
 	# Preserve the licensed source animation and its rig paths unchanged.
 	if not library.has_animation("Sword_Heavy_Combo") or skeleton == null: return
 	var source: Animation = library.get_animation("Sword_Heavy_Combo")
 	var clip: Animation = source.duplicate(true)
-	clip.length = AERIAL_SOURCE_END - AERIAL_SOURCE_START
+	clip.length = source_end - source_start
 	clip.loop_mode = Animation.LOOP_NONE
 	var pelvis: int = skeleton.find_bone("pelvis")
 	var parent_basis: Basis = skeleton.get_bone_global_rest(skeleton.get_bone_parent(pelvis)).basis
@@ -836,10 +853,10 @@ func _bind_aerial_sword_segment(library: AnimationLibrary) -> void:
 		var type: int = source.track_get_type(track)
 		if type not in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]: continue
 		for key in range(clip.track_get_key_count(track) - 1, -1, -1): clip.track_remove_key(track, key)
-		var times: Array[float] = [AERIAL_SOURCE_START, AERIAL_SOURCE_END]
+		var times: Array[float] = [source_start, source_end]
 		for key in source.track_get_key_count(track):
 			var time: float = source.track_get_key_time(track, key)
-			if time > AERIAL_SOURCE_START and time < AERIAL_SOURCE_END: times.append(time)
+			if time > source_start and time < source_end: times.append(time)
 		for time in times:
 			var value: Variant
 			if type == Animation.TYPE_POSITION_3D:
@@ -850,9 +867,9 @@ func _bind_aerial_sword_segment(library: AnimationLibrary) -> void:
 					value = parent_basis.inverse() * Vector3(anchor.x, world_value.y, anchor.z)
 			elif type == Animation.TYPE_ROTATION_3D: value = source.rotation_track_interpolate(track, time)
 			else: value = source.scale_track_interpolate(track, time)
-			clip.track_insert_key(track, time - AERIAL_SOURCE_START, value)
+			clip.track_insert_key(track, time - source_start, value)
 		clip.track_set_interpolation_loop_wrap(track, false)
-	library.add_animation("Aerial_Heavy", clip)
+	library.add_animation(clip_name, clip)
 
 func _play_animation(name: String, speed: float = 1.0) -> void:
 	if animation_player == null or current_animation == name:

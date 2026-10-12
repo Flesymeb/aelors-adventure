@@ -10,7 +10,7 @@ var capturing := ""
 var capture_button: Button
 var column: BoxContainer
 const GROUPS := {"audio": "声音", "graphics": "画面", "controls": "操作", "reading": "阅读与反馈"}
-const KEY_LABELS := {"roll": "翻滚", "dodge": "闪避", "shoulder": "切换肩位", "jump": "跳跃", "sprint": "奔跑（按住）", "forward": "前进", "back": "后退", "left": "向左", "right": "向右", "crouch": "蹲伏", "prone": "俯卧", "perspective": "切换视角"}
+const KEY_LABELS := {"roll": "翻滚", "dodge": "闪避", "shoulder": "切换肩位", "jump": "跳跃", "sprint": "奔跑（按住）", "forward": "前进", "back": "后退", "left": "向左", "right": "向右", "crouch": "蹲伏", "prone": "俯卧", "perspective": "切换视角", "heavy": "剑终结技（轻击收招末段）"}
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if host.pause_world:
@@ -57,6 +57,7 @@ func build() -> void:
 				for action in bindings.CONTROL_DEFAULTS:
 					var item: Button = host.button(column, KEY_LABELS[action] + " · " + bindings.key_prompt(action), capture.bind(action))
 					item.name = action.capitalize()
+				host.paragraph(column, "取得巡路剑后，轻击第一或第二段收招的最后 0.2 秒按 %s，可衔接重击终结；按住不会连发，收招更长。" % bindings.key_prompt("heavy"))
 				host.button(column, "恢复默认按键", func():
 					var error: String = bindings.restore_controls()
 					build()
