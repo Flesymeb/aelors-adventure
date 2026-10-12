@@ -10,7 +10,7 @@ class RouteDiagram extends Control:
 	var state: Node
 	var player: Node3D
 	func point(xz: Vector2) -> Vector2:
-		var north := 108.0 if state.mf02_acquired else 80.0
+		var north := 120.0 if state.mf02_acquired else 80.0
 		return Vector2(size.x * (0.28 + xz.x / 35.0), 30 + (north - xz.y) / (north - 20.0) * (size.y - 70))
 	func _draw() -> void:
 		var ground = preload("res://world/map02_ground.gd")
@@ -22,7 +22,7 @@ class RouteDiagram extends Control:
 		if state.mf01_acquired:
 			marks.append_array([[ground.PRESSURE_FLANK[0],"岩石右侧绕行"], [ground.ROUTE_RECORD,"林缘 · 固定路碑"]])
 		if state.mf02_acquired:
-			marks.append_array([[ground.LINE_APPROACH,"树线后的林路"], [ground.LINE_RECORD,"墓殿方向 · 结界记号"]])
+			marks.append_array([[ground.LINE_APPROACH,"树线后的林路"], [ground.LINE_RECORD,"墓殿方向 · 结界记号"], [ground.LN01_PASSAGE,"通道已稳定" if state.ln01_location_purified else "林缘通道 · 结界"]])
 		for mark in marks: route.append(point(mark[0]))
 		draw_polyline(route, ink, 3, true)
 		for mark in marks:
@@ -38,7 +38,7 @@ class RouteDiagram extends Control:
 			draw_string(font, rock + Vector2(20,7), "岩石掩体", HORIZONTAL_ALIGNMENT_LEFT, -1, get_theme_default_font_size(), ink)
 		if is_instance_valid(player) and state.current_map == state.MAP02:
 			var xz := Vector2(player.global_position.x, player.global_position.z)
-			if xz.y >= 20 and xz.y <= (108 if state.mf02_acquired else 80):
+			if xz.y >= 20 and xz.y <= (120 if state.mf02_acquired else 80):
 				draw_circle(point(xz), 7, ink)
 				draw_circle(point(xz), 4, Color(1,0.9,0.5))
 

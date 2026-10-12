@@ -8,6 +8,8 @@ var ambush_route_ready := false
 var ambush_route_samples := 0
 var line_route_ready := false
 var line_route_samples := 0
+var barrier_route_samples := 0
+var barrier_route_ready := false
 
 func _ready() -> void:
 	meadow_slice = true
@@ -55,7 +57,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not ground.place(self, player, xz): xz = ground.ENTRY; continue
-		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded or not ambush_encounter.grounded or not line_encounter.grounded or not line_record.grounded: continue
+		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded or not ambush_encounter.grounded or not line_encounter.grounded or not line_record.grounded or not barrier.grounded: continue
 		# Qualify support and standing volume along the scoped approach, not an
 		# invisible replacement floor. The retained collision remains authoritative.
 		route_samples = 0
@@ -92,8 +94,14 @@ func _place_player() -> void:
 			for j in 6:
 				if ground.place(self, stance, line_points[i].lerp(line_points[i+1], float(j)/5.0)) and line_encounter.standing_clear(stance): line_route_samples += 1
 		line_route_ready = line_route_samples == 30
+		barrier_route_samples = 0
+		var circuit_points: Array[Vector2] = [ground.LINE_RECORD_APPROACH, ground.LN01_CLUE, Vector2(6,105), Vector2(3,105), ground.LN01_SUPPLY, Vector2(3,105), Vector2(9,105), ground.LN01_LOCATION]
+		for i in circuit_points.size()-1:
+			for j in 5:
+				if ground.place(self,stance,circuit_points[i].lerp(circuit_points[i+1],float(j)/4)): barrier_route_samples += 1
+		barrier_route_ready = barrier_route_samples == 35
 		stance.queue_free()
-		route_ready = route_samples == 20 and pressure_route_ready and ambush_route_ready and line_route_ready
+		route_ready = route_samples == 20 and pressure_route_ready and ambush_route_ready and line_route_ready and barrier_route_ready
 		if not route_ready:
 			entry_failed.emit("草甸道路无法安全通行。已保留上一处落脚点。")
 			return
@@ -115,5 +123,7 @@ func _mcp_state() -> Dictionary:
 	result.ambush_route_samples = ambush_route_samples
 	result.line_route_ready = line_route_ready
 	result.line_route_samples = line_route_samples
+	result.barrier_route_ready = barrier_route_ready
+	result.barrier_route_samples = barrier_route_samples
 	result.checkpoint = "CP02"
 	return result

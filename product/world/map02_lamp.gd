@@ -8,6 +8,10 @@ func reveal() -> bool:
 		world.training.tell("旧灯恢复中 · %.1f 秒" % cooldown)
 		return true
 	if world.player.switch_timer > 0 or world.training.player_locked() or world.player.traversal.action != "" or world.element_abilities.busy() or world.player.attack_timer > 0 or not world.pause_owners.is_empty(): return true
+	if world.barrier and world.barrier.lamp_target_available():
+		if world.barrier.reveal():
+			cooldown = 3.0
+			return true
 	if not world.ambush_encounter.approach_allowed():
 		world.training.tell("先调查岩石后的固定路碑，再追踪林缘魔痕")
 		return true

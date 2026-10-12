@@ -40,6 +40,7 @@ var route_clue: Node3D
 var ambush_encounter: Node3D
 var line_encounter: Node3D
 var line_record: Node3D
+var barrier: Node3D
 var pressure_encounter: Node3D
 var bridge_encounter: Node3D
 var dynamic_encounters: Node3D
@@ -176,6 +177,10 @@ func _ready() -> void:
 		line_record.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(line_record)
 		line_record.configure(self)
+		barrier = preload("res://world/Map02Barrier.tscn").instantiate()
+		barrier.name = "LN01Barrier"
+		add_child(barrier)
+		barrier.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -407,6 +412,8 @@ func _load_opening(slot: int) -> void:
 	player.prepare_restored_camera(float(restored.yaw))
 	training.restore_history()
 	if route_clue: route_clue.restore_history()
+	if line_record: line_record.restore_history()
+	if barrier: barrier.restore_history()
 	if bridge_actions: bridge_actions.restore_history()
 	if channel_guards: channel_guards.restore_history()
 	gameplay_hud.restore_view()
@@ -423,6 +430,12 @@ func _refresh_reading_controls() -> void:
 	dialogue._layout()
 	if failure_panel: _layout_failure()
 
+
+func contextual_interaction_target() -> Node3D:
+	# This priority owns both the visible prompt and ordinary E recipient.
+	for target in [barrier, route_clue, line_record, pressure_encounter, bridge_actions, lamp_training, bow_training, training]:
+		if is_instance_valid(target) and target.interaction_prompt() != "": return target
+	return null
 
 func _mcp_state() -> Dictionary:
 	# Lifecycle sampling reads authorities only, including partial construction.
@@ -583,15 +596,9 @@ func handle_controls_input(event: InputEvent) -> bool:
 			if event.keycode in [KEY_F10, KEY_ESCAPE]:
 				_open_controls()
 				return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and route_clue and route_clue.interact(): return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and line_record and line_record.interact(): return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and pressure_encounter and pressure_encounter.interact(): return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bridge_actions and bridge_actions.interact(): return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and lamp_training and lamp_training.interact(): return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and bow_training and bow_training.interact():
-				return true
-			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E) and training and training.interact():
-				return true
+			if event.keycode == KEY_E and not player.blocked_keys.has(KEY_E):
+				var target := contextual_interaction_target()
+				if target and target.interact(): return true
 			if event.keycode == KEY_E and not meadow_slice and not player.blocked_keys.has(KEY_E) and isha.can_interact(player):
 				if dialogue_state.dialogue_kind != "isha":
 					dialogue_state.conversation_active = false

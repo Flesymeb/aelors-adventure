@@ -89,7 +89,7 @@ func _record_activated(active: bool) -> void:
 		return
 	world.training.commit()
 	world.menu_audio.play_cue("confirm")
-	world.training.tell("路标指向裂隙墓殿，并标出了林缘通道的结界。\nMF02 已记录 · M 地图 / J 日志", 7)
+	world.training.tell("路标指向裂隙墓殿 · 沿路前行，用旧灯显露线路。\n先切断螺旋供能，再净化箭头定位 · M 地图 / J 日志", 7)
 
 func _supply_activated(active: bool) -> void:
 	if not active: return

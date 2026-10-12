@@ -1,0 +1,50 @@
+{
+  "revision": "82d948812bfe3f269ef8f731dcdb07b08160edc4",
+  "sources": [
+    {
+      "path": "ln01_spiral.svg",
+      "upstream_path": "lorc/divided-spiral.svg",
+      "source_url": "https://raw.githubusercontent.com/game-icons/icons/82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/divided-spiral.svg",
+      "author": "Lorc",
+      "license": "CC-BY-3.0",
+      "adaptation": "Removed opaque background; white silhouette retained; rasterized with transparent native edges."
+    },
+    {
+      "path": "ln01_arrow.svg",
+      "upstream_path": "delapouite/plain-arrow.svg",
+      "source_url": "https://raw.githubusercontent.com/game-icons/icons/82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/plain-arrow.svg",
+      "author": "Delapouite",
+      "license": "CC-BY-3.0",
+      "adaptation": "Removed opaque background; white silhouette retained; rasterized with transparent native edges."
+    }
+  ],
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "materials": "Native StandardMaterial3D, no shader TIME; animation driven by pausable owner delta.",
+  "acquisition": "Direct acquisition of unregistered SVG members after policy-bound local and remote mark searches returned no suitable mark family; no registered materialization was exposed for these members.",
+  "conversion": "rsvg-convert 256x256 RGBA; source white paths unchanged; transparent background",
+  "retained_geometry": {
+    "resource": "res://assets/maps/map02/Meshes/Rocks/rock_moss_set_01_rock06.glb",
+    "notice": "assets/maps/map02/LICENSE",
+    "adaptation": "Retained rock geometry and materials instanced at grounded circuit and passage anchors."
+  },
+  "mechanism": {
+    "source": "Nodragem Action Adventure",
+    "revision": "efc171fd37682811c9efe0df83b02e9102d4f5f5",
+    "license": "CC0-1.0",
+    "paths": [
+      "interaction/nodragem/switch_component.gd",
+      "interaction/nodragem/short_interaction_switch.gd"
+    ],
+    "adaptation": "Direct permanent switches; signal-blocked fact projection; product state owns legal transitions."
+  },
+  "registered_materialization": {
+    "asset_id": "2eb29e1fe5bb2b5dd917d53f622ead62c20f032cada0dc41ed811317dc0ece79:3b5d4bd33c942782cf39453df5fb9ed724d4338f7f19de0f218ae634d2debdd1",
+    "source": "local_pool",
+    "members": [
+      "ln01_spiral.png",
+      "ln01_arrow.png"
+    ],
+    "publication": "game-asset-provider catalog import",
+    "staging": "game-asset-provider agent download"
+  }
+}

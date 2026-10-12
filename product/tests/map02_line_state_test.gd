@@ -32,7 +32,7 @@ static func run() -> Dictionary:
 	restored.restore_config(wire)
 	checks.pending_restore = restored.line_remaining() == 2 and not restored.reward_history[restored.LINE_IDS[2]].collected and not restored.mf02_acquired
 	checks.finish = restored.settle_line(Vector3(5,1,87),{},restored.LINE_IDS[0]) and restored.settle_line(Vector3(11,1,88),{},restored.LINE_IDS[1]) and restored.line_defeated() and restored.experience == xp + 30
-	checks.mf02_once = restored.acquire_mf02() and not restored.acquire_mf02() and restored.tracked_quest == "line_record" and restored.mf01_acquired
+	checks.mf02_once = restored.acquire_mf02() and not restored.acquire_mf02() and restored.tracked_quest == "ln01" and restored.objective().contains("旧灯") and restored.mf01_acquired
 	var settled: ConfigFile = HISTORY.history(restored)
 	checks.complete_valid = restored.config_unavailable_reason(settled) == ""
 	restored.restore_config(settled)

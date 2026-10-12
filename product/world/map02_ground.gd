@@ -24,6 +24,11 @@ const LINE_RECORD := Vector2(13, 100)
 const LINE_RECORD_APPROACH := Vector2(11, 101)
 const LINE_SUPPLY := Vector2(2, 100)
 const LINE_SUPPLY_APPROACH := Vector2(4, 100)
+const LN01_CLUE := Vector2(6, 103)
+const LN01_SUPPLY := Vector2(3, 107)
+const LN01_LOCATION := Vector2(9, 107)
+const LN01_PASSAGE := Vector2(6, 111)
+const LN01_EXIT := Vector2(6, 116)
 
 static func in_bounds(xz: Vector2) -> bool:
 	return xz.is_finite() and xz.x >= -1100 and xz.x <= 700 and xz.y >= -1300 and xz.y <= 500
@@ -32,7 +37,7 @@ static func entry_xz(position: Vector3, map_id: String) -> Vector2:
 	# Old MAP02 reused village coordinates. Recover at CP02 without altering facts.
 	if map_id != MAP02_ID or not position.is_finite(): return ENTRY
 	var xz := Vector2(position.x, position.z)
-	return xz if xz.x >= -20 and xz.x <= 35 and xz.y >= 10 and xz.y <= 105 else ENTRY
+	return xz if xz.x >= -20 and xz.x <= 35 and xz.y >= 10 and xz.y <= 119 else ENTRY
 
 static func support(world: Node3D, xz: Vector2, excludes: Array = []) -> Dictionary:
 	if not in_bounds(xz): return {}

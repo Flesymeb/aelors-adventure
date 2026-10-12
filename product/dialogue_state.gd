@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -57,6 +57,9 @@ var mf01_acquired := false
 var e03_revealed := false
 var mf02_acquired := false
 var line_supply_claimed := false
+var ln01_revealed := false
+var ln01_supply_cut := false
+var ln01_location_purified := false
 const MAP02 := "meadow-entry-v1"
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
@@ -333,13 +336,41 @@ func settle_line(point: Vector3, drop: Dictionary, id: String) -> bool:
 func acquire_mf02() -> bool:
 	if mf02_acquired or not line_defense_available() or not line_defeated(): return false
 	mf02_acquired = true
-	tracked_quest = "line_record"
+	tracked_quest = "ln01"
 	progression_changed.emit()
 	return true
 
 func mf02_information() -> String:
 	if not mf02_acquired: return "墓殿方向尚未查明。沿 E03 树线继续前行，清除 E04 的两名近卫与弓守，再调查固定标记。"
-	return "押送队沿林路前往裂隙墓殿。石旁的结界记号指向墓殿入口，拘束仍未解除。\nMF02 标记独立于尸体；M / J 保留墓殿方向与结界记号。返程沿树线与岩石右侧回到草甸灯台。\n四位村民仍待救援；墓殿通路尚未开放。"
+	return "押送队沿林路前往裂隙墓殿。石旁的结界记号指向墓殿入口，拘束仍未解除。\nMF02 标记独立于尸体；M / J 保留墓殿方向与结界记号。返程沿树线与岩石右侧回到草甸灯台。\n四位村民仍待救援。\n" + ln01_information()
+
+func ln01_available() -> bool:
+	return mf02_acquired and lamp_owned and line_defense_available() and line_defeated()
+
+func reveal_ln01() -> bool:
+	if not ln01_available() or ln01_revealed: return false
+	ln01_revealed = true
+	tracked_quest = "ln01"
+	progression_changed.emit()
+	return true
+
+func cut_ln01_supply() -> bool:
+	if not ln01_available() or not ln01_revealed or ln01_supply_cut: return false
+	ln01_supply_cut = true
+	progression_changed.emit()
+	return true
+
+func purify_ln01_location() -> bool:
+	if not ln01_available() or not ln01_revealed or not ln01_supply_cut or ln01_location_purified: return false
+	ln01_location_purified = true
+	progression_changed.emit()
+	return true
+
+func ln01_information() -> String:
+	if ln01_location_purified: return "林缘通道已稳定 · 敌方光纹消退。四位村民仍待救援；裂隙墓殿仍待探索。"
+	if ln01_supply_cut: return "螺旋供能已切断 · 靠近箭头定位节点，按 E 用旧灯净化。"
+	if ln01_revealed: return "螺旋环形是敌方供能，箭头是通道定位。先在螺旋处按 E 切断供能，再净化箭头。"
+	return "沿墓殿路标向前，旧灯显露通道线路 · 3 装备旧灯，F 显形。先断螺旋供能，再净化箭头定位；线索与节点均在结界外。"
 
 func line_supply_available() -> bool:
 	return line_defense_available() and line_defeated() and not line_supply_claimed
@@ -512,7 +543,7 @@ func objective() -> String:
 			if not ambush_defeated(): return "MF01 已记录 · E03 林缘魔痕（剩余 %d/2） · 按 3 装备旧灯，F 显形；M / J 查阅路线" % ambush_remaining() if not e03_revealed else "E03 伏击者已显形（剩余 %d/2） · 闪避或格挡突进，再反击；可退回灯台" % ambush_remaining()
 			if not line_defeated(): return "E03 已清除 · 沿树线前行至 E04（剩余 %d/3）；利用岩石挡箭，优先处理弓守" % line_remaining()
 			if not mf02_acquired: return "E04 已清除 · 固定石旁标记按 E 调查 MF02；另有一次恢复补给"
-			return "MF02 已记录 · M / J 查阅墓殿方向与结界记号；" + ("可领取一次恢复补给；" if line_supply_available() else "") + "四位村民仍待救援"
+			return ln01_information()
 		return "E02 已清除 · " + ("领取一次胜利补给；" if pressure_supply_available() else "胜利补给已领取；") + ("MF01 已记录 · M 查看农田至林缘路线，J 查看记录；后续痕迹仍待追踪" if mf01_acquired else "岩石后方固定路碑 · 按 E 调查 MF01")
 	if not q01_accepted: return "救援请求 · 与广场边的伊莎交谈"
 	if not sword_owned: return "出发前的训练 · 转身沿土路，到木屋旁找赫斯"
@@ -748,6 +779,13 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 		if not config.get_value("post_bow", key, false) is bool: return "存档墓殿路线记录无效"
 	if line_earned and (not e03_complete or not revealed): return "存档林路防线前置无效"
 	if (config.get_value("post_bow", "mf02_acquired", false) or config.get_value("post_bow", "line_supply_claimed", false)) and (not claimed or not e03_complete or not revealed or not line_complete): return "存档林路调查前置无效"
+	for key in ["ln01_revealed", "ln01_supply_cut", "ln01_location_purified"]:
+		if typeof(config.get_value("post_bow", key, false)) != TYPE_BOOL: return "存档通道线路状态无效"
+	var circuit_revealed: bool = config.get_value("post_bow", "ln01_revealed", false)
+	var supply_cut: bool = config.get_value("post_bow", "ln01_supply_cut", false)
+	var purified: bool = config.get_value("post_bow", "ln01_location_purified", false)
+	if (circuit_revealed or supply_cut or purified) and (not config.get_value("post_bow", "mf02_acquired", false) or not config.get_value("post_bow", "lamp_owned", false)): return "存档通道调查前置无效"
+	if supply_cut and not circuit_revealed or purified and not supply_cut: return "存档通道线路顺序无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -863,6 +901,8 @@ func quest_entries() -> Array[Dictionary]:
 	if cp02_claimed:
 		rows.append({"id":"line", "title":"林路防线 · E04", "complete":line_defeated(), "context":"两名近卫与一名弓守占据树线后的林路。用岩石阻断箭线；沿原路可退回灯台。胜利后调查固定标记，恢复补给另行领取。", "action":objective(), "steps":LINE_IDS.filter(func(id): return reward_history.has(id)).map(func(id): return "林路弓守已击败" if id == LINE_IDS[2] else "林路近卫已击败") + (["一次恢复补给已领取"] if line_supply_claimed else [])})
 		rows.append({"id":"line_record", "title":"墓殿方向与结界记号 · MF02", "complete":mf02_acquired, "context":mf02_information(), "action":"M 查阅墓殿方向 · 四位村民仍待救援" if mf02_acquired else "清除 E04，调查石旁固定标记", "steps":["固定标记已记录 · 保存后可继续查阅"] if mf02_acquired else []})
+	if mf02_acquired:
+		rows.append({"id":"ln01", "title":"林缘通道 · 解除结界", "complete":ln01_location_purified, "context":ln01_information(), "action":"旧灯显形 → 切断螺旋供能 → 净化箭头定位", "steps":["线路已显形" if ln01_revealed else "显露线路", "供能已切断" if ln01_supply_cut else "切断供能", "通道已稳定" if ln01_location_purified else "净化定位"]})
 	return rows
 
 func tracked_entry() -> Dictionary:
