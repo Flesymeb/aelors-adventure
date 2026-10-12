@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -64,6 +64,10 @@ const MAP02 := "meadow-entry-v1"
 const MAP03 := "tomb-entry-v1"
 var cp03_claimed := false
 var ritual_record_read := false
+var ln02_revealed := false
+var ln02_north_cut := false
+var ln02_south_cut := false
+var ln02_purified := false
 var bridge_resident_rescued := false
 var bridge_lamp_lit := false
 var bridge_first_action := ""
@@ -275,8 +279,44 @@ func acquire_ritual_record() -> bool:
 	ritual_record_read = true
 	return true
 
+func ln02_available() -> bool:
+	return current_map == MAP03 and cp03_claimed and lamp_owned and health > 0 and not recovery_pending and tomb_missing_conditions().is_empty()
+
+func reveal_ln02() -> bool:
+	if not ln02_available() or ln02_revealed: return false
+	ln02_revealed = true
+	tracked_quest = "ln02"
+	progression_changed.emit()
+	return true
+
+func cut_ln02_supply(side: String) -> bool:
+	if not ln02_available() or not ln02_revealed or side not in ["north", "south"]: return false
+	var key := "ln02_" + side + "_cut"
+	if get(key): return false
+	set(key, true)
+	progression_changed.emit()
+	return true
+
+func purify_ln02() -> bool:
+	if not ln02_available() or not ln02_revealed or not ln02_north_cut or not ln02_south_cut or ln02_purified: return false
+	ln02_purified = true
+	progression_changed.emit()
+	return true
+
+func ln02_remaining() -> Array[String]:
+	var remaining: Array[String] = []
+	if not ln02_north_cut: remaining.append("北侧螺旋供能")
+	if not ln02_south_cut: remaining.append("南侧箭纹供能")
+	return remaining
+
+func ln02_information() -> String:
+	if ln02_purified: return "入口结界已净化 · 沿左右石阶进入墓殿，原路可返回灯台。四位村民仍待救援。"
+	if not ln02_revealed: return "入口有两条独立供能。按 3 装备旧灯，靠近入口按 F 显形；北侧螺旋与南侧箭纹均在封锁外。"
+	if ln02_north_cut and ln02_south_cut: return "两条供能已切断 · 靠近入口右侧通行装置，按 E 用旧灯主动净化。"
+	return "仍在供能：" + "、".join(ln02_remaining()) + "。可按任意顺序靠近节点按 E 切断；只断一条，另一条仍会维持结界。"
+
 func ritual_information() -> String:
-	return "维恩需要村长奥伦指出最后封印的位置，仪式尚未完成。奥伦与三名村民仍待救援。没有隐藏倒计时。入口结界 LN02 尚未解除；看守、维恩、逐人营救与集合仍待完成。" if ritual_record_read else "墓殿入口的石碑保存着敌方仪式记录。先在封锁外调查，再决定营救路线。"
+	return "维恩需要村长奥伦指出最后封印的位置，仪式尚未完成。奥伦与三名村民仍待救援。没有隐藏倒计时。" + ln02_information() + "看守、维恩、逐人营救与集合仍待完成。" if ritual_record_read else "墓殿入口的石碑保存着敌方仪式记录。先在封锁外调查，再决定营救路线。"
 
 func checkpoint_name() -> String:
 	return "裂隙墓殿灯台" if current_map == MAP03 else "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
@@ -558,13 +598,14 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	current_map = map_id if map_id in [MAP02, MAP03] else GROUND.MAP_ID
 	var ground_policy = preload("res://world/map03_ground.gd") if current_map == MAP03 else preload("res://world/map02_ground.gd") if current_map == MAP02 else GROUND
 	var xz: Vector2 = ground_policy.entry_xz(saved, current_map) if current_map in [MAP02, MAP03] else GROUND.restored_xz(saved, current_map)
+	if current_map == MAP03 and not ln02_purified and xz.y < -7.2: xz = ground_policy.ENTRY
 	if map_id != GROUND.MAP_ID and encounter_defeated and not remnant_collected:
 		remnant_position = Vector3(GROUND.ENCOUNTER.x, 0, GROUND.ENCOUNTER.y)
 	persistence_error = ""
 	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": current_map}
 
 func objective() -> String:
-	if current_map == MAP03: return "墓殿入口 · 调查右侧仪式石碑（E）；左侧蓝光通道可返回草甸" if not ritual_record_read else "仪式记录已保存 · 四位村民仍待救援；入口结界与后续营救尚未完成。可经蓝光通道回草甸。"
+	if current_map == MAP03: return "墓殿入口 · 调查右侧仪式石碑（E）；左侧蓝光通道可返回草甸" if not ritual_record_read and not ln02_revealed else ln02_information()
 	if current_map == MAP02:
 		if not roadblock_defeated(): return "林缘草甸 · 清除路障近战者（剩余 %d/2）；可退回灯台整顿" % roadblock_remaining()
 		if not pressure_defeated(): return "E02 押送守卫（剩余 %d/2） · 沿林路前行，利用岩石挡箭；可退回灯台" % pressure_remaining()
@@ -820,6 +861,14 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if not tomb_claimed is bool or not record_read is bool: return "存档墓殿记录无效"
 	if (tomb_claimed or current == MAP03 or map_id == MAP03 or record_read) and (not claimed or not e01_complete or not e02_complete or not e03_complete or not line_complete or not revealed or not config.get_value("post_bow", "mf01_acquired", false) or not config.get_value("post_bow", "mf02_acquired", false) or not purified): return "存档墓殿前置无效"
 	if (current == MAP03 or map_id == MAP03 or record_read) and not tomb_claimed: return "存档墓殿检查点无效"
+	for key in ["ln02_revealed", "ln02_north_cut", "ln02_south_cut", "ln02_purified"]:
+		if typeof(config.get_value("post_bow", key, false)) != TYPE_BOOL: return "存档入口线路状态无效"
+	var entrance_revealed: bool = config.get_value("post_bow", "ln02_revealed", false)
+	var north_cut: bool = config.get_value("post_bow", "ln02_north_cut", false)
+	var south_cut: bool = config.get_value("post_bow", "ln02_south_cut", false)
+	var entrance_purified: bool = config.get_value("post_bow", "ln02_purified", false)
+	if (entrance_revealed or north_cut or south_cut or entrance_purified) and (not tomb_claimed or not config.get_value("post_bow", "lamp_owned", false)): return "存档入口调查前置无效"
+	if (north_cut or south_cut) and not entrance_revealed or entrance_purified and (not north_cut or not south_cut): return "存档入口线路完成条件无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -939,6 +988,7 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"ln01", "title":"林缘通道 · 解除结界", "complete":ln01_location_purified, "context":ln01_information(), "action":"旧灯显形 → 切断螺旋供能 → 净化箭头定位", "steps":["线路已显形" if ln01_revealed else "显露线路", "供能已切断" if ln01_supply_cut else "切断供能", "通道已稳定" if ln01_location_purified else "净化定位"]})
 	if cp03_claimed:
 		rows.append({"id":"ritual_record", "title":"墓殿入口 · 仪式记录", "complete":ritual_record_read, "context":ritual_information(), "action":objective(), "steps":["CP03 灯台已启用 · 首次加命已领取"] + (["仪式尚未完成 · 四位村民仍待救援"] if ritual_record_read else [])})
+		rows.append({"id":"ln02", "title":"墓殿入口 · 双供能结界", "complete":ln02_purified, "context":ln02_information(), "action":ln02_information(), "steps":["线路已显形" if ln02_revealed else "旧灯显形", "北侧供能已切断" if ln02_north_cut else "切断北侧供能", "南侧供能已切断" if ln02_south_cut else "切断南侧供能", "入口已净化" if ln02_purified else "主动净化入口"]})
 	return rows
 
 func tracked_entry() -> Dictionary:

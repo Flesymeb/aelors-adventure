@@ -3,6 +3,7 @@ extends "res://preview_controller.gd"
 const TOMB_GROUND = preload("res://world/map03_ground.gd")
 var ritual_record: Node3D
 var return_passage: Node3D
+var entrance_circuit: Node3D
 var route_ready := false
 var route_samples := 0
 var collision_meshes := 0
@@ -17,11 +18,10 @@ class TombQuality extends Node:
 class TombLamp extends "res://lamp_training.gd":
 	func interaction_prompt() -> String: return ""
 	func reveal() -> bool:
-		if not state.lamp_owned or world.player.weapon_mode != "lamp": return false
-		if cooldown > 0 or not world.travel_safe(): return true
-		cooldown = 3.0
-		world.training.feedback.spark(world.player.global_position + Vector3.UP,Color(0.4,0.85,1))
-		world.training.tell("旧灯照亮墓道 · 入口结界尚未解除，先调查仪式记录。",4)
+		if not state.lamp_owned or world.player.weapon_mode != "lamp": world.training.tell("按 3 装备旧灯，再按 F 显形。",4); return true
+		if cooldown > 0: world.training.tell("旧灯恢复中 · %.1f 秒" % cooldown,3); return true
+		if not world.travel_safe(): return true
+		if world.entrance_circuit.reveal(): cooldown = 3.0
 		return true
 
 func _ready() -> void:
@@ -34,7 +34,7 @@ func _ready() -> void:
 	village.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(village)
 	_bind_collision()
-	_bind_entrance_boundary()
+	_bind_entrance_lights()
 	if dialogue_state == null:
 		entry_failed.emit("墓殿缺少冒险历史，已保留上一处边界。")
 		return
@@ -47,6 +47,8 @@ func _ready() -> void:
 	player.process_mode = Node.PROCESS_MODE_DISABLED
 	add_child(player)
 	player.camera.current = true
+	# The retained crypt has a 0.60 m first tread, then 0.49 m treads.
+	player.traversal.step_height_limit = 0.65
 	quality = TombQuality.new()
 	add_child(quality)
 	menu_audio = entry_router.audio
@@ -65,6 +67,7 @@ func _ready() -> void:
 	bow_training.configure(self)
 	bow_training.pending_demo = false
 	lamp_training = TombLamp.new()
+	lamp_training.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(lamp_training)
 	lamp_training.configure(self)
 	element_abilities = preload("res://world/map02_element_abilities.gd").new()
@@ -89,6 +92,9 @@ func _ready() -> void:
 	return_passage.name = "ReturnPassage"
 	add_child(return_passage)
 	return_passage.configure(self)
+	entrance_circuit = preload("res://world/map03_barrier.tscn").instantiate()
+	add_child(entrance_circuit)
+	entrance_circuit.configure(self)
 	_place_player.call_deferred()
 
 func create_environment() -> Node3D:
@@ -103,7 +109,7 @@ func _bind_collision() -> void:
 			if not body is StaticBody3D: continue
 			body.collision_layer = 1
 			body.collision_mask = 1
-			if "Floor" in mesh.name: body.set_meta("tomb_floor",true)
+			if "Floor" in mesh.name or "Stairs" in mesh.name: body.set_meta("tomb_floor",true)
 			for shape in body.get_children():
 				if shape is CollisionShape3D and shape.shape is ConcavePolygonShape3D: shape.shape.backface_collision = true
 		collision_meshes += 1
@@ -113,7 +119,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not TOMB_GROUND.place(self,player,xz): xz = TOMB_GROUND.ENTRY; continue
-		if not ritual_record.grounded or not return_passage.grounded: continue
+		if not ritual_record.grounded or not return_passage.grounded or not entrance_circuit.grounded: continue
 		var stance := Node3D.new()
 		add_child(stance)
 		route_samples = 0
@@ -131,22 +137,28 @@ func _place_player() -> void:
 	entry_failed.emit("墓殿落脚点无法准备，已保留上一处边界。")
 
 func destination_ready() -> bool:
-	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded
+	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded and entrance_circuit.grounded
 
 func restore_destination_history() -> void:
 	super()
 	ritual_record.restore_history()
+	entrance_circuit.restore_history()
+
+func restored_xz(position: Vector3, map_id: String) -> Vector2:
+	var xz := TOMB_GROUND.entry_xz(position,map_id)
+	return TOMB_GROUND.ENTRY if not dialogue_state.ln02_purified and xz.y < -7.2 else xz
 
 func checkpoint_xz() -> Vector2: return TOMB_GROUND.ENTRY
 func active_map_id() -> String: return dialogue_state.MAP03
 func contextual_interaction_target() -> Node3D:
-	for target in [ritual_record,return_passage]:
+	for target in [entrance_circuit,ritual_record,return_passage]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 
 func _load_opening(slot: int) -> void:
 	super(slot)
 	if is_instance_valid(ritual_record): ritual_record.restore_history()
+	if is_instance_valid(entrance_circuit): entrance_circuit.restore_history()
 
 func _mcp_state() -> Dictionary:
 	var result := super()
@@ -159,48 +171,7 @@ func _mcp_state() -> Dictionary:
 	result.record_read = dialogue_state.ritual_record_read if is_instance_valid(dialogue_state) else null
 	return result
 
-func _bind_entrance_boundary() -> void:
-	# The scoped entrance ends at a visible sealed threshold; LN02 remains unfinished.
-	var seal := MeshInstance3D.new()
-	seal.name = "UnresolvedEntranceSeal"
-	var veil := QuadMesh.new()
-	veil.size = Vector2(15.8,6.0)
-	seal.mesh = veil
-	var mist := StandardMaterial3D.new()
-	mist.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mist.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mist.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mist.albedo_color = Color(0.2,0.6,0.8,0.09)
-	seal.material_override = mist
-	seal.position = Vector3(0,3,-7.4)
-	village.add_child(seal)
-	for x in [-4.0,4.0]:
-		var rune := MeshInstance3D.new()
-		var ring := TorusMesh.new()
-		ring.inner_radius = 0.6
-		ring.outer_radius = 0.63
-		rune.mesh = ring
-		rune.material_override = preload("res://assets/effects/ln01_flow.tres")
-		rune.rotation_degrees.x = 90
-		rune.position = Vector3(x,2.8,-7.35)
-		village.add_child(rune)
-	var body := StaticBody3D.new()
-	body.name = "UnresolvedEntranceBoundary"
-	body.collision_layer = 1
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(16,6,0.3)
-	shape.shape = box
-	body.add_child(shape)
-	body.position = seal.position
-	village.add_child(body)
-	var label := Label3D.new()
-	label.text = "入口结界尚未解除 · 先调查仪式记录"
-	label.font = ui_font
-	label.font_size = 40
-	label.pixel_size = 0.003
-	label.position = Vector3(0,3.5,-7.1)
-	village.add_child(label)
+func _bind_entrance_lights() -> void:
 	for point in [Vector3(-7,3,0),Vector3(7,3,0),Vector3(-7,3,-6),Vector3(7,3,-6)]:
 		var torch := OmniLight3D.new()
 		torch.position = point

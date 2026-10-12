@@ -48,7 +48,9 @@ class RouteDiagram extends Control:
 	func _draw_tomb() -> void:
 		var font := get_theme_default_font()
 		var ink := Color(0.2,0.15,0.08)
-		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口结界 · 尚未解除"]]
+		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口已净化 · 石阶" if state.ln02_purified else "入口结界 · 双供能"]]
+		if state.ln02_revealed:
+			marks.append_array([[Vector2(0.25,0.27),"北侧 · 已切断" if state.ln02_north_cut else "北侧 · 螺旋供能"],[Vector2(0.25,0.51),"南侧 · 已切断" if state.ln02_south_cut else "南侧 · 箭纹供能"]])
 		draw_polyline(PackedVector2Array([size*marks[1][0],size*marks[0][0],size*Vector2(0.5,0.32),size*marks[2][0]]),ink,3,true)
 		for mark in marks:
 			var p: Vector2 = size*mark[0]

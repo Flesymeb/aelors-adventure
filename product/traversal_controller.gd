@@ -3,6 +3,8 @@ extends Node
 const MOTION_ASSET := "res://Characters/KayKitAnimations/Rig_Medium_MovementAdvanced.glb"
 const MOTION_POSE := preload("res://movement_pose_modifier.gd")
 const STEP_HEIGHT := 0.32
+# A chapter may qualify a larger authored tread; other maps retain the default.
+var step_height_limit := STEP_HEIGHT
 const SPEEDS := {"standing": 5.0, "crouch": 2.2, "prone": 1.15}
 
 var player: CharacterBody3D
@@ -239,7 +241,7 @@ func move_with_steps(delta: float) -> void:
 	volume.exclude = [player.get_rid()]
 	if not player.get_world_3d().direct_space_state.intersect_shape(volume, 1).is_empty(): return
 	var support := _support_observation(before + horizontal)
-	if support.is_empty() or support.normal.dot(Vector3.UP) < cos(player.floor_max_angle) or absf(support.position.y - before.y) > STEP_HEIGHT: return
+	if support.is_empty() or support.normal.dot(Vector3.UP) < cos(player.floor_max_angle) or absf(support.position.y - before.y) > step_height_limit: return
 	if player.test_move(player.global_transform, horizontal): return
 	player.move_and_collide(horizontal)
 	if player.global_position.distance_squared_to(before) > 0.00000001: floor_recovery_count += 1
@@ -255,14 +257,14 @@ func _try_step(horizontal: Vector3) -> bool:
 	# Keep a short minimum lookahead; the same distance is swept for clearance.
 	var probe_distance := standing_shape.radius + maxf(horizontal.length(), 0.05) + 0.04
 	var probe: Vector3 = player.global_position + horizontal.normalized() * probe_distance
-	var query := PhysicsRayQueryParameters3D.create(probe + Vector3.UP * (STEP_HEIGHT + 0.04), probe + Vector3.DOWN * 0.04)
+	var query := PhysicsRayQueryParameters3D.create(probe + Vector3.UP * (step_height_limit + 0.04), probe + Vector3.DOWN * 0.04)
 	query.exclude = [player.get_rid()]
 	query.collision_mask = player.collision_mask
 	var landing: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
 	if landing.is_empty() or landing.normal.dot(Vector3.UP) < cos(player.floor_max_angle):
 		return false
 	var height: float = landing.position.y - player.global_position.y
-	if height <= 0.01 or height > STEP_HEIGHT:
+	if height <= 0.01 or height > step_height_limit:
 		return false
 	var rise := Vector3.UP * (height + 0.003)
 	var raised: Transform3D = player.global_transform
@@ -296,7 +298,7 @@ func observation() -> Dictionary:
 	# Called only by read-only runtime inspection; never drives the player or UI.
 	var heading: Vector3 = moving_direction if moving_direction.length_squared() > 0.01 else player.visual.global_basis.z
 	heading.y = 0.0
-	return {"grounded":player.is_on_floor(),"floor_normal":player.get_floor_normal() if player.is_on_floor() else Vector3.ZERO,"posture":posture,"action":action,"step_count":step_count,"floor_recovery_count":floor_recovery_count,"step_height_limit":STEP_HEIGHT,"step_grace":step_grace,"support":_support_observation(player.global_position),"ahead_support":_support_observation(player.global_position + heading.normalized() * 0.5),"last_step":last_step}
+	return {"grounded":player.is_on_floor(),"floor_normal":player.get_floor_normal() if player.is_on_floor() else Vector3.ZERO,"posture":posture,"action":action,"step_count":step_count,"floor_recovery_count":floor_recovery_count,"step_height_limit":step_height_limit,"step_grace":step_grace,"support":_support_observation(player.global_position),"ahead_support":_support_observation(player.global_position + heading.normalized() * 0.5),"last_step":last_step}
 
 func eye_height() -> float:
 	return 1.65 if posture == "standing" else (1.0 if posture == "crouch" else 0.62)

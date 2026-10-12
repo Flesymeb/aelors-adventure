@@ -33,3 +33,28 @@ static func observation_boundaries() -> Dictionary:
 
 func _mcp_state() -> Dictionary:
 	return {"sampled":sampled,"controls_absent":controls_absent,"pending_teardown":pending_teardown,"departure_lifecycle":departure_lifecycle,"checks":checks}
+
+static func qualify_live_inputs(router: Node) -> Dictionary:
+	# Call only in an opted-in probe or from the runtime reader. No commands,
+	# preference applications, seeking, saves or history snapshots with side effects.
+	if not is_instance_valid(router) or not is_instance_valid(router.state):
+		return {"ready":false,"reason":"entry/state unavailable","checks":{}}
+	var state: Node = router.state
+	var facts: Dictionary = state.training_snapshot().duplicate(true)
+	var preferences: Dictionary = state.preference_snapshot()
+	var audio_before: Dictionary = state.audio_observation()
+	var audio: Dictionary = router.audio._mcp_state() if is_instance_valid(router.audio) else {"ready":false}
+	var entry: Dictionary = router._mcp_state()
+	var opening: Dictionary = router.opening._mcp_state() if is_instance_valid(router.opening) else {"ready":false}
+	var repeated: Dictionary = router.opening._mcp_state() if is_instance_valid(router.opening) else {"ready":false}
+	var checks := {
+		"facts_preserved":facts == state.training_snapshot(),
+		"preferences_preserved":preferences == state.preference_snapshot(),
+		"audio_configuration_preserved":audio_before == state.audio_observation(),
+		"audio_readiness_explicit":audio.get("ready") is bool,
+		"separate_live_routes":not audio.get("ready",false) or audio.get("voice_bus") == "Effects" and audio.get("music_bus") == "Music",
+		"entry_readiness_explicit":entry.get("ready") is bool and entry.get("player_ready") is bool,
+		"opening_readiness_explicit":opening.get("ready") is bool,
+		"opening_read_does_not_advance":opening.get("elapsed") == repeated.get("elapsed") and opening.get("beat") == repeated.get("beat"),
+		"qualified_opening_fields":not opening.get("ready",false) or opening.has_all(["beat","beat_elapsed","elapsed","pause_owners","timeline_paused","inputs_armed","finished"])}
+	return {"ready":true,"checks":checks,"audio":audio,"output":audio_before,"opening":opening,"route":entry.get("route"),"control_ready":entry.get("departure_control_ready")}
