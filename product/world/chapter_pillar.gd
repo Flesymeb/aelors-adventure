@@ -85,6 +85,7 @@ func ground() -> void:
 		var hit: Dictionary = world.ground_policy.support(world,anchor,excluded)
 		if not hit.is_empty():
 			global_position = hit.position
+			if not return_passage: GROUND.bind_departure_sightline(world.village)
 			grounded = true
 			visible = true
 			return
@@ -132,4 +133,4 @@ func _mcp_state() -> Dictionary:
 	var eligible: Variant = null
 	if owners_ready:
 		eligible = active and distance < 2.5 and world.pause_owners.is_empty() and not world.training.player_locked() and world.training.can_save() and world.bow_training.can_save()
-	return {"ready":ready,"grounded":grounded,"active":active,"destination":"河谷聚落" if return_passage else "林缘草甸","missing_conditions":missing,"missing_count":missing.size() if state_ready else null,"player_distance":distance,"player_in_range":distance < 2.5 if ready else null,"interaction_eligible":eligible,"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position) if ready else null}
+	return {"ready":ready,"grounded":grounded,"active":active,"destination":"河谷聚落" if return_passage else "林缘草甸","missing_conditions":missing,"missing_count":missing.size() if state_ready else null,"player_distance":distance,"player_in_range":distance < 2.5 if ready else null,"interaction_eligible":eligible,"rejected_entries":rejected_entries,"presentation_time":elapsed,"position":str(global_position) if ready else null,"anchor":[anchor.x,anchor.y],"placement_owner":str(world.get_path()) if world_ready and world.is_inside_tree() else null,"placement_binding":"ground_policy.support"}

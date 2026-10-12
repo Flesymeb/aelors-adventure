@@ -15,9 +15,55 @@ static func run(_holder: Node) -> Dictionary:
 		"pending_teardown": world.is_queued_for_deletion() and pending.ready == false and pending.controls_visible == null,
 		"unavailable_state": before.preferences == null and before.objective == null and pending.tree_paused == null}
 	checks.merge(observer_lifecycle_checks())
+	var isha: Dictionary = isha_observer_checks()
+	checks.merge(isha.checks)
 	var departure: Dictionary = departure_lifecycle_checks()
 	checks.merge(departure.checks)
-	return {"checks": checks, "before": before, "pending_teardown": pending, "departure": departure}
+	return {"checks": checks, "before": before, "pending_teardown": pending, "departure": departure, "isha": isha}
+
+
+static func isha_observer_checks() -> Dictionary:
+	# Detached real actor/player: no actor _ready, model import, world build,
+	# conversation, progression or saves. Only this explicit fixture drives the
+	# tiny clip; repeated observations must never assign, seek or start it.
+	var actor: Node = preload("res://isha_npc.gd").new()
+	var absent: Dictionary = actor._mcp_state()
+	actor.idle_player = AnimationPlayer.new()
+	actor.add_child(actor.idle_player)
+	var initial: Dictionary = actor._mcp_state()
+	var initial_repeated: Dictionary = actor._mcp_state()
+	var library := AnimationLibrary.new()
+	var clip := Animation.new()
+	clip.length = 3.5
+	clip.loop_mode = Animation.LOOP_LINEAR
+	library.add_animation("Isha_Idle", clip)
+	actor.idle_player.add_animation_library("", library)
+	actor.idle_player.play("Isha_Idle")
+	actor.idle_player.advance(0.625)
+	var assigned: String = actor.idle_player.assigned_animation
+	var playing: bool = actor.idle_player.is_playing()
+	var initialized: Dictionary = actor._mcp_state()
+	var initialized_repeated: Dictionary = actor._mcp_state()
+	var playback_preserved: bool = actor.idle_player.assigned_animation == assigned and actor.idle_player.is_playing() == playing
+	actor.idle_player.pause()
+	var paused: Dictionary = actor._mcp_state()
+	var paused_repeated: Dictionary = actor._mcp_state()
+	var paused_preserved: bool = not actor.idle_player.is_playing() and actor.idle_player.assigned_animation == assigned
+	actor.idle_player.stop()
+	var stopped: Dictionary = actor._mcp_state()
+	actor.idle_player.free()
+	var freed: Dictionary = actor._mcp_state()
+	actor.free()
+	return {"checks": {
+		"isha_absent_animation_unavailable": absent.idle_animation_ready == false and absent.idle_clip == null and absent.idle_position == null,
+		"isha_unassigned_animation_unavailable": initial.idle_animation_ready == false and initial.idle_clip == null and initial.idle_position == null,
+		"isha_unassigned_observation_read_only": initial == initial_repeated,
+		"isha_initialized_idle_available": initialized.idle_animation_ready == true and initialized.idle_clip == "Isha_Idle" and is_equal_approx(initialized.idle_position, 0.625),
+		"isha_initialized_playback_read_only": initialized == initialized_repeated and playback_preserved,
+		"isha_paused_playback_read_only": paused == paused_repeated and paused_preserved,
+		"isha_stopped_animation_unavailable": stopped.idle_animation_ready == false and stopped.idle_position == null,
+		"isha_freed_animation_unavailable": freed.idle_animation_ready == false and freed.idle_clip == null and freed.idle_position == null},
+		"absent": absent, "unassigned": initial, "initialized": initialized, "paused": paused, "stopped": stopped, "freed": freed}
 
 
 static func departure_lifecycle_checks() -> Dictionary:

@@ -12,6 +12,29 @@ const RONEN := Vector2(123, 103)
 const BOW_TARGET := Vector2(123, 109)
 const COVER := Vector2(125, 106)
 
+# This authored maple's instanced canopy crosses the departure approach's
+# character and light sightlines. Terrain3D flattens its scene into a MultiMesh
+# without the source trunk collider, so changing collision layers cannot make
+# the camera avoid it. Keep the terrain, passage anchor and all other trees.
+const DEPARTURE_MAPLE := Vector3(137.4184, 11.56699, 154.4324)
+
+static func bind_departure_sightline(forest: Node3D) -> void:
+	for instance in forest.get_node("Terrain3D").find_children("*", "MultiMeshInstance3D", true, false):
+		if not String(instance.name).ends_with("_M6_L0") or instance.multimesh == null: continue
+		# The inspected chunk contains this one tree. Refuse to suppress a chunk
+		# containing neighbors if the authored source later changes.
+		if instance.multimesh.instance_count != 1: continue
+		var placed: Transform3D = instance.global_transform * instance.multimesh.get_instance_transform(0)
+		if placed.origin.distance_to(DEPARTURE_MAPLE) > 0.05: continue
+		if instance.has_meta("departure_sightline_excluded"): return
+		# Private runtime resource: source region buffers and shared meshes remain
+		# intact, including reload/return and every unrelated natural instance.
+		instance.multimesh = instance.multimesh.duplicate()
+		instance.multimesh.visible_instance_count = 0
+		instance.set_meta("departure_sightline_excluded", true)
+		instance.set_meta("departure_source_origin", placed.origin)
+		return
+
 static func bind_departure_collision(forest: Node3D) -> void:
 	# Forest's arch was authored on layer 2. In the product that layer belongs
 	# to enemies; terrain, foot support and the village SpringArm use layer 1.

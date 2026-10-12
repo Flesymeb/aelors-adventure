@@ -105,4 +105,11 @@ func can_interact(player: CharacterBody3D) -> bool:
 	return interaction_available
 
 func _mcp_state() -> Dictionary:
-	return {"grounded": grounded, "interaction_available": interaction_available, "distance_limit": interaction_distance, "source_height": model_height, "actor_height": 1.72, "ground_normal": grounding_normal, "model_path": "res://assets/dialogue/isha_actor.glb", "skeleton_bones": skeleton.get_bone_count() if skeleton else 0, "idle_clip": idle_player.current_animation if idle_player else "", "idle_position": idle_player.current_animation_position if idle_player else 0.0, "idle_kind": "native-body skin transfer; skeletal breathing"}
+	# Construction can expose the player before play() assigns a clip. The
+	# position accessor requires a current animation; an existing player or its
+	# last assigned animation alone does not establish that readiness.
+	var player_available := is_instance_valid(idle_player) and not idle_player.is_queued_for_deletion()
+	var current_clip: String = idle_player.current_animation if player_available else ""
+	var idle_available := player_available and not current_clip.is_empty() and idle_player.has_animation(current_clip)
+	var skeleton_available := is_instance_valid(skeleton) and not skeleton.is_queued_for_deletion()
+	return {"grounded": grounded, "interaction_available": interaction_available, "distance_limit": interaction_distance, "source_height": model_height, "actor_height": 1.72, "ground_normal": grounding_normal, "model_path": "res://assets/dialogue/isha_actor.glb", "skeleton_bones": skeleton.get_bone_count() if skeleton_available else 0, "idle_animation_ready": idle_available, "idle_clip": current_clip if idle_available else null, "idle_position": idle_player.current_animation_position if idle_available else null, "idle_kind": "native-body skin transfer; skeletal breathing"}
