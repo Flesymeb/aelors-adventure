@@ -726,14 +726,20 @@ func _physics_process(delta: float) -> void:
 	var direction := (forward * move_axis.y + right * move_axis.x).normalized()
 	var speed: float = traversal.advance(delta, direction)
 	if combat and combat.motion_restricted(): speed *= 0.3
+	var grounded_before: bool = is_on_floor() or traversal.step_grace > 0.0
 	var acceleration := 18.0 if is_on_floor() else 6.0
-	velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
-	velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * delta)
+	if grounded_before and direction.is_zero_approx() and traversal.action == "":
+		# Neutral grounded input ends locomotion drive on this physics update.
+		# Airborne braking and the evade owner's impulse keep their trajectories.
+		velocity.x = 0.0
+		velocity.z = 0.0
+	else:
+		velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
+		velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * delta)
 	if traversal.action != "":
 		var impulse: Vector3 = traversal.action_velocity()
 		velocity.x = impulse.x
 		velocity.z = impulse.z
-	var grounded_before: bool = is_on_floor() or traversal.step_grace > 0.0
 	var fall_speed := velocity.y
 	if grounded_before:
 		if control_held("jump") and traversal.posture == "standing" and traversal.action == "" and (combat == null or not combat.motion_restricted()):
@@ -769,7 +775,12 @@ func _physics_process(delta: float) -> void:
 	_update_switch(delta)
 	_update_archery(delta)
 	attack_timer = maxf(0.0, attack_timer - delta)
-	_update_animation(direction.length_squared() > 0.01)
+	# Collision-resolved travel owns gait; input alone cannot make a blocked
+	# actor walk in place. Step support and physics remain translation owners.
+	var travel := global_position - before
+	var planar_speed := Vector2(travel.x, travel.z).length() / maxf(delta, 0.000001)
+	traversal.update_motion_pose(delta, planar_speed)
+	_update_animation(planar_speed > 0.05, planar_speed)
 	_update_footsteps(before)
 	if global_position.y < minimum_world_height or not ground_policy.in_bounds(Vector2(global_position.x, global_position.z)):
 		if combat: combat.lethal_fall()
@@ -817,7 +828,7 @@ func _set_weapon_visibility() -> void:
 	if bow_back_holder: bow_back_holder.visible = owns_bow and (weapon_mode != "bow" or stowed)
 
 
-func _update_animation(moving: bool) -> void:
+func _update_animation(moving: bool, planar_speed: float = 5.0) -> void:
 	if (abilities and abilities.busy()) or animation_player == null or switch_timer > 0.0 or attack_timer > 0.0 or (traversal and traversal.action != "") or (combat and combat.pose_owned()):
 		return
 	if not is_on_floor() and traversal.step_grace <= 0.0:
@@ -825,13 +836,20 @@ func _update_animation(moving: bool) -> void:
 	elif traversal.landing_timer > 0 and traversal.posture == "standing":
 		_play_animation("Jump_Land", 2.0)
 	elif traversal.posture == "crouch":
-		_play_animation("Crouch_Fwd" if moving else "Crouch_Idle")
+		if moving: _play_locomotion("Crouch_Fwd", planar_speed, traversal.SPEEDS.crouch)
+		else: _play_animation("Crouch_Idle")
 	elif traversal.posture == "prone":
 		_play_animation("Idle")
 	elif moving:
-		_play_animation("Sprint" if traversal.sprinting else "Walk")
+		_play_locomotion("Sprint" if traversal.sprinting else "Walk", planar_speed, 9.5 if traversal.sprinting else traversal.SPEEDS.standing)
 	else:
 		_play_animation("Sword_Idle" if weapon_mode == "sword" else "Idle")
+
+
+func _play_locomotion(clip: String, planar_speed: float, nominal_speed: float) -> void:
+	_play_animation(clip)
+	# Adjust the existing loop without restarting its phase every update.
+	animation_player.speed_scale = clampf(planar_speed / nominal_speed, 0.01, 1.5)
 
 
 func _bind_aerial_sword_segment(library: AnimationLibrary) -> void:
@@ -875,6 +893,8 @@ func _play_animation(name: String, speed: float = 1.0) -> void:
 	if animation_player == null or current_animation == name:
 		return
 	if animation_player.has_animation(name):
+		# Locomotion cadence must not leak into combat, evade or jump playback.
+		animation_player.speed_scale = 1.0
 		animation_player.play(name, 0.16, speed)
 		current_animation = name
 

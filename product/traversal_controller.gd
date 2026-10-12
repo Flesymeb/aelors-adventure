@@ -17,6 +17,7 @@ var action_direction := Vector3.ZERO
 var moving_direction := Vector3.ZERO
 var sprinting := false
 var clock := 0.0
+var crawl_clock := 0.0
 var takeoff_timer := 0.0
 var landing_timer := 0.0
 var air_time := 0.0
@@ -180,7 +181,6 @@ func advance(delta: float, direction: Vector3) -> float:
 				collision.shape = standing_shape if posture == "standing" else crouch_shape
 				collision.transform = _shape_transform(posture)
 			player.current_animation = ""
-	_update_pose(direction.length_squared() > 0.01)
 	if player.aim_requested:
 		return 2.2
 	return 9.5 if sprinting else SPEEDS[posture]
@@ -196,7 +196,10 @@ func sync_prone_facing() -> void:
 		var old_forward := collision.basis.y.normalized()
 		player.visual.rotation.y = atan2(old_forward.x, old_forward.z)
 
-func _update_pose(moving: bool) -> void:
+func update_motion_pose(delta: float, planar_speed: float) -> void:
+	var moving := planar_speed > 0.05
+	if moving and posture == "prone" and action == "":
+		crawl_clock += delta * planar_speed
 	if not motion_pose:
 		return
 	motion_pose.breathing_weight = 1.0 if not moving and posture != "prone" and action == "" and not player.aim_requested and player.attack_timer <= 0.0 and player.switch_timer <= 0.0 else 0.0
@@ -212,7 +215,7 @@ func _update_pose(moving: bool) -> void:
 		motion_pose.clip_time = minf(0.399, action_time)
 	else:
 		motion_pose.clip = "Crawling"
-		motion_pose.clip_time = fmod(clock * 1.15, 1.0666) if moving else 0.5
+		motion_pose.clip_time = fmod(crawl_clock, 1.0666) if moving else 0.5
 
 func action_velocity() -> Vector3:
 	var progress := clampf(action_time / action_duration, 0, 1)

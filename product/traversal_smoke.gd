@@ -1,5 +1,9 @@
 extends SceneTree
 
+class SyntheticGround extends RefCounted:
+	static func in_bounds(point: Vector2) -> bool:
+		return point.is_finite()
+
 var failures: Array[String] = []
 var hip_height := INF
 var palm_height := INF
@@ -57,6 +61,9 @@ func run() -> void:
 	box(stage, Vector3(-6, 2.1, -2), Vector3(3, 0.2, 3))
 	box(stage, Vector3(12, 1, -1), Vector3(3, 2, 0.1))
 	var p := (load("res://Player.tscn") as PackedScene).instantiate() as CharacterBody3D
+	# This opt-in synthetic stage does not use the authored map's elevation.
+	p.minimum_world_height = -40.0
+	p.ground_policy = SyntheticGround
 	stage.add_child(p)
 	p.set_physics_process(false)
 	await frames(p, 10)
@@ -108,9 +115,9 @@ func run() -> void:
 	p.visual.rotation.y = PI
 	await frames(p, 5)
 	t.moving_direction = Vector3.ZERO
-	key(KEY_F, true)
-	key(KEY_F, false)
-	check(t.action == "roll", "F must start roll")
+	key(p.effective_bindings["roll"], true)
+	key(p.effective_bindings["roll"], false)
+	check(t.action == "roll", "Bound roll control must start roll")
 	check(not t.evade("roll"), "Rolling must not restart repeatedly")
 	await frames(p, 52)
 	check(p.position.z > -0.64 and t.action == "", "Roll must stop at a thin wall and recover")
