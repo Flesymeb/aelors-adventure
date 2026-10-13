@@ -3,6 +3,8 @@ extends RefCounted
 const PRESSURE = preload("res://tests/map02_pressure_test.gd")
 const HISTORY = preload("res://tests/chapter_travel_test.gd")
 const STATE = preload("res://dialogue_state.gd")
+const MAP_PAGE = preload("res://ui/map_page.gd")
+const JOURNAL = preload("res://ui/quest_journal.gd")
 
 static func run() -> Dictionary:
 	var checks := {}
@@ -13,6 +15,7 @@ static func run() -> Dictionary:
 	before = isolated_before
 	checks.legacy_default = not state.mf01_acquired and not state.mf01_information().contains("绕到岩石右侧")
 	checks.before_e02_rejected = not state.acquire_mf01()
+	checks.unearned_navigation_hidden = MAP_PAGE.mf01_navigation(state) == state.mf01_information() and MAP_PAGE.known_route_marks(state).size() == 2 and JOURNAL.project_entries(state) == state.quest_entries()
 	for id in state.PRESSURE_IDS: state.settle_pressure(Vector3(6, 1, 66), {}, id)
 	var xp: int = state.experience
 	var lives: int = state.lives
@@ -21,6 +24,13 @@ static func run() -> Dictionary:
 	checks.once_without_reward = not state.acquire_mf01() and xp == state.experience and lives == state.lives and rewards == state.reward_history
 	checks.map_information = state.mf01_information().contains("岩石右侧") and state.mf01_information().contains("返程")
 	checks.journal_projection = state.quest_entries().any(func(row): return row.id == "route_record" and row.context == state.mf01_information())
+	var facts: Dictionary = state.training_snapshot().duplicate(true)
+	var information: String = MAP_PAGE.mf01_navigation(state)
+	var projected: Array[Dictionary] = JOURNAL.project_entries(state)
+	checks.learned_navigation = information.contains("树根左侧") and information.contains("3 装备旧灯") and information.contains("F 显形") and information.contains("E 提示") and information.contains("返回灯台")
+	checks.shared_page_projection = projected.any(func(row): return row.id == "route_record" and row.context == information and row.action.contains("树根左侧"))
+	checks.no_future_landmarks = MAP_PAGE.known_route_marks(state).size() == 5 and not information.contains("结界记号") and not information.contains("map02_e03")
+	checks.read_only_navigation = facts == state.training_snapshot() and not state.e03_revealed and not state.mf02_acquired and rewards == state.reward_history
 	var committed: ConfigFile = HISTORY.history(state)
 	checks.valid_config = state.config_unavailable_reason(committed) == ""
 	# ConfigFile serialization exercises the persisted shape without filesystem IO.
@@ -29,6 +39,7 @@ static func run() -> Dictionary:
 	var restored: Node = STATE.new()
 	restored.restore_config(serialized)
 	checks.continue_information = restored.mf01_acquired and restored.mf01_information() == state.mf01_information() and not restored.acquire_mf01()
+	checks.restored_page_projection = MAP_PAGE.mf01_navigation(restored) == information and JOURNAL.project_entries(restored).any(func(row): return row.id == "route_record" and row.context == information)
 	restored.health = 0
 	restored.recovery_pending = true
 	checks.death_preserves_information = restored.mf01_acquired and restored.mf01_information() == state.mf01_information()

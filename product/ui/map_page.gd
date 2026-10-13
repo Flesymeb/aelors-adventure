@@ -5,10 +5,30 @@ var world: Node3D
 var suspended := false
 var information: Label
 var diagram: Control
+var route_key: Label
+var navigation_hint: Label
+
+static func mf01_navigation(owner: Node) -> String:
+	var known: String = owner.mf01_information()
+	if not owner.mf01_acquired: return known
+	return mf01_approach(owner) + "\n\n" + known
+
+static func mf01_approach(owner: Node) -> String:
+	if not owner.mf01_acquired: return ""
+	return "MF01 · 林缘调查路线：从固定路碑沿树根左侧前行，到树线前停下。按 3 装备旧灯，F 显形；靠近显露的魔痕，看到 E 提示后调查。\n返回灯台：从树根左侧回固定路碑，沿岩石右侧退回路障，再沿泥路回草甸灯台。"
+
+static func known_route_marks(owner: Node) -> Array:
+	var marks := [[GROUND.ENTRY, "草甸灯台"], [GROUND.ROADBLOCK, "路障泥路"]]
+	if owner.mf01_acquired:
+		marks.append_array([[GROUND.PRESSURE_FLANK[0], "岩石右侧绕行"], [GROUND.ROUTE_RECORD, "固定路碑 · MF01"], [GROUND.AMBUSH_APPROACH, "树根左侧 · 旧灯调查处"]])
+	if owner.mf02_acquired:
+		marks.append_array([[GROUND.LINE_APPROACH, "树线后的林路"], [GROUND.LINE_RECORD, "墓殿方向 · 结界记号"], [GROUND.LN01_PASSAGE, "通道已稳定" if owner.ln01_location_purified else "林缘通道 · 结界"]])
+	return marks
 
 class RouteDiagram extends Control:
 	var state: Node
 	var player: Node3D
+	var marks: Array = []
 	func point(xz: Vector2) -> Vector2:
 		var north := 120.0 if state.mf02_acquired else 80.0
 		return Vector2(size.x * (0.28 + xz.x / 35.0), 30 + (north - xz.y) / (north - 20.0) * (size.y - 70))
@@ -18,27 +38,20 @@ class RouteDiagram extends Control:
 			return
 		var ground = preload("res://world/map02_ground.gd")
 		var font: Font = get_theme_default_font()
-		var font_size := get_theme_default_font_size()
+		var font_size := int(16 * state.text_scale)
 		var ink := Color(0.20, 0.15, 0.08)
 		var route: PackedVector2Array = []
-		var marks := [[ground.ENTRY,"草甸灯台"], [ground.ROADBLOCK,"路障泥路"]]
-		if state.mf01_acquired:
-			marks.append_array([[ground.PRESSURE_FLANK[0],"岩石右侧绕行"], [ground.ROUTE_RECORD,"林缘 · 固定路碑"]])
-		if state.mf02_acquired:
-			marks.append_array([[ground.LINE_APPROACH,"树线后的林路"], [ground.LINE_RECORD,"墓殿方向 · 结界记号"], [ground.LN01_PASSAGE,"通道已稳定" if state.ln01_location_purified else "林缘通道 · 结界"]])
 		for mark in marks: route.append(point(mark[0]))
 		draw_polyline(route, ink, 3, true)
-		for mark in marks:
+		for index in marks.size():
+			var mark: Array = marks[index]
 			var p := point(mark[0])
 			draw_texture_rect(preload("res://assets/ui/journal_icons.svg"), Rect2(p - Vector2(13,13), Vector2(26,26)), false, ink)
-			var label_width := font.get_string_size(mark[1], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-			var label_x := p.x - label_width - 24 if mark[1] == "岩石右侧绕行" else p.x + 24
-			label_x = clampf(label_x, 0, maxf(0, size.x - label_width))
-			draw_string(font, Vector2(label_x, p.y + font_size * 0.3), mark[1], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)
+			# Long, scaled names wrap in the page key rather than colliding on the map.
+			draw_string(font, p + Vector2(24, font_size * 0.3), str(index + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)
 		if state.mf01_acquired:
 			var rock := point(ground.PRESSURE_COVER)
 			draw_circle(rock, 9, Color(0.6,0.61,0.56))
-			draw_string(font, rock + Vector2(20,7), "岩石掩体", HORIZONTAL_ALIGNMENT_LEFT, -1, get_theme_default_font_size(), ink)
 		if is_instance_valid(player) and state.current_map == state.MAP02:
 			var xz := Vector2(player.global_position.x, player.global_position.z)
 			if xz.y >= 20 and xz.y <= (120 if state.mf02_acquired else 80):
@@ -66,6 +79,7 @@ func _ready() -> void:
 	%MenuContainer.hide()
 	set_meta("page_width", 1040)
 	var column := create_page(self, "押送路线 · 路线图 [M]", true)
+	navigation_hint = paragraph(column, "")
 	diagram = RouteDiagram.new()
 	diagram.state = state
 	diagram.player = world.player
@@ -73,6 +87,7 @@ func _ready() -> void:
 	diagram.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	diagram.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(diagram)
+	route_key = paragraph(column, "")
 	information = paragraph(column, "")
 	paragraph(column, "圆点：艾洛 · 路线示意，上方朝林缘")
 	button(get_meta("footer_column"), "返回 [M / Esc]", close_panel)
@@ -83,6 +98,15 @@ func _ready() -> void:
 func refresh() -> void:
 	# Give scaled labels their own vertical space; the retained page scrolls.
 	diagram.custom_minimum_size.y = 310 * state.text_scale
+	diagram.marks = known_route_marks(state)
+	navigation_hint.visible = state.current_map != state.MAP03 and state.mf01_acquired
+	navigation_hint.text = mf01_approach(state) if navigation_hint.visible else ""
+	route_key.text = ""
+	route_key.visible = state.current_map != state.MAP03
+	if route_key.visible:
+		var marks := known_route_marks(state)
+		for index in marks.size(): route_key.text += "%d · %s\n" % [index + 1, marks[index][1]]
+		if state.mf01_acquired: route_key.text += "灰色圆点：岩石掩体"
 	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + ("\n右侧石阶通往看守院；四位村民仍需逐人营救。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
 	diagram.queue_redraw()
 	reflow(self)
@@ -117,4 +141,4 @@ func _unhandled_input(_event: InputEvent) -> void:
 	pass
 
 func _mcp_state() -> Dictionary:
-	return {"open":visible, "acquired":state.mf01_acquired, "mf02_acquired":state.mf02_acquired, "information":information.text, "pause_owned":world.pause_owners.has("map")}
+	return {"open":visible, "acquired":state.mf01_acquired, "mf02_acquired":state.mf02_acquired, "information":(navigation_hint.text + "\n\n" if navigation_hint.visible else "") + information.text, "route_key":route_key.text, "pause_owned":world.pause_owners.has("map")}

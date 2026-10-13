@@ -15,6 +15,15 @@ var detail_column: VBoxContainer
 var column: VBoxContainer
 var entries_signature := ""
 
+static func project_entries(owner: Node) -> Array[Dictionary]:
+	var projected: Array[Dictionary] = owner.quest_entries().duplicate(true)
+	for row in projected:
+		if row.id != "route_record" or not owner.mf01_acquired: continue
+		row.context = preload("res://ui/map_page.gd").mf01_navigation(owner)
+		if not owner.e03_revealed:
+			row.action = "从固定路碑沿树根左侧到旧灯调查处；3 装备旧灯，F 显形，靠近魔痕后 E 调查。"
+	return projected
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -105,8 +114,11 @@ func _set_category(value: String) -> void:
 	quest_list.focus_first.call_deferred()
 
 func refresh_entries() -> void:
-	rows = state.quest_entries()
+	rows = project_entries(state)
 	entries_signature = JSON.stringify(rows)
+	details.fit_content = false
+	details.scroll_active = true
+	details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for child in quest_list.get_children():
 		quest_list.remove_child(child)
 		child.queue_free()
@@ -149,6 +161,12 @@ func _select_entry(id: String) -> void:
 	selection = id
 	for row in rows:
 		if row.id != id: continue
+		# The earned route is a long reading entry. Use the retained page scroll
+		# rather than nesting a second clipped reading viewport at large scales.
+		var route_reading: bool = id == "route_record" and state.mf01_acquired
+		details.fit_content = route_reading
+		details.scroll_active = not route_reading
+		details.size_flags_vertical = Control.SIZE_FILL if route_reading else Control.SIZE_EXPAND_FILL
 		details.scroll_to_line(0)
 		detail_heading.text = row.title + (" · 已完成" if row.complete else " · 当前")
 		details.text = row.context + "\n\n当前行动\n" + row.action + "\n\n已完成步骤\n"
@@ -172,7 +190,7 @@ func _input(_event: InputEvent) -> void:
 	pass
 
 func _process(_delta: float) -> void:
-	if visible and entries_signature != JSON.stringify(state.quest_entries()): refresh_entries()
+	if visible and entries_signature != JSON.stringify(project_entries(state)): refresh_entries()
 
 func _mcp_state() -> Dictionary:
 	return {"visible": visible, "category": category, "selected": selection, "tracked": state.tracked_quest, "entries": rows, "details": details.text, "return_rules": footer_status.text}
