@@ -24,8 +24,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 | Field | Value |
 | --- | --- |
 | Open | 65 |
-| Closed | 37 |
-| All | 102 |
+| Closed | 38 |
+| All | 103 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -34,10 +34,10 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 | Field | Value |
 | --- | --- |
 | Active | 48 |
-| Verified closed | 28 |
+| Verified closed | 29 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 81 |
+| All in this run | 82 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,7 +55,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Session audio-input capability prevents independent listening qualification. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | This client cannot independently listen to the successfully captured audio. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -98,7 +98,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | untitled issue |
 | `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
 | `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | The existing later rescue-route issue cannot be closed from entrance-fixture evidence. |
-| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 earning and committed Continue information restoration remain unverified. |
+| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 earning and committed Continue restoration remain unverified. |
 | `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | untitled issue |
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | The original crowded CH01 defect was not independently qualified or reproduced. |
@@ -115,15 +115,16 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.warden-counterplay-evidence-gap` | [#91](https://github.com/Flesymeb/aelors-adventure/issues/91) | OPEN | untitled issue |
 | `finisher-obstruction-unverified` | [#92](https://github.com/Flesymeb/aelors-adventure/issues/92) | OPEN | untitled issue |
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
-| `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | Natural moved-phase framing improved; skipped qualification remains missing. |
+| `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | The moved-Veyne phase skip remains unverified on this candidate. |
 | `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
 | `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Arena fragment removal and route support remain independently unqualified. |
 | `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Fixed flight samples do not establish complete dive-warning acceptance; retained camera coverage also shows partial visibility. |
 | `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Breath and beam readability and preserved contact behavior remain incompletely verified. |
 | `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
 | `attack-lifecycle-retest-incomplete` | [#100](https://github.com/Flesymeb/aelors-adventure/issues/100) | OPEN | untitled issue |
-| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | E02 local observations do not yet establish every cover, projectile, counterplay and reset outcome. |
-| `qa.e02-visual-coherence` | [#102](https://github.com/Flesymeb/aelors-adventure/issues/102) | OPEN | E02 actor styles and unfinished white landmarks weaken the supplied visual direction. |
+| `qa.e02-visual-coherence` | [#102](https://github.com/Flesymeb/aelors-adventure/issues/102) | CLOSED | Independently verified resolved at loop 54. |
+| `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | E02 lifecycle qualification remains incomplete despite successful local animation and contact observations. |
+| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -131,7 +132,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 65 | 37 | 102 |
+| GitHub HoH namespace | 65 | 38 | 103 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -168,7 +169,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-54-72c223ea5af5` | `development_snapshot:attempt-0e0feb7d4024ba0a23e7626c` | NEEDS VISUAL QA |
+| `loop-54-72c223ea5af5` | `development_snapshot:attempt-0e0feb7d4024ba0a23e7626c` | BLOCKED |
 
 ### Project Planner
 
@@ -195,7 +196,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-54-72c223ea5af5` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `e02-lifecycle-qualification-gap` | MAJOR | INTERNAL | HIGH | E02 lifecycle qualification remains incomplete despite successful local animation and contact observations. |
+| `mf01-earned-restoration-gap` | MAJOR | INTERNAL | HIGH | MF01 earning and committed Continue restoration remain unverified. |
+| `audio-listening-gap` | MAJOR | INTERNAL | HIGH | This client cannot independently listen to the successfully captured audio. |
+| `opening-variant-gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
+| `veyne-skip-qualification-gap` | MINOR | INTERNAL | MEDIUM | The moved-Veyne phase skip remains unverified on this candidate. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -2964,5 +2980,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-54-72c223ea5af5`
 - Latest warm start: `loop-54-52c750a03080`
 - Last published: `loop-54-72c223ea5af5`
-- Best verified: `loop-53-52c750a03080`
+- Best verified: `loop-54-72c223ea5af5`
 - Generated by the HoH host from immutable run evidence.
