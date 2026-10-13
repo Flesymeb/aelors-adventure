@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -83,6 +83,10 @@ var reward_history: Dictionary = {}
 var dynamic_serial := 0
 var dynamic_remaining := 120.0
 var dynamic_instances: Dictionary = {}
+var meadow_dynamic_serial := 0
+var meadow_dynamic_remaining := 120.0
+var meadow_dynamic_groups := 0
+var meadow_dynamic_instances: Dictionary = {}
 var bag_history: Dictionary = {}
 var quick_item := "healing"
 var inventory: Node
@@ -867,6 +871,13 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if departure and (not guard_started or not GUARD_IDS.all(func(id): return rewards.has(id)) or not config.get_value("training", "practice_hit", false) or not config.get_value("training", "practice_defense", false) or not config.get_value("training", "encounter_defeated", false) or not config.get_value("post_bow", "trace_revealed", false)): return "存档离村前置无效"
 	if (claimed or current in [MAP02, MAP03] or map_id in [MAP02, MAP03] or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not departure: return "存档草甸前置无效"
 	if (map_id in [MAP02, MAP03] or current in [MAP02, MAP03] or (E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS).any(func(id): return rewards.has(id))) and not claimed: return "存档检查点无效"
+	var meadow_records: Variant = config.get_value("post_bow", "meadow_dynamic_instances", {})
+	var meadow_serial: Variant = config.get_value("post_bow", "meadow_dynamic_serial", 0)
+	if not valid_meadow_dynamic_facts(meadow_serial, config.get_value("post_bow", "meadow_dynamic_remaining", 120.0), config.get_value("post_bow", "meadow_dynamic_groups", 0), meadow_records): return "存档草甸动态遭遇无效"
+	if meadow_serial > 0 and (not departure or not claimed or not config.get_value("post_bow", "mf01_acquired", false)): return "存档草甸动态前置无效"
+	for record in meadow_records.values():
+		if record.status == "collected": collected_xp += int(record.xp)
+	if xp < rewards.size() * 10 + collected_xp: return "存档草甸动态奖励无效"
 	var e02_earned: bool = PRESSURE_IDS.any(func(id): return rewards.has(id))
 	var e02_complete: bool = PRESSURE_IDS.all(func(id): return rewards.has(id))
 	var e01_complete: bool = E01_IDS.all(func(id): return rewards.has(id))
@@ -1168,4 +1179,52 @@ func collect_dynamic_xp(id: String) -> bool:
 	if not dynamic_instances.has(id) or dynamic_instances[id].status != "pending": return false
 	dynamic_instances[id].status = "collected"
 	experience += 10
+	return true
+
+static func valid_meadow_dynamic_facts(serial: Variant, remaining: Variant, groups: Variant, instances: Variant) -> bool:
+	# Bounded CH02 history stays separate from legacy CH01 identities.
+	if not serial is int or serial < 0 or serial > 4: return false
+	if not groups is int or groups < 0 or groups > 2: return false
+	if serial < groups or serial > groups * 2: return false
+	if not (remaining is int or remaining is float) or not is_finite(float(remaining)) or remaining < 0 or remaining > 120: return false
+	if not instances is Dictionary or instances.size() != serial: return false
+	var active := 0
+	for id in instances:
+		if not id is String or not id.begins_with("ch02_dynamic_"): return false
+		var suffix: String = id.trim_prefix("ch02_dynamic_")
+		if not suffix.is_valid_int() or int(suffix) < 1 or int(suffix) > serial or id != "ch02_dynamic_%d" % int(suffix): return false
+		var record: Variant = instances[id]
+		if not record is Dictionary or record.get("chapter") != "CH02" or record.get("instance_id") != id: return false
+		var archetype: Variant = record.get("archetype", "")
+		if archetype not in ["melee", "ranged"]: return false
+		if record.get("status", "") not in ["active", "pending", "collected"] or record.get("xp", 0) != (10 if archetype == "melee" else 15): return false
+		var hp: Variant = record.get("hp", -1)
+		if not (hp is int or hp is float) or not is_finite(float(hp)) or hp < 0 or hp > (42 if archetype == "melee" else 36): return false
+		if (record.status == "active") != (hp > 0): return false
+		var home: Variant = record.get("home", Vector3.INF)
+		var point: Variant = record.get("position", Vector3.INF)
+		if not home is Vector3 or not home.is_finite() or not point is Vector3 or not point.is_finite(): return false
+		if home.x < -10 or home.x > 0 or home.z < 46 or home.z > 57 or absf(home.y) > 220 or home.distance_to(point) > 15: return false
+		var loot: Variant = record.get("loot", null)
+		if not loot is Array or loot.size() > 1: return false
+		for drop in loot:
+			if not drop is Dictionary or drop.get("id", "") not in ["healing", "lifeflame"] or not drop.get("count") is int or drop.count != 1: return false
+		if record.status == "active":
+			active += 1
+			if not loot.is_empty(): return false
+	return active <= 2
+
+func collect_meadow_reward(id: String) -> bool:
+	if not meadow_dynamic_instances.has(id) or meadow_dynamic_instances[id].status != "pending" or not is_instance_valid(inventory): return false
+	var record: Dictionary = meadow_dynamic_instances[id]
+	var before: Dictionary = inventory.snapshot()
+	for drop in record.loot:
+		if not inventory.accept(drop.id, drop.count):
+			bag_history = before
+			inventory.restore()
+			return false
+	bag_history = inventory.snapshot()
+	record.status = "collected"
+	experience += int(record.xp)
+	progression_changed.emit()
 	return true

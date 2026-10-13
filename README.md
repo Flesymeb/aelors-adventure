@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Audio collection failed during its stop handler; independent listening acceptance remains unavailable. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | BLOCKED | Audio collection failed during its stop handler; independent listening acceptance remains unavailable. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | BLOCKED | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,7 +80,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Current Hers acquisition was observed; complete coach continuity remains unverified. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | BLOCKED | Current Hers acquisition was observed; complete coach continuity remains unverified. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
@@ -91,14 +91,14 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | REGRESSED | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
 | `fps.runtime.candidate-error-3c0e1afbfbb2` | [#69](https://github.com/Flesymeb/aelors-adventure/issues/69) | CLOSED | Independently verified resolved at loop 28. |
 | `earned_travel_matrix_unverified` | [#68](https://github.com/Flesymeb/aelors-adventure/issues/68) | OPEN | untitled issue |
-| `earned_departure_unverified` | [#70](https://github.com/Flesymeb/aelors-adventure/issues/70) | OPEN | Earned normal departure now reaches CP02; the remaining departure and recovery variants remain unverified. |
+| `earned_departure_unverified` | [#70](https://github.com/Flesymeb/aelors-adventure/issues/70) | BLOCKED | Earned normal departure now reaches CP02; the remaining departure and recovery variants remain unverified. |
 | `journey_manifest_empty_input` | [#71](https://github.com/Flesymeb/aelors-adventure/issues/71) | CLOSED | Independently verified resolved at loop 33. |
 | `qa.e01-ordinary-reward-gap` | [#72](https://github.com/Flesymeb/aelors-adventure/issues/72) | CLOSED | Independently verified resolved at loop 34. |
 | `qa.lightning-ranged-hurt-callback` | [#74](https://github.com/Flesymeb/aelors-adventure/issues/74) | OPEN | Earned E02/E04 combat remains unqualified despite current CH01 lightning observations. |
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | untitled issue |
 | `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
 | `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | The existing later rescue-route issue cannot be closed from entrance-fixture evidence. |
-| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 ordinary earning and committed Continue restoration remain unverified. |
+| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | BLOCKED | MF01 ordinary earning and committed Continue restoration remain unverified. |
 | `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | untitled issue |
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | The original crowded CH01 defect was not independently qualified or reproduced. |
@@ -170,7 +170,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-58-d33b3101ad5f` | `warm_start:loop-57-d33b3101ad5f` | PLANNED |
+| `loop-58-7b331072457c` | `development_snapshot:attempt-1232e80038a6c6b522ae0d6e` | DEVELOPER REPORT READY |
 
 ### Project Planner
 
@@ -186,7 +186,12 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | NOT STARTED |
+| Status | PASS |
+| Summary | Implementation details are retained in the private HoH Runtime audit. |
+| Completed tasks | 3 |
+| Changed paths | 9 |
+| Blocker | See the QA outcome below. |
+| Attempt | `attempt-1232e80038a6c6b522ae0d6e` |
 
 ### QA Tester
 
@@ -3167,10 +3172,10 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 ## Current pointers
 
-- Latest candidate: `loop-58-d33b3101ad5f`
+- Latest candidate: `loop-58-7b331072457c`
 - Accepted candidate: `none`
-- Latest attempted: `loop-58-d33b3101ad5f`
+- Latest attempted: `loop-58-7b331072457c`
 - Latest warm start: `loop-58-d33b3101ad5f`
-- Last published: `loop-57-d33b3101ad5f`
+- Last published: `loop-58-7b331072457c`
 - Best verified: `loop-57-d33b3101ad5f`
 - Generated by the HoH host from immutable run evidence.

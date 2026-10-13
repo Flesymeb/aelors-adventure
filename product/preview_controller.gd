@@ -181,6 +181,11 @@ func _ready() -> void:
 		barrier.name = "LN01Barrier"
 		add_child(barrier)
 		barrier.configure(self)
+		dynamic_encounters = preload("res://combat/map02_dynamic_encounters.gd").new()
+		dynamic_encounters.name = "MeadowDynamicEncounters"
+		dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(dynamic_encounters)
+		dynamic_encounters.configure(self)
 	if not meadow_slice:
 		bridge_actions = preload("res://world/BridgeActions.tscn").instantiate()
 		bridge_actions.process_mode = Node.PROCESS_MODE_PAUSABLE
