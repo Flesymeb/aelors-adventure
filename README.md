@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Audio capture is available, but this session cannot accept its audio attachment for independent listening. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent audio listening is blocked by the client capability. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening pause/resume was observed; complete qualified opening transition coverage remains unavailable. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening recovery remains unqualified despite observed control return. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,12 +80,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Current Hers and Ronen acquisition continuity was observed; the complete coach matrix remains unverified. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach committed-Continue and duplicate-grant acceptance remain unobserved. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
 | `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | Partial route observations do not establish complete milestone acceptance. |
-| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | Local meadow admission and combat observations do not qualify ordinary admission, complete counterplay or persistent settlement. |
+| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | Ordinary meadow admission and persistent settlement remain unqualified. |
 | `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | OPEN | Mandatory retained-grass closure remains insufficiently evidenced. |
 | `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | CLOSED | Independently verified resolved at loop 29. |
 | `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | REGRESSED | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
@@ -117,7 +117,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
 | `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | The moved-Veyne second-phase skip remains unverified. |
 | `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
-| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Original Veyne arena qualification remains unexecuted. |
+| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Local stair conditions pass; original arena closure remains incomplete. |
 | `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Fixed flight samples do not establish complete dive-warning acceptance; retained camera coverage also shows partial visibility. |
 | `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Breath and beam readability and preserved contact behavior remain incompletely verified. |
 | `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
@@ -126,7 +126,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | Complete E02 search termination and recovery acceptance remains unverified. |
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
-| `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | Actual Host source declarations were collected, but native resource inspection exposed metadata only; native implementation-payload coverage remains unresolved. |
+| `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -171,7 +171,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-59-7b331072457c` | `development_snapshot:attempt-f0bcf257ebd31bbd6aa04640` | DEVELOPER REPORT READY |
+| `loop-59-7b331072457c` | `development_snapshot:attempt-f0bcf257ebd31bbd6aa04640` | BLOCKED |
 
 ### Project Planner
 
@@ -198,7 +198,24 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-59-7b331072457c` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 8 (8 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `opening_recovery_gap` | MAJOR | INTERNAL | HIGH | Opening recovery remains unqualified despite observed control return. |
+| `coach_recovery_gap` | MAJOR | INTERNAL | HIGH | Coach committed-Continue and duplicate-grant acceptance remain unobserved. |
+| `arena_matrix_gap` | MAJOR | INTERNAL | HIGH | Local stair conditions pass; original arena closure remains incomplete. |
+| `audio_listening_gap` | MAJOR | INTERNAL | HIGH | Independent audio listening is blocked by the client capability. |
+| `pillar_approach_gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
+| `meadow_admission_gap` | MAJOR | INTERNAL | HIGH | Ordinary meadow admission and persistent settlement remain unqualified. |
+| `retained_grass_gap` | MAJOR | INTERNAL | HIGH | Mandatory retained-grass closure remains insufficiently evidenced. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3232,5 +3249,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-59-7b331072457c`
 - Latest warm start: `loop-59-7b331072457c`
 - Last published: `loop-59-7b331072457c`
-- Best verified: `loop-58-7b331072457c`
+- Best verified: `loop-59-7b331072457c`
 - Generated by the HoH host from immutable run evidence.
