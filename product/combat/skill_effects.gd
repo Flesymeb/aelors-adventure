@@ -35,6 +35,9 @@ func _add_effect(node: Node3D, element: String, stage: String, duration: float, 
 				record.node.queue_free()
 				records.erase(record)
 				break
+	# Contact/travel positions are world-owned; the casting actor may move while
+	# their explicitly driven clocks continue. Socket warnings follow in tick().
+	node.top_level = true
 	add_child(node)
 	next_id += 1
 	records.append({"id":next_id,"node":node,"element":element,"stage":stage,"elapsed":0.0,"duration":duration,"material":material,"managed":managed,"socket":null})
@@ -72,6 +75,13 @@ func finish(id: int, duration := 0.18) -> void:
 		record.socket = null
 		return
 
+func remove(id: int) -> void:
+	for record in records:
+		if record.id != id: continue
+		if is_instance_valid(record.node): record.node.queue_free()
+		records.erase(record)
+		return
+
 func projectile(element: String, origin: Vector3) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.name = "SkillProjectile"
@@ -94,10 +104,10 @@ func projectile(element: String, origin: Vector3) -> MeshInstance3D:
 	return node
 
 func line(origin: Vector3, destination: Vector3, element: String, duration := 0.22) -> int:
-	var node := Node3D.new()
-	node.name = "SkillTravel"
 	var length := origin.distance_to(destination)
 	if length < 0.001: return -1
+	var node := Node3D.new()
+	node.name = "SkillTravel"
 	var material := ShaderMaterial.new()
 	material.shader = LIGHTNING if element == "lightning" else FIRE
 	if element == "lightning":
@@ -119,15 +129,34 @@ func line(origin: Vector3, destination: Vector3, element: String, duration := 0.
 		mesh.size = Vector2(0.48 if element == "lightning" else 0.6, length)
 		strip.mesh = mesh
 		strip.material_override = material
+		strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		strip.rotation.y = angle
 		node.add_child(strip)
 	var id := _add_effect(node, element, "active", duration, material)
+	records.back().line_geometry = true
+	update_line(id, origin, destination)
+	return id
+
+func update_line(id: int, origin: Vector3, destination: Vector3) -> void:
+	for record in records:
+		if record.id != id or not record.get("line_geometry", false): continue
+		var length := origin.distance_to(destination)
+		record.node.visible = length >= 0.001
+		if length < 0.001: return
+		for strip in record.node.get_children(): strip.mesh.size.y = length
+		if record.element == "lightning": record.material.set_shader_parameter("Y_Size", maxf(1.0, length * 0.5))
+		else:
+			record.material.set_shader_parameter("flame_height", length)
+			record.material.set_shader_parameter("flame_height_offset", -length * 0.5)
+		_place_line(record.node, origin, destination)
+		return
+
+func _place_line(node: Node3D, origin: Vector3, destination: Vector3) -> void:
 	node.global_position = (origin + destination) * 0.5
 	var axis := origin.direction_to(destination)
 	var tangent := axis.cross(Vector3.FORWARD).normalized()
 	if tangent.length_squared() < 0.1: tangent = axis.cross(Vector3.RIGHT).normalized()
 	node.global_basis = Basis(tangent, axis, tangent.cross(axis).normalized())
-	return id
 
 func contact(point: Vector3, element: String, outcome: String, hp_loss: float) -> int:
 	# Only a resolved result creates hit feedback. Misses/obstructions use a

@@ -31,6 +31,8 @@ func configure(owner: CharacterBody3D) -> void:
 	effects.configure(entity.encounter.world)
 	warning = preload("res://assets/bosses/veyne_effects.tscn").instantiate()
 	warning.material_override = warning.material_override.duplicate()
+	# Attempt-owned lifetime, world-owned landing footprint.
+	warning.top_level = true
 	add_child(warning)
 	breath = MeshInstance3D.new()
 	var cone := CylinderMesh.new()

@@ -38,6 +38,26 @@ static func lifecycle_checks(parent: Node) -> Dictionary:
 	checks.active_decays = effects.records[0].stage == "decay"
 	effects.tick(0.12)
 	checks.travel_lifetime_bounded = effects.records.is_empty()
+	var owned_beam: int = effects.line(Vector3.ZERO, Vector3(0, 0, -6), "lightning", 0.0)
+	var travel: Node3D = effects.records[0].node
+	effects.tick(0.8)
+	checks.action_owned_visual_survives_active_window = effects.records.size() == 1 and effects.records[0].stage == "active"
+	effects.position = Vector3(5, 3, 2)
+	checks.travel_ignores_actor_parent_motion = travel.global_position.is_equal_approx(Vector3(0, 0, -3))
+	effects.update_line(owned_beam, Vector3(1, 2, 3), Vector3(1, 2, 1))
+	checks.moved_clipped_endpoints_rebind = travel.global_position.is_equal_approx(Vector3(1, 2, 2)) and travel.get_child(0).mesh.size.y == 2.0
+	effects.update_line(owned_beam, Vector3.ONE, Vector3.ONE)
+	checks.zero_length_obstruction_hides_visual = not travel.visible
+	effects.update_line(owned_beam, Vector3.ZERO, Vector3.UP * 2)
+	checks.restored_lane_shows_visual = travel.visible and travel.global_position.is_equal_approx(Vector3.UP)
+	var clock_before: Dictionary = effects.snapshot()
+	world.pause_owners["menu"] = true
+	effects.tick(0.5)
+	checks.action_owned_pause_freezes = effects.snapshot() == clock_before
+	world.pause_owners.clear()
+	effects.remove(owned_beam)
+	checks.action_end_cancels_visual = effects.records.is_empty() and travel.is_queued_for_deletion()
+	effects.position = Vector3.ZERO
 	effects.contact(Vector3.ONE, "fire", "obstruction", 0.0)
 	checks.obstruction_not_hit = effects.records[0].stage == "obstruction" and effects.records[0].node.name == "SkillBlocked"
 	effects.clear_transients()

@@ -326,13 +326,9 @@ func set_menu_paused(paused: bool) -> void:
 	music.stream_paused = paused
 	cue.stream_paused = paused
 	effects.stream_paused = paused
-	if paused and not paused_by_menu:
-		# Close obsolete contact/windows immediately; resume from ordinary AI.
-		actor.interrupt_action()
-		clear_rifts()
-		for unit in reinforcements.units:
-			if is_instance_valid(unit): unit.interrupt_action()
-		if phase == "battle": actor.phase = "idle"; actor.character.play("Idle",1,true)
+	# SceneTree pause suspends the pausable actor/timeline; combat_allowed()
+	# rejects menu-time contacts. Retain clocks, footprint and instance dedup so
+	# resume continues the same attack instead of silently starting a new one.
 	paused_by_menu = paused
 
 func claim_score() -> void:

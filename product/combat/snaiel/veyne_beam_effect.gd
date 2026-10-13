@@ -10,7 +10,7 @@ var origin := Vector3.ZERO
 var direction := Vector3.FORWARD
 var active := false
 var warning: MeshInstance3D
-var beam: MeshInstance3D
+var beam_id := -1
 var clipped_length := LENGTH
 var contacts := 0
 var blocked := false
@@ -25,18 +25,6 @@ func configure(owner: CharacterBody3D) -> void:
 	warning = preload("res://assets/bosses/veyne_effects.tscn").instantiate()
 	warning.material_override = warning.material_override.duplicate()
 	add_child(warning)
-	beam = MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(HALF_WIDTH*2,0.5,1)
-	beam.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(0.15,0.7,0.85)
-	mat.emission_enabled = true
-	mat.emission = Color(0.1,0.6,0.8)
-	beam.material_override = mat
-	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(beam)
 	end()
 
 func prepare(point: Vector3, facing: Vector3) -> void:
@@ -56,8 +44,6 @@ func effect(instance: int) -> void:
 	active = true
 	warning.hide()
 	_refresh_length()
-	beam.show()
-	entity.dragon_actions.effects.line(origin,origin+direction*clipped_length,"lightning",0.45)
 
 func _refresh_length() -> void:
 	if active: origin = entity.character.casting_position()
@@ -66,9 +52,13 @@ func _refresh_length() -> void:
 	clipped_length = LENGTH if wall.is_empty() else maxf(0.0,origin.distance_to(wall.position)-0.03)
 	blocked = not wall.is_empty()
 	var midpoint := origin+direction*clipped_length*0.5
-	beam.global_position = midpoint
-	beam.global_basis = Basis.looking_at(-direction)
-	beam.scale.z = maxf(0.01,clipped_length)
+	if active:
+		# The retrieved lightning is the sole active visual. Its lifetime and
+		# clipped endpoints belong to this action, including fully blocked lanes.
+		if beam_id <= 0 and clipped_length >= 0.001:
+			beam_id = entity.dragon_actions.effects.line(origin,origin+direction*clipped_length,"lightning",0.0)
+		elif beam_id > 0:
+			entity.dragon_actions.effects.update_line(beam_id,origin,origin+direction*clipped_length)
 	warning.global_position = Vector3(midpoint.x,entity.global_position.y+0.04,midpoint.z)
 	warning.rotation.y = atan2(direction.x,direction.z)
 	warning.scale = Vector3(HALF_WIDTH*2,clipped_length,1)
@@ -97,5 +87,7 @@ func sample_contact() -> Dictionary:
 func end() -> void:
 	active = false
 	if source: source.can_damage = false
-	if beam: beam.hide()
+	if beam_id > 0 and is_instance_valid(entity):
+		entity.dragon_actions.effects.remove(beam_id)
+	beam_id = -1
 	if warning: warning.hide()

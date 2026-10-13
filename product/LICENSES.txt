@@ -23,10 +23,10 @@ Fantasy Ruin I by -X-ScornGames, CC BY 4.0
 https://sketchfab.com/3d-models/fantasy--ruin-idis-2a820c7c91754b42a0fe3f9b974e85e2
 https://sketchfab.com/XX-XX
 https://creativecommons.org/licenses/by/4.0/
-Source identifies Tripo/AI-generated geometry. Adaptation: open ritual shell,
-entry aperture, decorative/nonblocking leaves, bounded native collision and
-replacement of the irregular inner ground with authored Crypt of Kings stone
-and two native stair flights. Original source textures and geometry remain.
+Source identifies Tripo/AI-generated geometry. Original source textures and
+geometry remain archived; its merged shell/leaf render binding is retired.
+The live ritual perimeter reuses Crypt of Kings textured walls and pillars,
+retaining its authored stone floor and two stair flights.
 Crypt of Kings by Brett Murphy remains CC BY 4.0, as in assets/maps/map03/NOTICE.txt.
 
 3D Lightning Shader by Loop_Box, CC0-1.0 (posted shader code only)

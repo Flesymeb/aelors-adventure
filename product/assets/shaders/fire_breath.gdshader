@@ -1,9 +1,11 @@
 // Adapted from erBimo, Cartoon 3D Fire, CC0-1.0. See LICENSES.txt.
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_draw_never;
+render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
 uniform float effect_time = 0.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 uniform bool reduced_motion = false;
+// Native alpha blending keeps actor silhouettes and escape lanes visible.
+uniform float max_alpha : hint_range(0.0, 1.0) = 0.42;
 
 group_uniforms FlameShape;
 uniform bool apply_shape_deform = false; // use only for a cylindric shape flame
@@ -169,7 +171,7 @@ float getDepth(float n, float cutoff, float steps) {
 }
 
 float getNoiseAt(vec3 pos, float height01, float t) {
-	float cutoff = 1.1 - height01 * 2.5;
+	float cutoff = max(0.4, 1.1 - height01 * 2.5);
 	float noise = getNoise(pos, t);
 	return step(cutoff, noise);
 }
@@ -185,7 +187,7 @@ void fragment() {
 
 	float t = (reduced_motion ? 0.0 : effect_time) * 3.0;
 
-	float cutoff = 1.1 - height01 * 2.5;
+	float cutoff = max(0.4, 1.1 - height01 * 2.5);
 	float noise = getNoise(pos, t);
 
 	if (noise < cutoff) {
@@ -200,7 +202,7 @@ void fragment() {
 
 			if (edge > 0.5) {
 				ALBEDO = outline_color.rgb;
-				ALPHA = outline_color.a * opacity;
+				ALPHA = min(outline_color.a, max_alpha) * opacity;
 			} else {
 				ALPHA = 0.0;
 			}
@@ -226,6 +228,10 @@ void fragment() {
 
 		ALBEDO = col;
 		EMISSION = col * 1.2;
-		ALPHA = opacity;
+		// Avoid the surviving solid cone/strip branch, even under reduced motion.
+		float density = smoothstep(cutoff, cutoff + 0.22, noise);
+		float ends = smoothstep(0.0, 0.06, height01) * (1.0 - smoothstep(0.78, 1.0, height01));
+		float rim = smoothstep(0.0, 0.12, UV.x) * (1.0 - smoothstep(0.88, 1.0, UV.x));
+		ALPHA = max_alpha * density * ends * rim * opacity;
 	}
 }

@@ -1,6 +1,6 @@
 // Adapted from Loop_Box, 3D Lightning shader, CC0-1.0. See LICENSES.txt.
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_draw_never;
+render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
 
 uniform vec3 Main_Color : source_color = vec3(1.0);
 uniform vec3 Effect_Color : source_color = vec3(0.3, 0.3, 1.0);
@@ -82,5 +82,6 @@ void fragment()
 
 	ALBEDO = Final_Color * Main_Color;
 	EMISSION = ALBEDO * Emission_Power;
-	ALPHA = clamp(max(Final_Color.r, max(Final_Color.g, Final_Color.b)), 0.0, 1.0) * opacity;
+	float edge = smoothstep(0.0, 0.1, UV.x) * (1.0 - smoothstep(0.9, 1.0, UV.x));
+	ALPHA = clamp(max(Final_Color.r, max(Final_Color.g, Final_Color.b)), 0.0, 0.72) * edge * opacity;
 }

@@ -209,6 +209,12 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 	var accepted: bool = action.begin(move)
 	var checks := {"started":accepted,"warning_no_damage":false,"recovery":false,"flight_clip_advanced":false}
 	var before_contacts: int = action.contacts
+	var warning_position: Vector3 = action.warning.global_position
+	if move == "dive":
+		checks.warning_world_owned = action.warning.top_level
+		checks.warning_matches_landing = warning_position.is_equal_approx(action.landing+Vector3.UP*0.05) and action.warning.scale.x==6.0 and action.warning.scale.y==6.0
+		checks.warning_stationary_in_flight = true
+		checks.warning_visible_until_impact = true
 	if scenario == "initial_overlap":
 		checks.initial_overlap_rejected = not action.travel(Vector3.BACK*0.2) and actor.global_position.is_equal_approx(start)
 		checks.warning_no_damage = world.dialogue_state.health==100 and not action.source.can_damage
@@ -216,6 +222,9 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 		for frame in 370:
 			await world.get_tree().physics_frame
 			action.tick(1.0/60.0)
+			if move == "dive" and action.stage in ["warning","flight","active"]:
+				checks.warning_stationary_in_flight = checks.warning_stationary_in_flight and action.warning.global_position.is_equal_approx(warning_position)
+				checks.warning_visible_until_impact = checks.warning_visible_until_impact and action.warning.visible
 			if frame == 15: checks.warning_no_damage = world.dialogue_state.health == 100 and not action.source.can_damage
 			if frame == 30 and scenario.ends_with("evade"):
 				world.ground_policy.place(world,world.player,Vector2(1,-21))
@@ -246,15 +255,44 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 		checks.grounded_landing = not support.is_empty() and absf(actor.global_position.y-support.position.y-0.08)<0.15
 	var elapsed: float = action.elapsed
 	var position: Vector3 = actor.global_position
+	var warning_transform: Transform3D = action.warning.global_transform
+	var warning_progress = action.warning.material_override.get_shader_parameter("progress")
 	world._set_pause_owner("dragon_case",true)
 	action.tick(0.5)
 	checks.pause_preserves_stage = action.elapsed==elapsed and actor.global_position==position
+	checks.pause_preserves_warning = action.warning.global_transform==warning_transform and action.warning.material_override.get_shader_parameter("progress")==warning_progress
+	var before_menu: Dictionary = action._mcp_state()
+	boss.set_menu_paused(true)
+	checks.menu_preserves_attack_instance = action._mcp_state()==before_menu
+	boss.set_menu_paused(false)
 	world._set_pause_owner("dragon_case",false)
 	actor.interrupt_action()
 	checks.interruption_cleanup = action.kind=="" and not action.source.can_damage and action.effects.records.is_empty()
 	if obstacle: obstacle.queue_free()
 	world.dialogue_state.health = 100
 	world.training.hurt_time = 0; world.training.protection = 0; world.training.phase = "idle"
-	world.ground_policy.place(world,actor,Vector2(-4,-25))	
+	world.ground_policy.place(world,actor,Vector2(-4,-25))
 	actor.set_physics_process(physics_enabled)
+	return checks
+
+static func arena_checks(world: Node3D) -> Dictionary:
+	var arena: Node3D = world.get_node("TombEnvironment/VeyneArena")
+	var checks := {"contaminated_shell_retired":not arena.has_node("RitualRuin"),"route_supported":true,"perimeter_supported":true,"perimeter_textured":true,"perimeter_normals_uv":true}
+	var excludes: Array[RID] = []
+	for body in world.find_children("*","CollisionObject3D",true,false):
+		if not world.village.is_ancestor_of(body): excludes.append(body.get_rid())
+	# Stair treads, entrance, both escape lanes, landing/key, and adjacent LN02.
+	for point in [Vector2(-4,-11),Vector2(-4,-15),Vector2(-4,-17.3),Vector2(-10,-23),Vector2(2,-23),Vector2(-4,-30),Vector2(-4,-33),Vector2(-4,-5)]:
+		checks.route_supported = checks.route_supported and not world.ground_policy.support(world,point,excludes).is_empty()
+	var walls := 0
+	for mesh in arena.get_children():
+		if not mesh is MeshInstance3D or not str(mesh.name).begins_with("RitualStoneWall"): continue
+		walls += 1
+		checks.perimeter_supported = checks.perimeter_supported and mesh.has_meta("arena_collision_bound")
+		for surface in mesh.mesh.get_surface_count():
+			var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+			checks.perimeter_normals_uv = checks.perimeter_normals_uv and arrays[Mesh.ARRAY_NORMAL]!=null and not arrays[Mesh.ARRAY_NORMAL].is_empty() and arrays[Mesh.ARRAY_TEX_UV]!=null and not arrays[Mesh.ARRAY_TEX_UV].is_empty()
+			var material = mesh.get_active_material(surface)
+			checks.perimeter_textured = checks.perimeter_textured and material is StandardMaterial3D and material.albedo_texture!=null and material.normal_texture!=null and material.roughness>0.8
+	checks.connected_wall_modules = walls==14
 	return checks
