@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 57 |
+| Open | 59 |
 | Closed | 36 |
-| All | 93 |
+| All | 95 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 40 |
+| Active | 42 |
 | Verified closed | 27 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 72 |
+| All in this run | 74 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,7 +55,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Separate audio comparisons were captured; independent listening remains unavailable. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Lifecycle purity is supported; independent audio listening remains unavailable. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -80,7 +80,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Current Hers acquisition presentation is supported; complete variants and recovery remain unverified. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach presentation and recovery variants remain unverified. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
@@ -107,14 +107,16 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | Training-label obstruction and final cue recovery remain unqualified. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | OPEN | untitled issue |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | OPEN | untitled issue |
-| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Earned production LN02 traversal and recovery remain unverified. |
+| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Local post-LN02 approach is supported; earned tomb entry and recovery remain unverified. |
 | `qa.case-finalization-unavailable` | [#89](https://github.com/Flesymeb/aelors-adventure/issues/89) | OPEN | Host case queue exhaustion prevented formal finish and remaining finalization receipts. |
 | `warden-acceptance-unverified` | [#87](https://github.com/Flesymeb/aelors-adventure/issues/87) | OPEN | untitled issue |
 | `qa.aerial-validation-gap` | [#88](https://github.com/Flesymeb/aelors-adventure/issues/88) | OPEN | untitled issue |
 | `qa.independent-lifecycle-selection-gap` | [#90](https://github.com/Flesymeb/aelors-adventure/issues/90) | CLOSED | Independently verified resolved at loop 48. |
 | `qa.warden-counterplay-evidence-gap` | [#91](https://github.com/Flesymeb/aelors-adventure/issues/91) | OPEN | untitled issue |
 | `finisher-obstruction-unverified` | [#92](https://github.com/Flesymeb/aelors-adventure/issues/92) | OPEN | untitled issue |
-| `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | Grounded stopping is observed, but its required next-update deadline remains unqualified. |
+| `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
+| `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | Veyne counterplay, victory/key persistence and complete recovery acceptance remain unverified. |
+| `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | Phase camera framing crops the moved caster and foreground player. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -122,7 +124,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 57 | 36 | 93 |
+| GitHub HoH namespace | 59 | 36 | 95 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -159,7 +161,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-50-19c10f4c7a61` | `development_snapshot:attempt-f387900d5e4842e3bba319bf` | DEVELOPER REPORT READY |
+| `loop-50-19c10f4c7a61` | `development_snapshot:attempt-f387900d5e4842e3bba319bf` | BLOCKED |
 
 ### Project Planner
 
@@ -186,7 +188,24 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-50-19c10f4c7a61` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 8 (6 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `qa.veyne-acceptance-gap` | MAJOR | INTERNAL | HIGH | Veyne counterplay, victory/key persistence and complete recovery acceptance remain unverified. |
+| `qa.opening-native-observation-gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
+| `qa.settings-listening-gap` | MAJOR | INTERNAL | HIGH | Lifecycle purity is supported; independent audio listening remains unavailable. |
+| `qa.coach-qualification-gap` | MINOR | INTERNAL | MEDIUM | Coach presentation and recovery variants remain unverified. |
+| `qa.mf01-earned-gap` | MAJOR | INTERNAL | HIGH | MF01 earning and committed information restoration remain unobserved. |
+| `qa.tomb-earned-gap` | MAJOR | INTERNAL | HIGH | Local post-LN02 approach is supported; earned tomb entry and recovery remain unverified. |
+| `veyne-phase-camera-crop` | MINOR | DEGRADED | MEDIUM | Phase camera framing crops the moved caster and foreground player. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -2737,5 +2756,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-50-19c10f4c7a61`
 - Latest warm start: `loop-50-2172c7dd693f`
 - Last published: `loop-50-19c10f4c7a61`
-- Best verified: `loop-49-2172c7dd693f`
+- Best verified: `loop-50-19c10f4c7a61`
 - Generated by the HoH host from immutable run evidence.

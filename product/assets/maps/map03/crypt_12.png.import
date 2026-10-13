@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cexlx2y464e72"
-path="res://.godot/imported/crypt_12.png-0a14c8a9940b0c301ff7ea648fce608e.ctex"
+path.s3tc="res://.godot/imported/crypt_12.png-0a14c8a9940b0c301ff7ea648fce608e.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "c38cea273df84762580b34831cf7a047"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/maps/map03/crypt_12.png"
-dest_files=["res://.godot/imported/crypt_12.png-0a14c8a9940b0c301ff7ea648fce608e.ctex"]
+dest_files=["res://.godot/imported/crypt_12.png-0a14c8a9940b0c301ff7ea648fce608e.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
