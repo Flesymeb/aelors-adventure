@@ -3,6 +3,15 @@ extends "res://combat/channel_ranged_adapter.gd"
 ## E02 adds lifecycle ownership; it does not introduce another damage authority.
 const WITHDRAWAL_BURST := 0.9
 const WITHDRAWAL_STAND := 0.7
+const COVER_SEARCH_LIMIT := 6.0
+const COVER_HOME_RADIUS := 4.0
+var cover_search_active := false
+var cover_search_attempted := false
+var cover_search_elapsed := 0.0
+var cover_search_plans := 0
+var cover_destination := Vector3.ZERO
+var cover_path := PackedVector3Array()
+var cover_search_result := "idle"
 var withdrawal_active := false
 var withdrawal_elapsed := 0.0
 var withdrawal_recovery_remaining := 0.0
@@ -20,6 +29,7 @@ func interrupt_action() -> void:
 	withdrawal_active = false
 	withdrawal_elapsed = 0
 	withdrawal_recovery_remaining = 0
+	_clear_cover_search()
 	if health > 0: phase = "idle"
 
 func reset_encounter() -> void:
@@ -34,6 +44,7 @@ func _physics_process(delta: float) -> void:
 	if not encounter.combat_allowed():
 		if engaged or returning or action.executing_action or not projectiles.is_empty(): interrupt_action()
 		return
+	if stable_id == "map02_e02_ranged": _update_cover_search(delta)
 	withdrawal_recovery_remaining = maxf(0, withdrawal_recovery_remaining - delta)
 	if withdrawal_active:
 		withdrawal_elapsed = minf(WITHDRAWAL_BURST, withdrawal_elapsed + delta)
@@ -46,7 +57,123 @@ func _physics_process(delta: float) -> void:
 		blackboard.set_value("perform_action", false)
 	super(delta)
 
+func lost_sight_timeout() -> float:
+	return COVER_SEARCH_LIMIT if stable_id == "map02_e02_ranged" and cover_search_active else super()
+
+func _clear_cover_search() -> void:
+	cover_search_active = false
+	cover_search_attempted = false
+	cover_search_elapsed = 0
+	cover_search_plans = 0
+	cover_destination = Vector3.ZERO
+	cover_path.clear()
+	cover_search_result = "idle"
+
+func _update_cover_search(delta: float) -> void:
+	if health <= 0 or not engaged or returning: return
+	var target: Vector3 = encounter.world.player.global_position
+	var distance := global_position.distance_to(target)
+	if target.distance_to(home) > 12 or distance < 6 or distance > 12:
+		_clear_cover_search()
+		return
+	if line_clear(target):
+		if cover_search_active: cover_search_result = "reacquired"
+		cover_search_active = false
+		cover_search_attempted = false
+		return
+	if not cover_search_attempted:
+		cover_search_attempted = true
+		cover_search_elapsed = 0
+		cover_search_plans = 1
+		cover_path = _firing_path(target)
+		cover_search_active = not cover_path.is_empty()
+		cover_search_result = "searching" if cover_search_active else "unavailable"
+		if cover_search_active: cover_destination = cover_path[-1]
+	if cover_search_active:
+		cover_search_elapsed += delta
+		if cover_search_elapsed >= COVER_SEARCH_LIMIT:
+			cover_search_active = false
+			cover_search_result = "timed_out"
+
+func _supported_stance(point: Vector3) -> Variant:
+	var excluded: Array[RID] = [get_rid(), encounter.world.player.get_rid()]
+	var support: Dictionary = encounter.world.ground_policy.support(encounter.world, Vector2(point.x, point.z), excluded)
+	if support.is_empty(): return null
+	var position: Vector3 = support.position + Vector3.UP * 0.08
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.38
+	shape.height = 1.8
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform.origin = position + Vector3.UP * 0.9
+	query.collision_mask = 1
+	query.exclude = excluded
+	return position if get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty() else null
+
+func _firing_path(target: Vector3) -> PackedVector3Array:
+	# Inspect supported flank stances once per obstruction, never pursue the
+	# player's occupied cover or replace the retained NavigationAgent movement.
+	var best := PackedVector3Array()
+	var best_length := maxf(0, COVER_SEARCH_LIMIT - cover_search_elapsed) * 1.5
+	if not navigation_ready: return best
+	var map := navigation_agent.get_navigation_map()
+	for radius in [2.0, COVER_HOME_RADIUS]:
+		for index in 8:
+			var angle := TAU * float(index) / 8.0
+			var stance: Variant = _supported_stance(home + Vector3(cos(angle), 0, sin(angle)) * radius)
+			if stance == null: continue
+			var candidate: Vector3 = stance
+			var distance := candidate.distance_to(target)
+			if candidate.distance_to(home) > COVER_HOME_RADIUS + 0.1 or distance < 6 or distance > 12: continue
+			if not _firing_stance_clear(candidate, target): continue
+			var path := NavigationServer3D.map_get_path(map, global_position, candidate, true, navigation_agent.navigation_layers)
+			if path.size() < 2 or path[-1].distance_to(candidate) > 0.35: continue
+			var length := 0.0
+			var supported := true
+			for segment in range(1, path.size()):
+				var from := path[segment - 1]
+				var to := path[segment]
+				length += from.distance_to(to)
+				for sample in range(1, maxi(1, int(ceil(from.distance_to(to) / 0.5))) + 1):
+					var point := from.lerp(to, minf(1.0, float(sample) * 0.5 / maxf(0.01, from.distance_to(to))))
+					var actual: Variant = _supported_stance(point)
+					if actual == null or absf(actual.y - point.y) > 0.7 or point.distance_to(home) > COVER_HOME_RADIUS + 0.35:
+						supported = false
+						break
+				if not supported: break
+			if supported and length < best_length:
+				best = path
+				best_length = length
+	return best
+
+func _firing_stance_clear(candidate: Vector3, target: Vector3) -> bool:
+	# Navigation arrival has a 0.35m tolerance. A ray grazing the rock at the
+	# exact endpoint is insufficient: require clearance across that tolerance.
+	for offset in [Vector3.ZERO, Vector3.LEFT * 0.4, Vector3.RIGHT * 0.4, Vector3.FORWARD * 0.4, Vector3.BACK * 0.4]:
+		# Stance placement has an 0.08m gap; the body settles onto the floor.
+		# Use the lower grounded eye line, with a small vertical safety margin.
+		var query := PhysicsRayQueryParameters3D.create(candidate + offset + Vector3.UP * 1.18, target + Vector3.UP, 1, [get_rid(), encounter.world.player.get_rid()])
+		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty(): return false
+	return true
+
 func _move(destination: Vector3, stage: String) -> void:
+	if stable_id == "map02_e02_ranged" and stage == "reposition" and cover_search_active:
+		destination = cover_destination
+		if global_position.distance_to(destination) < 0.4:
+			# A player moving during the search may invalidate its firing line.
+			# Allow one updated route within the SAME finite clock, then stop.
+			if cover_search_plans < 2:
+				cover_search_plans += 1
+				cover_path = _firing_path(encounter.world.player.global_position)
+				if not cover_path.is_empty():
+					cover_destination = cover_path[-1]
+					destination = cover_destination
+				else:
+					cover_search_active = false
+			if cover_path.is_empty() or global_position.distance_to(destination) < 0.4:
+				cover_search_active = false
+				cover_search_result = "occluded_at_destination"
+				return
 	if stage != "retreat":
 		withdrawal_active = false
 		withdrawal_elapsed = 0
@@ -73,4 +200,10 @@ func _mcp_state() -> Dictionary:
 	result.withdrawal_active = withdrawal_active
 	result.withdrawal_elapsed = withdrawal_elapsed
 	result.withdrawal_recovery_remaining = withdrawal_recovery_remaining
+	result.cover_search_active = cover_search_active
+	result.cover_search_elapsed = cover_search_elapsed
+	result.cover_search_plans = cover_search_plans
+	result.cover_search_result = cover_search_result
+	result.cover_destination = str(cover_destination)
+	result.cover_path_points = cover_path.size()
 	return result

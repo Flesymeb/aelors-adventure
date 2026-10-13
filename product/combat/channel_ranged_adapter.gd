@@ -113,7 +113,7 @@ func _physics_process(delta: float) -> void:
 	var sees := in_arena and distance <= 12 and line_clear(target.global_position)
 	lost_time = 0 if sees else lost_time + delta
 	if sees: engaged = true; returning = false
-	elif engaged and (lost_time > 1.1 or not in_arena):
+	elif engaged and (lost_time > lost_sight_timeout() or not in_arena):
 		engaged = false
 		returning = true
 		action.interrupt_action()
@@ -152,6 +152,10 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor(): velocity.y -= 20 * delta
 	else: velocity.y = 0
 	move_and_slide()
+
+func lost_sight_timeout() -> float:
+	# Encounters may retain a bounded search; shared CH01 behavior stays intact.
+	return 1.1
 
 func _move(destination: Vector3, stage: String) -> void:
 	if not navigation_ready: return

@@ -4,6 +4,18 @@ const STATE = preload("res://dialogue_state.gd")
 const TRAVEL = preload("res://tests/chapter_travel_test.gd")
 const ROADBLOCK = preload("res://tests/map02_roadblock_test.gd")
 
+class CoverDecisionArcher extends "res://combat/map02_ranged_adapter.gd":
+	# Decision-only unit in the existing disposable fixture. Real terrain paths
+	# and projectile contact are checked separately below, never earned history.
+	var visible_target := false
+	var available_path := PackedVector3Array()
+	func _ready() -> void:
+		set_physics_process(false)
+	func line_clear(_destination: Vector3) -> bool:
+		return visible_target
+	func _firing_path(_target: Vector3) -> PackedVector3Array:
+		return available_path
+
 class DiagnosticPressureRouter extends ROADBLOCK.DiagnosticMeadowRouter:
 	func _ready() -> void:
 		super()
@@ -149,6 +161,86 @@ static func lightning_contact_checks(parent: Node) -> Dictionary:
 	# Exercise the E02 subclass with the same real Snaiel contact/reaction owner.
 	return preload("res://tests/ranged_lightning_contact_test.gd").lightning_contact_checks(parent,preload("res://combat/map02_ranged_adapter.gd"))
 
+static func cover_decision_checks(world: Node3D) -> Dictionary:
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var body: Node = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
+	body.set_script(CoverDecisionArcher)
+	body.encounter = world.pressure_encounter
+	body.stable_id = "map02_e02_ranged"
+	body.position = world.player.global_position + Vector3.BACK * 8
+	body.home = body.position
+	body.visible = false
+	body.collision_layer = 0
+	world.add_child(body)
+	body.engaged = true
+	body.available_path = PackedVector3Array([body.position, body.position + Vector3.LEFT * 2])
+	body._update_cover_search(0.2)
+	var checks := {"finite_search_started":body.cover_search_active and body.cover_search_plans == 1 and body.lost_sight_timeout() == body.COVER_SEARCH_LIMIT}
+	body._update_cover_search(body.COVER_SEARCH_LIMIT)
+	checks.timeout_ends = not body.cover_search_active and body.cover_search_result == "timed_out" and body.lost_sight_timeout() == 1.1
+	body._update_cover_search(0.2)
+	checks.no_endless_retry = not body.cover_search_active and body.cover_search_plans == 1
+	body.interrupt_action()
+	checks.interrupt_clears = not body.cover_search_active and not body.cover_search_attempted and body.cover_search_plans == 0 and body.cover_destination == Vector3.ZERO and body.cover_path.is_empty()
+	body.engaged = true
+	body.available_path.clear()
+	body._update_cover_search(0.2)
+	checks.unavailable_safe = not body.cover_search_active and body.cover_search_result == "unavailable" and body.lost_sight_timeout() == 1.1
+	body.visible_target = true
+	body._update_cover_search(0.2)
+	checks.reacquisition_allows_new_attempt = not body.cover_search_attempted
+	body.stable_id = "map02_e04_ranged"
+	body.cover_search_active = true
+	checks.e04_timeout_unchanged = body.lost_sight_timeout() == 1.1
+	body.free()
+	var ranged: Node = world.pressure_encounter.enemies[1]
+	var path: PackedVector3Array = ranged._firing_path(world.player.global_position)
+	checks.real_supported_firing_path = path.size() >= 2 and ranged._firing_stance_clear(path[-1], world.player.global_position) and path[-1].distance_to(ranged.home) <= ranged.COVER_HOME_RADIUS + 0.1
+	var ready: bool = ranged.navigation_ready
+	ranged.navigation_ready = false
+	checks.unsynchronized_path_rejected = ranged._firing_path(world.player.global_position).is_empty()
+	ranged.navigation_ready = ready
+	return checks
+
+static func projectile_contact_checks(world: Node3D) -> Dictionary:
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var encounter: Node = world.pressure_encounter
+	var ranged: Node = encounter.enemies[1]
+	if not encounter.combat_allowed(): return {"combat_allowed":false}
+	# Use actual physics sweeps and retained Snaiel contact, confined to the
+	# intercepted-save world. Never teleport an actor or award a victory.
+	var hp: float = world.dialogue_state.health
+	var contacts: int = ranged.cover_contacts
+	var arrow: Node = preload("res://combat/guard_projectile.gd").new()
+	arrow.shooter = ranged
+	arrow.occurrence = 90001
+	encounter.add_child(arrow)
+	arrow.set_physics_process(false)
+	var origin: Vector3 = encounter.cover.global_position + Vector3.BACK * 4 + Vector3.UP * 1.1
+	arrow.launch(origin, Vector3.FORWARD, ranged.get_rid(), 16)
+	arrow._physics_process(0.3)
+	var checks := {"rock_blocks_swept_arrow":arrow.settled and ranged.cover_contacts == contacts + 1 and world.dialogue_state.health == hp and ranged.last_projectile_result.outcome == "cover"}
+	arrow._settle({"collider":world.player,"position":world.player.global_position}, Vector3.FORWARD)
+	checks.blocked_arrow_settles_once = world.dialogue_state.health == hp and ranged.cover_contacts == contacts + 1 and not arrow.source.can_damage
+	arrow.free()
+	# Legal contact requires a fresh fixture without an active hurt immunity.
+	contacts = ranged.player_contacts
+	arrow = preload("res://combat/guard_projectile.gd").new()
+	arrow.shooter = ranged
+	arrow.occurrence = 90002
+	encounter.add_child(arrow)
+	arrow.set_physics_process(false)
+	var target: Vector3 = world.player.global_position + Vector3.UP
+	origin = target + Vector3.BACK
+	arrow.launch(origin, Vector3.FORWARD, ranged.get_rid(), 16)
+	arrow._physics_process(0.08)
+	var hp_after: float = world.dialogue_state.health
+	checks.legal_contact = arrow.settled and ranged.player_contacts == contacts + 1 and hp_after < hp
+	arrow._settle({"collider":world.player,"position":target}, Vector3.FORWARD)
+	checks.legal_arrow_settles_once = world.dialogue_state.health == hp_after and ranged.player_contacts == contacts + 1 and not arrow.source.can_damage
+	arrow.free()
+	return checks
+
 static func lifecycle_checks(world: Node3D) -> Dictionary:
 	var state: Node = world.dialogue_state
 	if not state is TRAVEL.DiagnosticState: return {"isolated_state":false}
@@ -158,12 +250,22 @@ static func lifecycle_checks(world: Node3D) -> Dictionary:
 	var ranged: CharacterBody3D = encounter.enemies[1]
 	var checks := {"isolated_state":true}
 	checks.authored_cover = encounter.cover.mesh != null and encounter.cover_body.collision_layer == 1 and encounter.cover_body.get_child(0).shape is ConvexPolygonShape3D
+	ranged.cover_search_active = true
+	ranged.cover_search_attempted = true
+	ranged.cover_search_elapsed = 2
+	ranged.cover_search_plans = 2
+	ranged.cover_destination = ranged.home
 	encounter.interrupt()
+	checks.cover_intent_interrupted = not ranged.cover_search_active and not ranged.cover_search_attempted and ranged.cover_search_elapsed == 0 and ranged.cover_search_plans == 0 and ranged.cover_destination == Vector3.ZERO
 	checks.ranged_safe_idle = ranged.can_save()
 	ranged.action.perform_action()
 	checks.draw_blocks_save = not ranged.can_save() and not encounter.can_save() and ranged.phase == "telegraph"
 	encounter.interrupt()
 	checks.draw_interrupted = ranged.phase == "idle" and not ranged.action.executing_action and not ranged.blackboard.get_value("perform_action",false)
+	ranged.cover_search_active = true
+	ranged.cover_search_attempted = true
+	ranged.reset_encounter()
+	checks.reset_clears_cover = not ranged.cover_search_active and not ranged.cover_search_attempted and ranged.cover_path.is_empty() and ranged.can_save()
 	var xp: int = state.experience
 	var cue: int = world.training.feedback.cue_serial
 	ranged.health_component.decrement_health(ranged.health)
