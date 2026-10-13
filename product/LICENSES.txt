@@ -9,3 +9,30 @@ journal.png (menuList) and ability.png (star): Kenney Vleugels,
 Game Icons, https://kenney.nl/assets/game-icons, CC0 1.0.
 https://creativecommons.org/publicdomain/zero/1.0/
 PNG/White/2x source artwork is retained unchanged, tinted in the HUD.
+
+
+Veyne dragon encounter additions:
+European Dragon by Regina Cachoa, CC BY 4.0
+https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87
+https://sketchfab.com/ReginaCachoa
+https://creativecommons.org/licenses/by/4.0/
+Adaptation: physics-owned scale/grounding, native idle/walk/run/flight bindings,
+and supplemental jaw, claw, wing, hurt and death poses on the original rig.
+
+Fantasy Ruin I by -X-ScornGames, CC BY 4.0
+https://sketchfab.com/3d-models/fantasy--ruin-idis-2a820c7c91754b42a0fe3f9b974e85e2
+https://sketchfab.com/XX-XX
+https://creativecommons.org/licenses/by/4.0/
+Source identifies Tripo/AI-generated geometry. Adaptation: open ritual shell,
+entry aperture, decorative/nonblocking leaves, bounded native collision and
+replacement of the irregular inner ground with authored Crypt of Kings stone
+and two native stair flights. Original source textures and geometry remain.
+Crypt of Kings by Brett Murphy remains CC BY 4.0, as in assets/maps/map03/NOTICE.txt.
+
+3D Lightning Shader by Loop_Box, CC0-1.0 (posted shader code only)
+https://godotshaders.com/shader/3d-lightning-shader/
+Cartoon 3D Fire by erBimo, CC0-1.0 (posted shader code only)
+https://godotshaders.com/shader/cartoon-3d-fire/
+Adaptations: explicit simulation clock, bounded geometry, no automatic TIME,
+warning/contact/decay lifecycle, lower quality and Reduced Motion controls.
+No site preview images or third-party texture dependencies are included.

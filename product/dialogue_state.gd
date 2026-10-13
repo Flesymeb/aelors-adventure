@@ -334,7 +334,7 @@ func take_veyne_key() -> bool:
 func veyne_information() -> String:
 	if veyne_release_key: return "维恩已败 · 解除钥印已取得。四位村民仍需逐人释放，召唤核心仍需关闭。"
 	if veyne_defeated: return "维恩已败 · 在左侧裂隙祭坛按 E 取得解除钥印。"
-	return "维恩 · 沿左侧石阶进入裂隙祭坛。青色灯束横移躲避，不能振刀；金色近身挥击可振刀。"
+	return "维恩 · 沿左侧石阶进入裂隙祭坛。火息离开扇区，冲锋向侧面闪避，俯冲离开落点；青色灯束不能振刀，金色爪击可振刀。"
 
 func warden_information() -> String:
 	if warden_lock_released: return "锁印已解除 · 应急解除器已取得。奥伦与三位村民仍需逐人释放。"
@@ -348,7 +348,7 @@ func ln02_remaining() -> Array[String]:
 	return remaining
 
 func ln02_information() -> String:
-	if ln02_purified: return "入口结界已净化 · " + (veyne_information() if veyne_defeated else "左阶 · 维恩：横移躲开灯束，挥击可振刀。") + "\n" + (warden_information() if warden_defeated else "右阶 · 锁印看守：重击可振刀，震荡离开范围。")
+	if ln02_purified: return "入口结界已净化 · " + (veyne_information() if veyne_defeated else "左阶 · 维恩：火息横移、冲锋侧闪、俯冲离开落点；金色爪击可振刀。") + "\n" + (warden_information() if warden_defeated else "右阶 · 锁印看守：重击可振刀，震荡离开范围。")
 	if not ln02_revealed: return "入口有两条独立供能。按 3 装备旧灯，靠近入口按 F 显形；北侧螺旋与南侧箭纹均在封锁外。"
 	if ln02_north_cut and ln02_south_cut: return "两条供能已切断 · 靠近入口右侧通行装置，按 E 用旧灯主动净化。"
 	return "仍在供能：" + "、".join(ln02_remaining()) + "。可按任意顺序靠近节点按 E 切断；只断一条，另一条仍会维持结界。"

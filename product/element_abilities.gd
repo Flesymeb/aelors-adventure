@@ -3,6 +3,9 @@ extends Node3D
 const GROUND = preload("res://forest_ground.gd")
 const CONTACT_ENEMY = preload("res://combat/snaiel/scripts/entities/enemy.gd")
 const RANGED_ENEMY = preload("res://combat/channel_ranged_adapter.gd")
+const SKILL_EFFECTS = preload("res://combat/skill_effects.gd")
+var skill_effects
+var warning_effect := -1
 var world: Node3D
 var state: Node
 var player: CharacterBody3D
@@ -30,10 +33,12 @@ var e02_ranged_lightning_immunity_remaining: Variant:
 		return null
 
 func configure(owner_world: Node3D) -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	world = owner_world
 	state = world.dialogue_state
 	player = world.player
 	player.abilities = self
+	ensure_effects()
 	for id in ["fire","lightning"]:
 		var target = StaticBody3D.new()
 		target.name = "FirePractice" if id == "fire" else "LightningPractice"
@@ -84,12 +89,17 @@ func request(id: String) -> bool:
 	cast = id
 	phase = "startup"
 	clock = 0.25
+	ensure_effects()
+	var socket: Node3D = world.lamp_training.visual.lamp
+	warning_effect = skill_effects.warning(id, socket.global_position, socket)
 	player._set_weapon_visibility()
 	player.current_animation = ""
 	player._play_animation("Interact",2.0)
 	return true
 
 func interrupt() -> void:
+	if is_instance_valid(skill_effects) and warning_effect >= 0: skill_effects.finish(warning_effect)
+	warning_effect = -1
 	cast = ""
 	phase = "idle"
 	clock = 0
@@ -98,6 +108,7 @@ func interrupt() -> void:
 
 func clear_transients() -> void:
 	interrupt()
+	if is_instance_valid(skill_effects): skill_effects.clear_transients()
 	for projectile in projectiles: projectile.node.queue_free(); projectile.source.queue_free()
 	projectiles.clear()
 	burns.clear()
@@ -105,6 +116,10 @@ func clear_transients() -> void:
 	cooldowns = {"fire":0.0,"lightning":0.0}
 
 func _physics_process(delta: float) -> void:
+	# MAP03 cinematics lock the world without pausing their own presentation.
+	# Keep attacks, cooldowns, burns and effects suspended under the same lock.
+	if not world.pause_owners.is_empty(): return
+	if is_instance_valid(skill_effects): skill_effects.tick(delta)
 	for id in cooldowns: cooldowns[id] = maxf(0,cooldowns[id] - delta)
 	for id in stagger_immunity: stagger_immunity[id] = maxf(0,stagger_immunity[id] - delta)
 	if busy():
@@ -124,9 +139,10 @@ func _physics_process(delta: float) -> void:
 		projectile.distance += 14.0 * delta
 		if not hit.is_empty():
 			settle(hit.collider,projectile.source,hit.position,"fire")
-			world.training.feedback.spark(hit.position,Color(1,0.35,0.08))
 			remove_projectile(projectile)
-		elif projectile.distance >= 18: remove_projectile(projectile)
+		elif projectile.distance >= 18:
+			if is_instance_valid(skill_effects): skill_effects.contact(projectile.node.global_position, "fire", "miss", 0)
+			remove_projectile(projectile)
 		else: projectile.node.global_position = next
 	for status in burns.duplicate():
 		if not is_instance_valid(status.target) or status.target.health <= 0: burns.erase(status); continue
@@ -135,9 +151,15 @@ func _physics_process(delta: float) -> void:
 		if status.tick >= 1.0:
 			status.tick -= 1.0
 			var src = source(3)
-			var before: float = status.target.health
-			status.target.health_component.incoming_damage(src)
-			world.training.feedback.impact(status.target.global_position + Vector3.UP,"灼烧",before - status.target.health,"hit")
+			# Periodic damage uses the same eligibility/reaction/result owner as
+			# direct skills, including Veyne's threshold and transition suspension.
+			var reaction: Callable = status.target.handler.reaction
+			status.target.handler.reaction = Callable()
+			var result: Dictionary = status.target.receive_contact(src,status.target.global_position+Vector3.UP)
+			status.target.handler.reaction = reaction
+			if result.get("hp_loss",0)>0 and status.target.has_method("enter_pressure_if_needed"): status.target.enter_pressure_if_needed()
+			if result.get("accepted",false) and is_instance_valid(skill_effects):
+				skill_effects.contact(status.target.global_position+Vector3.UP,"fire",str(result.get("outcome","")),float(result.get("hp_loss",0)))
 			src.queue_free()
 		if status.remaining <= 0: burns.erase(status)
 
@@ -152,14 +174,24 @@ func source(amount: float) -> SnaielDamageSource:
 	return src
 
 func release() -> void:
+	ensure_effects()
+	if warning_effect >= 0: skill_effects.finish(warning_effect, 0.12)
+	warning_effect = -1
 	if cast == "lightning":
 		var target = lightning_target()
 		if target == null: world.training.tell("目标离开视线 · 未消耗冷却"); return
+		var point = target.global_position + Vector3.UP
+		var origin: Vector3 = world.lamp_training.visual.lamp.global_position
+		# Camera visibility alone cannot establish an unobstructed socket contact.
+		var obstruction = get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin, point, 1, [player.get_rid(),target.get_rid()]))
+		if not obstruction.is_empty():
+			lightning_beam(origin, obstruction.position)
+			skill_effects.contact(obstruction.position, "lightning", "obstruction", 0)
+			world.training.feedback.impact(obstruction.position, "能力被挡住", 0, "obstruction")
+			return
 		cooldowns.lightning = 8.0
 		var src = source(22)
-		var point = target.global_position + Vector3.UP
 		settle(target,src,point,"lightning")
-		world.training.feedback.spark(point,Color(0.45,0.8,1))
 		lightning_beam(world.lamp_training.visual.lamp.global_position,point)
 		src.queue_free()
 	else:
@@ -170,20 +202,8 @@ func release() -> void:
 		var aim = get_world_3d().direct_space_state.intersect_ray(camera_ray)
 		var destination: Vector3 = aim.position if not aim.is_empty() else player.camera.global_position + direction * 50
 		direction = origin.direction_to(destination)
-		var fire = MeshInstance3D.new()
-		var mesh = SphereMesh.new()
-		mesh.radius = 0.1
-		mesh.height = 0.2
-		var material = StandardMaterial3D.new()
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.albedo_color = Color(1,0.34,0.035)
-		material.emission_enabled = true
-		material.emission = Color(1,0.25,0.02)
-		mesh.material = material
-		fire.mesh = mesh
-		add_child(fire)
-		fire.global_position = origin
-		projectiles.append({"node":fire,"source":source(18),"direction":direction,"distance":0.0})
+		var fire: MeshInstance3D = skill_effects.projectile("fire", origin)
+		projectiles.append({"node":fire,"source":source(18),"direction":direction,"distance":0.0,"effect_id":skill_effects.records.back().id})
 	world.training.feedback.swing()
 
 func lightning_target() -> Node3D:
@@ -198,6 +218,9 @@ func lightning_target() -> Node3D:
 	if world.get("ambush_encounter"): candidates.append_array(world.ambush_encounter.enemies)
 	if world.get("line_encounter"): candidates.append_array(world.line_encounter.enemies)
 	if world.channel_guards: candidates.append_array(world.channel_guards.enemies)
+	for name in ["warden_encounter", "veyne_encounter"]:
+		var encounter = world.get(name)
+		if is_instance_valid(encounter) and is_instance_valid(encounter.get("actor")): candidates.append(encounter.actor)
 	var best: Node3D
 	var score = 0.92
 	var forward = -player.camera.global_basis.z.normalized()
@@ -207,7 +230,7 @@ func lightning_target() -> Node3D:
 		if player.global_position.distance_to(target.global_position) > 12: continue
 		var alignment = forward.dot(player.camera.global_position.direction_to(point))
 		if alignment < score: continue
-		var query = PhysicsRayQueryParameters3D.create(player.camera.global_position,point,1,[player.get_rid()])
+		var query = PhysicsRayQueryParameters3D.create(player.camera.global_position,point,1,[player.get_rid(),target.get_rid()])
 		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 		score = alignment
 		best = target
@@ -230,6 +253,8 @@ func settle(target: Object, src: SnaielDamageSource, point: Vector3, element: St
 	if target.is_queued_for_deletion(): return
 	if target is StaticBody3D and target in targets:
 		world.training.feedback.impact(point,"元素靶命中",0,"straw")
+		ensure_effects()
+		skill_effects.contact(point, element, "straw", 0)
 		if target.get_meta("element") == element and state.trace_investigated:
 			practice_hits[element] += 1
 			if not state.element_practice_complete:
@@ -246,6 +271,10 @@ func settle(target: Object, src: SnaielDamageSource, point: Vector3, element: St
 		if element == "lightning": target.handler.reaction = Callable()
 		var result: Dictionary = target.receive_contact(src,point)
 		target.handler.reaction = reaction
+		if result.get("hp_loss",0)>0 and target.has_method("enter_pressure_if_needed"): target.enter_pressure_if_needed()
+		if result.get("accepted", false):
+			ensure_effects()
+			skill_effects.contact(point, element, result.get("outcome", "hit"), result.get("hp_loss", 0.0))
 		if result.get("hp_loss",0) > 0 and target.health > 0:
 			if element == "fire":
 				for status in burns:
@@ -256,7 +285,10 @@ func settle(target: Object, src: SnaielDamageSource, point: Vector3, element: St
 				target.hurt_remaining = 0.4
 				stagger_immunity[target.get_instance_id()] = 2.0
 			else: target.blackboard.set_value("got_hit",false)
-	else: world.training.feedback.impact(point,"能力被挡住",0,"obstruction")
+	else:
+		world.training.feedback.impact(point,"能力被挡住",0,"obstruction")
+		ensure_effects()
+		skill_effects.contact(point, element, "obstruction", 0)
 
 func remove_projectile(projectile: Dictionary) -> void:
 	projectiles.erase(projectile)
@@ -298,25 +330,15 @@ func _mcp_state() -> Dictionary:
 		"e02_ranged_lightning_immunity_remaining":e02_ranged_lightning_immunity_remaining,
 		"projectile_states":projectile_states,"burn_states":burn_states,
 		"process_frame":Engine.get_process_frames(),"physics_frame":Engine.get_physics_frames(),
-		"tree_paused":get_tree().paused,"pause_owners":world.pause_owners.keys()}
+		"tree_paused":get_tree().paused,"pause_owners":world.pause_owners.keys(),"skill_effects":skill_effects.snapshot() if is_instance_valid(skill_effects) else null}
+
+func ensure_effects() -> void:
+	if is_instance_valid(skill_effects): return
+	skill_effects = SKILL_EFFECTS.new()
+	skill_effects.name = "SkillEffects"
+	add_child(skill_effects)
+	skill_effects.configure(world, state)
 
 func lightning_beam(origin: Vector3, destination: Vector3) -> void:
-	var beam = MeshInstance3D.new()
-	var mesh = CylinderMesh.new()
-	mesh.top_radius = 0.025
-	mesh.bottom_radius = 0.025
-	mesh.height = origin.distance_to(destination)
-	var material = StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(0.55,0.85,1)
-	mesh.material = material
-	beam.mesh = mesh
-	add_child(beam)
-	beam.global_position = (origin + destination) * 0.5
-	var axis = origin.direction_to(destination)
-	var tangent = axis.cross(Vector3.FORWARD).normalized()
-	if tangent.length_squared() < 0.1: tangent = axis.cross(Vector3.RIGHT).normalized()
-	beam.global_basis = Basis(tangent,axis,tangent.cross(axis).normalized())
-	var tween = create_tween()
-	tween.tween_interval(0.15)
-	tween.tween_callback(beam.queue_free)
+	ensure_effects()
+	skill_effects.line(origin, destination, "lightning", 0.22)

@@ -109,8 +109,10 @@ func create_environment() -> Node3D:
 	return preload("res://assets/maps/map03/environment.tscn").instantiate()
 
 func _bind_collision() -> void:
+	village.get_node("VeyneArena").bind_geometry()
 	for mesh in village.find_children("*","MeshInstance3D",true,false):
 		# Cloth/candles have no blocking volume; authored stone owns all support.
+		if mesh.has_meta("arena_collision_bound") or not mesh.mesh: continue
 		if not ("Floor" in mesh.name or "Wall" in mesh.name or "Pillar" in mesh.name or "Stairs" in mesh.name or "Coffin" in mesh.name): continue
 		mesh.create_trimesh_collision()
 		for body in mesh.get_children():

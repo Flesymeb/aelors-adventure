@@ -116,10 +116,9 @@ func build_navigation() -> void:
 	var mesh = NavigationMesh.new()
 	var vertices = PackedVector3Array()
 	var cells: Dictionary = {}
-	# Half-meter samples retain the 6 m extent and cover narrow bridge paths.
-	for z in range(-12, 13):
-		for x in range(-12, 13):
-			var sample: Dictionary = ground_query.call(home + Vector3(x * 0.5, 0, z * 0.5))
+	for z in range(-8, 9):
+		for x in range(-8, 9):
+			var sample: Dictionary = ground_query.call(home + Vector3(x * 0.75, 0, z * 0.75))
 			if sample.is_empty(): continue
 			var point: Vector3 = sample.position
 			var shape = SphereShape3D.new()
@@ -133,8 +132,8 @@ func build_navigation() -> void:
 			cells[Vector2i(x, z)] = vertices.size()
 			vertices.append(point + Vector3.UP * 0.04)
 	mesh.vertices = vertices
-	for z in range(-12, 12):
-		for x in range(-12, 12):
+	for z in range(-8, 8):
+		for x in range(-8, 8):
 			var keys = [Vector2i(x, z), Vector2i(x + 1, z), Vector2i(x + 1, z + 1), Vector2i(x, z + 1)]
 			if not (cells.has(keys[0]) and cells.has(keys[1]) and cells.has(keys[2]) and cells.has(keys[3])): continue
 			var a: int = cells[keys[0]]
@@ -189,8 +188,7 @@ func _refresh_navigation() -> void:
 		navigation_status = "empty_terrain"
 		return
 	var projected = NavigationServer3D.map_get_closest_point(map, home)
-	# Include 1 mm for the sampled surface height and floating-point boundary.
-	if projected.distance_to(home) > 0.751:
+	if projected.distance_to(home) > 0.75:
 		navigation_status = "home_off_mesh"
 		return
 	navigation_probe_path = NavigationServer3D.map_get_path(map, home, patrol_point, true, navigation_agent.navigation_layers)

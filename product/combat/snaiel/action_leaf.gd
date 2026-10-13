@@ -12,7 +12,6 @@ func get_class_name() -> Array[StringName]:
 	return classes
 
 # Dependency-injected product action; tree retains Beehave RUNNING semantics.
-# Scene-authored action bindings must survive PackedScene export.
-@export var method: StringName
+var method: StringName
 func tick(actor: Node, blackboard: SnaielBlackboard) -> int:
 	return actor.call(method, blackboard)

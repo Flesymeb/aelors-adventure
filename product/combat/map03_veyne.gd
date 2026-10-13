@@ -1,7 +1,8 @@
 extends Node3D
 ## Presentation/attempt owner. DialogueState alone owns durable Boss/key facts.
 const GROUND = preload("res://world/map03_ground.gd")
-const HOME := Vector2(-4,-12)
+const ARENA = preload("res://world/veyne_arena.gd")
+const HOME := ARENA.HOME
 const RIFT_RADIUS := 0.65
 var world: Node3D
 var state: Node
@@ -33,6 +34,9 @@ var rift_timer := 4.5
 var rift_waves := 0
 var rift_contacts := 0
 var paused_by_menu := false
+var presentation_box := AABB()
+var flight_camera_owned := false
+var flight_camera_rotation := Vector3.ZERO
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -52,6 +56,7 @@ func configure(owner_world: Node3D) -> void:
 	reveal_camera = Camera3D.new()
 	reveal_camera.name = "RevealCamera"
 	reveal_camera.fov = 58
+	reveal_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	add_child(reveal_camera)
 	music = AudioStreamPlayer.new()
 	music.name = "VeyneMusic"
@@ -90,15 +95,15 @@ func ground() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if is_queued_for_deletion() or world.is_queued_for_deletion(): return
-		if not GROUND.place(world,actor,HOME) or not GROUND.place(world,device,Vector2(-5.0,-13)): continue
+		if not GROUND.place(world,actor,HOME) or not GROUND.place(world,device,ARENA.KEY): continue
 		arena_samples = 0
-		for x in [-5.0,-4.0,-3.0]:
-			for z in [-9.0,-11.0,-13.0]:
+		for x in [-10.0,-4.0,2.0]:
+			for z in [-20.0,-25.0,-30.0]:
 				if GROUND.route_clear(world,Vector2(x,z)): arena_samples += 1
 		approach_samples = 0
-		for z in [-5.0,-6.0,-6.5,-7.0,-7.5,-8.0,-8.7,-9.0]:
+		for z in [-5.0,-6.0,-8.7,-9.0,-10.0,-12.0,-14.0,-16.0,-18.0]:
 			if GROUND.route_clear(world,Vector2(-4,z)): approach_samples += 1
-		if arena_samples != 9 or approach_samples != 8:
+		if arena_samples != 9 or approach_samples != 9:
 			world.entry_failed.emit("裂隙祭坛的原生石地缺少通行净空。")
 			return
 		actor.home = actor.global_position
@@ -130,16 +135,18 @@ func _process(delta: float) -> void:
 	music.stream_paused = paused
 	cue.stream_paused = paused
 	effects.stream_paused = paused
+	frame_flight_camera()
 	if presentation:
 		if paused: actor.animator.pause(); return
+		frame_presentation()
 		if not actor.animator.is_playing(): actor.animator.play()
 		reveal_elapsed += delta
 		if not Input.is_key_pressed(KEY_SPACE): skip_armed = true
 		if reveal_elapsed >= (2.4 if phase == "phase_transition" else 3.0): finish_presentation()
 	elif phase == "waiting" and state.ln02_purified and not state.veyne_defeated and not paused and state.health > 0 and not state.recovery_pending:
-		if world.player.global_position.z < -8.6 and world.player.global_position.x < -2.5 and world.player.global_position.distance_to(actor.home) < 4.8 and world.warden_encounter.phase not in ["battle","reveal"]: begin_reveal()
+		if ARENA.contains(Vector2(world.player.global_position.x,world.player.global_position.z)) and world.player.global_position.distance_to(actor.home) < 12.0 and world.warden_encounter.phase not in ["battle","reveal"]: begin_reveal()
 	elif phase == "battle" and not paused:
-		if state.health <= 0 or state.recovery_pending or world.player.global_position.z > -7.2: interrupt(); return
+		if state.health <= 0 or state.recovery_pending or world.player.global_position.z > -10.5: interrupt(); return
 		if actor.pressure_phase:
 			rift_timer -= delta
 			if rift_timer <= 0: spawn_rifts(); rift_timer = 5.2
@@ -157,7 +164,8 @@ func _input(event: InputEvent) -> void:
 func begin_reveal() -> void:
 	if phase != "waiting" or state.veyne_defeated: return
 	reveal_starts += 1
-	_start_presentation("reveal","维恩 · 裂隙祭坛\n青色灯束横移躲避 · 金色近身挥击可振刀\n空格跳过 · Esc 暂停","Reveal")
+	_start_presentation("reveal","维恩 · 裂隙祭坛\n火息横移 · 冲锋侧闪 · 俯冲离开落点
+青色灯束不可振刀 · 金色爪击可振刀\n空格跳过 · Esc 暂停","Reveal")
 	claim_score()
 	play_cue("reveal")
 
@@ -169,13 +177,72 @@ func _start_presentation(kind: String, caption: String, clip: String) -> void:
 	actor.interrupt_action()
 	world.player.velocity = Vector3.ZERO
 	world._set_pause_owner("veyne_presentation",true)
+	presentation_box = actor.character.posed_bounds(actor.model)
 	actor.character.play(clip,1,true)
 	reveal_caption.text = caption
 	reveal_panel.show()
-	# Fixed camera avoids motion even when Reduced Motion is enabled.
-	reveal_camera.global_position = actor.home + Vector3(0.6,1.8,3.0)
-	reveal_camera.look_at(actor.home+Vector3.UP*1.0)
+	frame_presentation()
 	reveal_camera.current = true
+
+func presentation_points() -> Array[Vector3]:
+	# Sample the live rig as well as mesh extents. Home is a retry anchor only.
+	var points: Array[Vector3] = []
+	for corner in 8: points.append(actor.model.global_transform*presentation_box.get_endpoint(corner))
+	if actor.character.skeleton:
+		var skeleton: Skeleton3D = actor.character.skeleton
+		for bone in skeleton.get_bone_count():
+			points.append(skeleton.global_transform * skeleton.get_bone_global_pose(bone).origin)
+	points.append(world.player.global_position)
+	points.append(world.player.global_position+Vector3.UP*1.8)
+	return points
+
+func frame_flight_camera() -> void:
+	var flying: bool = phase == "battle" and actor.dragon_actions.kind == "dive" and actor.dragon_actions.stage in ["warning","flight","active"]
+	if flying:
+		if not flight_camera_owned:
+			flight_camera_owned = true
+			flight_camera_rotation = world.player.camera.rotation
+		# Keep the collision-backed player camera position and mouse-controlled
+		# spring arm. Aim upward enough to include the live airborne body.
+		var focus: Vector3 = world.player.global_position.lerp(actor.global_position,0.45)+Vector3.UP*1.6
+		world.player.camera.look_at(focus)
+	elif flight_camera_owned:
+		world.player.camera.rotation = flight_camera_rotation
+		flight_camera_owned = false
+
+func frame_presentation() -> void:
+	var points := presentation_points()
+	if points.is_empty(): return
+	var box := AABB(points[0],Vector3.ZERO)
+	for point in points: box = box.expand(point)
+	var center := box.get_center()
+	var radius := maxf(box.size.length()*0.5,1.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var half_vertical := deg_to_rad(reveal_camera.fov)*0.5
+	var half_horizontal := atan(tan(half_vertical)*viewport_size.x/maxf(viewport_size.y,1.0))
+	var distance := radius/sin(minf(half_vertical,half_horizontal)*0.78)+0.5
+	var best := center+Vector3.UP*distance
+	var best_score := -INF
+	var exclusions: Array[RID] = [actor.get_rid(),world.player.get_rid()]
+	var shape := SphereShape3D.new()
+	shape.radius = 0.25
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.collision_mask = 1
+	query.exclude = exclusions
+	var space := get_world_3d().direct_space_state
+	for direction in [Vector3(0,0.65,1),Vector3(1,0.8,1),Vector3(-1,0.8,1),Vector3(1,1,0),Vector3(-1,1,0),Vector3(0,1,-1),Vector3(0,1,0)]:
+		var candidate: Vector3 = center+direction.normalized()*distance
+		query.transform = Transform3D(Basis.IDENTITY,candidate)
+		if not space.intersect_shape(query,1).is_empty(): continue
+		var clear := 0
+		for target_point in [center,actor.global_position+Vector3.UP,world.player.global_position+Vector3.UP]:
+			var ray := PhysicsRayQueryParameters3D.create(candidate,target_point,1,exclusions)
+			if space.intersect_ray(ray).is_empty(): clear += 1
+		var score: float = clear*10.0-direction.normalized().y
+		if score > best_score: best_score = score; best = candidate
+	reveal_camera.global_position = best
+	reveal_camera.look_at(center,Vector3.FORWARD if absf((best-center).normalized().dot(Vector3.UP)) > 0.98 else Vector3.UP)
 
 func finish_presentation() -> void:
 	if phase not in ["reveal","phase_transition"]: return
@@ -209,7 +276,7 @@ func spawn_rifts() -> void:
 	rift_waves += 1
 	# Bounded stationary zones leave most of the native platform safe.
 	var player_xz := Vector2(world.player.global_position.x,world.player.global_position.z)
-	var spots := [Vector2(clampf(player_xz.x,-5.0,-3.0),clampf(player_xz.y,-13,-9)),Vector2(-5.0 if player_xz.x > -4 else -3.0,-12.6)]
+	var spots := [Vector2(clampf(player_xz.x,-11.0,3.0),clampf(player_xz.y,-33,-19)),Vector2(-10.0 if player_xz.x > -4 else 2.0,-28)]
 	for xz in spots:
 		var support: Dictionary = GROUND.support(world,xz,[actor.get_rid(),world.player.get_rid()])
 		if support.is_empty(): continue

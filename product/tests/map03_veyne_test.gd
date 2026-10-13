@@ -41,7 +41,7 @@ static func binding_checks(actor: Node) -> Dictionary:
 	checks.rig_present = actor.character.skeleton.get_bone_count()>10
 	checks.skinned_mesh_present = actor.model.find_children("*","MeshInstance3D",true,false).any(func(mesh): return mesh.skin!=null)
 	checks.contact_socket_present = actor.character.skeleton.find_bone(actor.character.contact_socket.bone_name)>=0
-	for alias in ["Idle","Walk","Punch","HitReact","Death","Cast","Reveal"]:
+	for alias in ["Idle","Walk","Punch","HitReact","Death","Cast","Reveal","Charge","Takeoff","Flight","Dive","Land"]:
 		checks[alias+"_bound"] = actor.animator.has_animation(alias) or actor.animator.has_animation("veyne/"+alias)
 	return checks
 
@@ -61,7 +61,7 @@ static func transaction_checks(world: Node3D) -> Dictionary:
 	checks.commit_once = world.dialogue_state.veyne_defeated and boss.victory_commits==1 and not boss.victory_pending
 	checks.key_separate = not world.dialogue_state.veyne_release_key
 	checks.wave_cleared = boss.reinforcements.units.is_empty()
-	checks.key_approach_supported = world.ground_policy.place(world,world.player,Vector2(-5,-11.4))
+	checks.key_approach_supported = world.ground_policy.place(world,world.player,boss.ARENA.KEY+Vector2(0,1.6))
 	checks.key_prompt_available = boss.device.interaction_prompt()!=""
 	world.dialogue_state.fail_save_after = 0
 	boss.device.interact()
@@ -122,13 +122,14 @@ static func beam_checks(world: Node3D) -> Dictionary:
 	var hp: float = world.dialogue_state.health
 	var old_pos: Vector3 = world.player.global_position
 	boss.actor.interrupt_action()
-	world.training.protection = 0
-	world.training.parry_window = 0.25
-	world.training.blocking = true
+	world.training.protection = 0; world.training.hurt_time = 0
+	world.training.parry_window = 0.25; world.training.blocking = true
 	world.player.visual.rotation.y = PI
-	world.ground_policy.place(world,world.player,Vector2(-4,-9.8))
+	world.ground_policy.place(world,world.player,Vector2(-4,-20))
 	await world.get_tree().create_timer(0.1,false,true).timeout
-	effect.prepare(boss.actor.global_position+Vector3.UP,Vector3.BACK)
+	var mouth: Vector3 = boss.actor.character.casting_position()
+	var lane_point: Vector3 = world.player.global_position+Vector3.UP
+	effect.prepare(mouth,mouth.direction_to(lane_point))
 	effect.effect(700)
 	var hit: Dictionary = effect.sample_contact()
 	var checks := {"physical_hit":hit.get("accepted",false) and hit.get("outcome","")=="hurt" and world.dialogue_state.health<hp,"beam_not_parried":hit.get("outcome","")!="parry" and effect.active}
@@ -136,25 +137,27 @@ static func beam_checks(world: Node3D) -> Dictionary:
 	effect.sample_contact()
 	checks.single_instance = world.dialogue_state.health==after
 	effect.end()
-	world.training.blocking = false
-	world.training.parry_window = 0
-	world.dialogue_state.health = hp
-	world.ground_policy.place(world,world.player,Vector2(-5.1,-9.8))
+	world.training.blocking = false; world.training.parry_window = 0
+	world.dialogue_state.health = hp; world.training.hurt_time = 0; world.training.protection = 0
+	world.ground_policy.place(world,world.player,Vector2(-7,-20))
 	await world.get_tree().create_timer(0.1,false,true).timeout
-	effect.prepare(boss.actor.global_position+Vector3.UP,Vector3.BACK)
-	effect.effect(701)
+	effect.prepare(mouth,mouth.direction_to(lane_point)); effect.effect(701)
 	checks.lateral_miss = effect.sample_contact().is_empty() and world.dialogue_state.health==hp
 	effect.end()
-	world.ground_policy.place(world,world.player,Vector2(4,-12))
+	world.ground_policy.place(world,world.player,Vector2(-4,-20))
+	var wall := StaticBody3D.new()
+	world.add_child(wall)
+	wall.global_position = mouth.lerp(lane_point,0.5)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new(); box.size = Vector3(4,4,0.3)
+	shape.shape = box; wall.add_child(shape)
 	await world.get_tree().create_timer(0.1,false,true).timeout
-	effect.prepare(boss.actor.global_position+Vector3.UP,Vector3.RIGHT)
-	effect.effect(702)
-	checks.native_obstruction = effect.blocked and effect.clipped_length<6.0 and effect.sample_contact().is_empty() and world.dialogue_state.health==hp
-	effect.end()
+	effect.prepare(mouth,mouth.direction_to(lane_point)); effect.effect(702)
+	checks.solid_obstruction = effect.blocked and effect.clipped_length<6.0 and effect.sample_contact().is_empty() and world.dialogue_state.health==hp
+	effect.end(); wall.queue_free()
 	world.player.global_position = old_pos
 	world.player.visual.rotation.y = 0
-	world.training.hurt_time = 0
-	world.training.phase = "idle"
+	world.training.hurt_time = 0; world.training.phase = "idle"
 	return checks
 
 static func rift_checks(world: Node3D) -> Dictionary:
@@ -174,4 +177,84 @@ static func rift_checks(world: Node3D) -> Dictionary:
 	checks.once_per_rift = world.dialogue_state.health==after
 	boss.clear_rifts()
 	checks.cleanup_closes_danger = boss.rifts.is_empty()
+	return checks
+
+static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
+	# Real physics frames and real contact owners, isolated from durable saves.
+	var boss: Node = world.veyne_encounter
+	var actor: CharacterBody3D = boss.actor
+	var action: Node3D = actor.dragon_actions
+	var physics_enabled := actor.is_physics_processing()
+	actor.set_physics_process(false)
+	actor.interrupt_action()
+	world.training.phase = "idle"
+	world.training.hurt_time = 0
+	world.training.protection = 0
+	world.dialogue_state.health = 100
+	world.ground_policy.place(world,actor,Vector2(-4,-27))
+	world.ground_policy.place(world,world.player,Vector2(-4,-21))
+	var start: Vector3 = actor.global_position
+	var obstacle: StaticBody3D
+	if scenario.ends_with("wall") or scenario == "initial_overlap":
+		obstacle = StaticBody3D.new()
+		world.add_child(obstacle)
+		obstacle.global_position = start+Vector3(0,3,3 if scenario != "initial_overlap" else 0)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(6,6,0.5)
+		shape.shape = box
+		obstacle.add_child(shape)
+		await world.get_tree().physics_frame
+	var move := "fire_breath" if scenario.begins_with("fire") else ("dive" if scenario.begins_with("dive") or scenario == "interruption" else "charge")
+	var accepted: bool = action.begin(move)
+	var checks := {"started":accepted,"warning_no_damage":false,"recovery":false,"flight_clip_advanced":false}
+	var before_contacts: int = action.contacts
+	if scenario == "initial_overlap":
+		checks.initial_overlap_rejected = not action.travel(Vector3.BACK*0.2) and actor.global_position.is_equal_approx(start)
+		checks.warning_no_damage = world.dialogue_state.health==100 and not action.source.can_damage
+	else:
+		for frame in 370:
+			await world.get_tree().physics_frame
+			action.tick(1.0/60.0)
+			if frame == 15: checks.warning_no_damage = world.dialogue_state.health == 100 and not action.source.can_damage
+			if frame == 30 and scenario.ends_with("evade"):
+				world.ground_policy.place(world,world.player,Vector2(1,-21))
+			if action.stage == "flight" and actor.character.current_position()>0.1:
+				checks.flight_clip_advanced = actor.character.current_clip()=="veyne/Flight" and actor.global_position.y-start.y>2.0
+			if scenario == "interruption" and action.stage == "flight":
+				var source := SnaielDamageSource.new()
+				source.entity = world.player; source.can_damage = true; source.damage_attributes.health = 6; source.instance = 980
+				var hit: Dictionary = actor.receive_contact(source,actor.global_position+Vector3.UP)
+				checks.hurt_interrupts = hit.get("accepted",false) and action.kind=="" and not action.source.can_damage and not action.warning.visible and not action.breath.visible and action.effects.records.is_empty()
+				source.free(); break
+			if action.stage == "recovery":
+				checks.recovery = not action.source.can_damage and not action.warning.visible and not action.breath.visible
+				break
+	checks.hp = world.dialogue_state.health
+	checks.contacts = action.contacts-before_contacts
+	checks.displacement = actor.global_position.distance_to(start)
+	if scenario.ends_with("hit"):
+		checks.real_single_hit = checks.hp==76 and checks.contacts==1
+	elif scenario.ends_with("evade") or scenario.ends_with("wall"):
+		checks.no_false_hit = checks.hp==100 and checks.contacts==0
+	if scenario.begins_with("charge"):
+		checks.real_travel = checks.displacement>(0.1 if scenario.ends_with("wall") else 1.0)
+	if scenario.ends_with("wall"):
+		checks.solid_blocks = action.stopped_by_wall if move == "charge" else not action.wall_between(actor.character.casting_position(),world.player.global_position+Vector3.UP).is_empty()
+	if scenario.begins_with("dive"):
+		var support: Dictionary = world.ground_policy.support(world,Vector2(actor.global_position.x,actor.global_position.z),[actor.get_rid()])
+		checks.grounded_landing = not support.is_empty() and absf(actor.global_position.y-support.position.y-0.08)<0.15
+	var elapsed: float = action.elapsed
+	var position: Vector3 = actor.global_position
+	world._set_pause_owner("dragon_case",true)
+	action.tick(0.5)
+	checks.pause_preserves_stage = action.elapsed==elapsed and actor.global_position==position
+	world._set_pause_owner("dragon_case",false)
+	actor.interrupt_action()
+	checks.interruption_cleanup = action.kind=="" and not action.source.can_damage and action.effects.records.is_empty()
+	if obstacle: obstacle.queue_free()
+	world.dialogue_state.health = 100
+	world.training.hurt_time = 0; world.training.protection = 0; world.training.phase = "idle"
+	world.ground_policy.place(world,actor,Vector2(-4,-25))	
+	actor.set_physics_process(physics_enabled)
 	return checks

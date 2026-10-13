@@ -16,7 +16,7 @@ const RECORD_APPROACH := Vector2(2.5, -3)
 const ROUTE := [ENTRY, Vector2(0,0), Vector2(2.5,-3), Vector2(-2.5,-3), Vector2(-4,3), RETURN]
 
 static func in_bounds(xz: Vector2) -> bool:
-	return xz.is_finite() and absf(xz.x) < 6.8 and xz.y > -15.3 and xz.y < 7.3
+	return xz.is_finite() and ((absf(xz.x) < 6.8 and xz.y > -15.3 and xz.y < 7.3) or (xz.x > -18.5 and xz.x < 10.5 and xz.y > -40.5 and xz.y <= -9))
 
 static func entry_xz(position: Vector3, map_id: String) -> Vector2:
 	var xz := Vector2(position.x,position.z)

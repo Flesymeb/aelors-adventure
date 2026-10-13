@@ -13,7 +13,7 @@ class Reinforcement extends "res://combat/snaiel/scripts/entities/enemy.gd":
 		target = encounter.world.player
 		enabled_policy = func(): return encounter.combat_allowed() and navigation_ready
 		ground_query = func(point: Vector3):
-			if point.x > -2.5 or point.x < -5.8 or point.z > -8.5 or point.z < -14.2: return {}
+			if not encounter.ARENA.contains(Vector2(point.x,point.z)): return {}
 			return encounter.world.ground_policy.support(encounter.world,Vector2(point.x,point.z),[get_rid(),target.get_rid()])
 		contact_policy = func(source,point): return encounter.world.training.player_hitbox.contact(source,point)
 		result_listener = encounter.world.training.resolved_enemy_contact
@@ -28,13 +28,13 @@ func summon() -> bool:
 	if wave_count > 0: return false
 	# No synthetic SQ02 state: the base encounter always uses the ordinary wave.
 	wave_count += 1
-	for x in [-5.0,-3.2]:
+	for x in [-10.0,2.0]:
 		var unit: CharacterBody3D = preload("res://combat/snaiel/scenes/entities/BaseEnemy.tscn").instantiate()
 		unit.set_script(Reinforcement)
 		unit.encounter = encounter
 		unit.name = "RiftMelee" + str(units.size()+1)
 		add_child(unit)
-		if not encounter.world.ground_policy.place(encounter.world,unit,Vector2(x,-9.4)):
+		if not encounter.world.ground_policy.place(encounter.world,unit,Vector2(x,-20.0)):
 			placement_failed = true
 			unit.queue_free()
 			encounter.world.entry_failed.emit("增援落脚点缺少原生支撑。")

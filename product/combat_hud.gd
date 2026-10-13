@@ -80,7 +80,9 @@ func _process(_delta: float) -> void:
 		boss_name.text = ("维恩 · %d / %d" if boss == caster else "锁印看守 · %d / %d") % [int(boss.actor.health),int(boss_hp.max_value)]
 		if boss == caster:
 			if boss.phase == "phase_transition": boss_name.text += " · 裂隙苏醒"
-			elif boss.actor.phase == "telegraph": boss_name.text += " · 灯束：横移躲避" if boss.actor.attack_kind == "beam" else " · 近身挥击：可振刀"
+			elif boss.actor.phase == "telegraph":
+				var cues := {"beam":"灯束：横移躲避","fire_breath":"火息：离开扇区","charge":"冲锋：向侧面闪避","dive":"俯冲：离开落点","melee":"爪击：可振刀"}
+				boss_name.text += " · "+str(cues.get(boss.actor.attack_kind,"保持距离"))
 		elif boss.actor.phase == "telegraph": boss_name.text += " · 震荡：离开或闪避" if boss.actor.attack_kind == "wave" else " · 正面重击：可振刀"
 		boss_name.add_theme_font_size_override("font_size",int(20*minf(state.text_scale,1.5)))
 		boss_rows.size = boss_rows.get_combined_minimum_size()

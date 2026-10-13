@@ -43,7 +43,7 @@ func prepare(point: Vector3, facing: Vector3) -> void:
 	end()
 	origin = point
 	direction = facing.normalized()
-	direction.y = 0
+
 	source.set_meta("attack_origin",origin-Vector3.UP)
 	source.set_meta("attack_direction",direction)
 	_refresh_length()
@@ -57,18 +57,20 @@ func effect(instance: int) -> void:
 	warning.hide()
 	_refresh_length()
 	beam.show()
+	entity.dragon_actions.effects.line(origin,origin+direction*clipped_length,"lightning",0.45)
 
 func _refresh_length() -> void:
+	if active: origin = entity.character.casting_position()
 	var q := PhysicsRayQueryParameters3D.create(origin,origin+direction*LENGTH,1,[entity.get_rid(),entity.target.get_rid()])
 	var wall := get_world_3d().direct_space_state.intersect_ray(q)
 	clipped_length = LENGTH if wall.is_empty() else maxf(0.0,origin.distance_to(wall.position)-0.03)
 	blocked = not wall.is_empty()
 	var midpoint := origin+direction*clipped_length*0.5
 	beam.global_position = midpoint
-	beam.rotation.y = atan2(direction.x,direction.z)
+	beam.global_basis = Basis.looking_at(-direction)
 	beam.scale.z = maxf(0.01,clipped_length)
 	warning.global_position = Vector3(midpoint.x,entity.global_position.y+0.04,midpoint.z)
-	warning.rotation.y = beam.rotation.y
+	warning.rotation.y = atan2(direction.x,direction.z)
 	warning.scale = Vector3(HALF_WIDTH*2,clipped_length,1)
 
 func sample_contact() -> Dictionary:
@@ -78,7 +80,7 @@ func sample_contact() -> Dictionary:
 	shape.size = Vector3(HALF_WIDTH*2,0.65,maxf(0.01,clipped_length))
 	var q := PhysicsShapeQueryParameters3D.new()
 	q.shape = shape
-	q.transform = Transform3D(Basis(Vector3.UP,atan2(direction.x,direction.z)),origin+direction*clipped_length*0.5)
+	q.transform = Transform3D(Basis.looking_at(-direction),origin+direction*clipped_length*0.5)
 	q.collision_mask = entity.target.collision_layer
 	q.exclude = [entity.get_rid()]
 	for hit in get_world_3d().direct_space_state.intersect_shape(q,8):
@@ -86,7 +88,9 @@ func sample_contact() -> Dictionary:
 		var wallq := PhysicsRayQueryParameters3D.create(origin,entity.target.global_position+Vector3.UP,1,[entity.get_rid(),entity.target.get_rid()])
 		if not get_world_3d().direct_space_state.intersect_ray(wallq).is_empty(): continue
 		var result: Dictionary = entity.contact_policy.call(source,entity.target.global_position+Vector3.UP)
-		if result.get("accepted",false): contacts += 1
+		if result.get("accepted",false):
+			contacts += 1
+			entity.dragon_actions.effects.contact(entity.target.global_position+Vector3.UP,"lightning",str(result.get("outcome","")),float(result.get("hp_loss",0)))
 		return result
 	return {}
 

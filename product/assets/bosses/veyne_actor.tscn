@@ -2,7 +2,7 @@
 [ext_resource type="PackedScene" path="res://combat/snaiel/scenes/entities/BaseEnemy.tscn" id="1"]
 [ext_resource type="Script" path="res://combat/veyne_enemy_adapter.gd" id="2"]
 [ext_resource type="Script" path="res://assets/bosses/veyne_animation_driver.gd" id="3"]
-[ext_resource type="PackedScene" path="res://assets/bosses/veyne_animations.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/bosses/veyne_dragon.glb" id="4"]
 
 [node name="Veyne" instance=ExtResource("1")]
 script = ExtResource("2")

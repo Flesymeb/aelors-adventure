@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/maps/map03/veyne_arena.glb" id="1"]
+[ext_resource type="Script" path="res://world/veyne_arena.gd" id="2"]
+[node name="VeyneArena" type="Node3D"]
+script = ExtResource("2")
+[node name="RitualRuin" parent="." instance=ExtResource("1")]
+position = Vector3(-4,8.7,-26)
+scale = Vector3(32,32,32)

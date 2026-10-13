@@ -46,9 +46,10 @@ func run_component_checks(kind: String) -> void:
 	var mode := actor.process_mode
 	var warden_mode: int = world.warden_encounter.process_mode
 	world.warden_encounter.process_mode = Node.PROCESS_MODE_DISABLED
-	actor.process_mode = Node.PROCESS_MODE_DISABLED
+	if not kind.begins_with("dragon_"): actor.process_mode = Node.PROCESS_MODE_DISABLED
 	var test = preload("res://tests/map03_veyne_test.gd")
-	if kind == "beam": component_results[kind] = await test.beam_checks(world)
+	if kind.begins_with("dragon_"): component_results[kind] = await test.dragon_case(world,kind.trim_prefix("dragon_"))
+	elif kind == "beam": component_results[kind] = await test.beam_checks(world)
 	elif kind == "phase_retry": component_results[kind] = test.phase_checks(world)
 	elif kind == "transaction": component_results[kind] = test.transaction_checks(world)
 	actor.process_mode = mode
