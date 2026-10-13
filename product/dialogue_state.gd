@@ -1196,8 +1196,11 @@ static func valid_meadow_dynamic_facts(serial: Variant, remaining: Variant, grou
 		var record: Variant = instances[id]
 		if not record is Dictionary or record.get("chapter") != "CH02" or record.get("instance_id") != id: return false
 		var archetype: Variant = record.get("archetype", "")
-		if archetype not in ["melee", "ranged"]: return false
+		if archetype not in ["melee", "ranged", "ambusher"]: return false
 		if record.get("status", "") not in ["active", "pending", "collected"] or record.get("xp", 0) != (10 if archetype == "melee" else 15): return false
+		if archetype == "ambusher":
+			if not record.get("revealed") is bool or not record.get("variant") is int or record.variant not in [0, 1]: return false
+			if record.status != "active" and not record.revealed: return false
 		var hp: Variant = record.get("hp", -1)
 		if not (hp is int or hp is float) or not is_finite(float(hp)) or hp < 0 or hp > (42 if archetype == "melee" else 36): return false
 		if (record.status == "active") != (hp > 0): return false

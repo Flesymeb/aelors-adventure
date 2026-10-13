@@ -3,6 +3,8 @@ extends Node3D
 const GROUND = preload("res://world/map02_ground.gd")
 const MELEE = preload("res://combat/Map02DynamicMelee.tscn")
 const RANGED = preload("res://combat/Map02DynamicRanged.tscn")
+const AMBUSHER = preload("res://combat/Map02DynamicAmbusher.tscn")
+const AMBUSH_MODELS = [preload("res://assets/ambush/ambusher_a.gltf"), preload("res://assets/ambush/ambusher_b.gltf")]
 const REVISIT := 120.0
 const GROUP_CAP := 2
 const ACTOR_CAP := 2
@@ -72,8 +74,39 @@ func combat_allowed() -> bool:
 func registry() -> Dictionary:
 	var result := {}
 	for enemy in enemies:
-		if is_instance_valid(enemy) and enemy.activated and enemy.health > 0: result[enemy] = enemy.hitbox
+		if is_instance_valid(enemy) and enemy.activated and enemy.health > 0 and (enemy.archetype != "ambusher" or enemy.revealed): result[enemy] = enemy.hitbox
 	return result
+
+func active_count() -> int:
+	var count := 0
+	for enemy in enemies:
+		if is_instance_valid(enemy) and enemy.activated and enemy.health > 0: count += 1
+	return count
+
+func reveal(origin: Vector3) -> int:
+	if not combat_allowed(): return 0
+	var count := 0
+	for enemy in enemies:
+		if not is_instance_valid(enemy) or enemy.archetype != "ambusher" or not enemy.activated or enemy.revealed or enemy.health <= 0 or origin.distance_to(enemy.global_position) > 7: continue
+		var ray := PhysicsRayQueryParameters3D.create(origin + Vector3.UP, enemy.global_position + Vector3.UP, 1, [world.player.get_rid()])
+		if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
+		if enemy.reveal():
+			count += 1
+			world.training.feedback.spark(enemy.global_position + Vector3.UP, Color(0.4,0.85,1))
+	if count > 0:
+		world.training.feedback.sound(preload("res://assets/dialogue/sounds/Audio/confirmation_001.ogg"), -19, 0.75)
+		world.training.tell("岔路伏击者已显形 · 看清抬手突进，可闪避、格挡或沿原路撤离", 5)
+		world.training.commit()
+	return count
+
+func telegraph(actor: CharacterBody3D) -> void:
+	world.training.feedback.spark(actor.global_position + Vector3.UP * 1.5, Color(1,0.62,0.25))
+
+func ambusher_prompt() -> String:
+	for enemy in enemies:
+		if is_instance_valid(enemy) and enemy.archetype == "ambusher" and enemy.activated and enemy.health > 0 and world.player.global_position.distance_to(enemy.home) < 10:
+			return "[3] 旧灯 · [F] 显形 · 7 米范围（可绕行）" if not enemy.revealed else "伏击者抬手后突进 · 闪避或格挡，再反击"
+	return ""
 
 func can_save() -> bool:
 	if not staged.is_empty(): return false
@@ -90,7 +123,7 @@ func attack_slot_available(requester: CharacterBody3D) -> bool:
 	var occupied := 0
 	for enemy in enemies:
 		if enemy == requester or not is_instance_valid(enemy) or enemy.health <= 0: continue
-		if (enemy.archetype == "melee" and enemy.melee.attacking) or (enemy.archetype == "ranged" and enemy.action.executing_action): occupied += 1
+		if (enemy.archetype in ["melee", "ambusher"] and enemy.melee.attacking) or (enemy.archetype == "ranged" and enemy.action.executing_action): occupied += 1
 	return occupied < 2
 
 func spawn_reason() -> String:
@@ -102,7 +135,7 @@ func spawn_reason() -> String:
 	if protected_player(): return "protected_interaction"
 	if fixed_busy(): return "fixed_combat"
 	if not world.element_abilities.can_save() or world.training.phase != "idle" or world.bow_training.pending_demo: return "active_action"
-	if not staged.is_empty() or not registry().is_empty(): return "density"
+	if not staged.is_empty() or active_count() > 0: return "density"
 	for record in state.meadow_dynamic_instances.values():
 		if record.status == "active": return "retained_active_instance"
 		if record.status == "pending": return "pending_pickup"
@@ -199,9 +232,18 @@ func build_navigation(excludes: Array[RID]) -> void:
 	navigation_region.global_transform = Transform3D.IDENTITY
 	navigation_region.set_navigation_map(navigation_map)
 
-func new_unit(point: Vector3, id: String, archetype: String) -> CharacterBody3D:
-	var scene: PackedScene = RANGED if archetype == "ranged" else MELEE
+func new_unit(point: Vector3, id: String, archetype: String, variant := 0) -> CharacterBody3D:
+	var scene: PackedScene = AMBUSHER if archetype == "ambusher" else (RANGED if archetype == "ranged" else MELEE)
 	var enemy: CharacterBody3D = scene.instantiate()
+	if archetype == "ambusher":
+		var old := enemy.get_node("Model")
+		enemy.remove_child(old)
+		old.free()
+		var model: Node3D = AMBUSH_MODELS[variant].instantiate()
+		model.name = "Model"
+		enemy.add_child(model)
+		enemy.variant = variant
+		enemy.display_name = "岔路伏击者 · 赤角" if variant == 0 else "岔路伏击者 · 铁颚"
 	enemy.encounter = self
 	enemy.stable_id = id
 	enemy.name = id
@@ -229,14 +271,17 @@ func stage_wave() -> void:
 			if not second.is_empty(): points.append(second.position)
 		for i in points.size():
 			var archetype := "ranged" if i == 1 else ("melee" if points.size() == 2 or rng.randi_range(0,1) == 0 else "ranged")
-			staged.append(new_unit(points[i], "ch02_dynamic_%d" % (state.meadow_dynamic_serial+i+1), archetype))
+			# Preserve the first mixed opportunity; the later group uses both
+			# retained silhouettes when two safe homes qualify.
+			if state.meadow_dynamic_groups > 0: archetype = "ambusher"
+			staged.append(new_unit(points[i], "ch02_dynamic_%d" % (state.meadow_dynamic_serial+i+1), archetype, i if points.size() == 2 else rng.randi_range(0,1)))
 		var excludes: Array[RID] = [world.player.get_rid()]
 		for enemy in staged: excludes.append(enemy.get_rid())
 		build_navigation(excludes)
 		staging_map_iteration = NavigationServer3D.map_get_iteration_id(navigation_map)
 		for enemy in staged:
 			enemy.share_navigation(navigation_region)
-			if enemy.archetype == "melee": enemy._choose_patrol_point()
+			if enemy.archetype != "ranged": enemy._choose_patrol_point()
 		staging_time = 0
 		last_placement = "navigation_synchronizing"
 		return
@@ -250,7 +295,7 @@ func finish_staging(delta: float) -> void:
 	if not ready and staging_time < 5: return
 	var excludes: Array[RID] = [world.player.get_rid()]
 	for enemy in staged: excludes.append(enemy.get_rid())
-	var valid: bool = ready and combat_allowed() and state.meadow_dynamic_remaining <= 0 and state.meadow_dynamic_groups < GROUP_CAP and registry().is_empty()
+	var valid: bool = ready and combat_allowed() and state.meadow_dynamic_remaining <= 0 and state.meadow_dynamic_groups < GROUP_CAP and active_count() == 0
 	var return_hit := support_point(RETURN_XZ, excludes)
 	if return_hit.is_empty(): valid = false
 	var paths_ready := ready
@@ -270,7 +315,9 @@ func finish_staging(delta: float) -> void:
 		var remaining: float = state.meadow_dynamic_remaining
 		for enemy in staged:
 			state.meadow_dynamic_serial += 1
-			state.meadow_dynamic_instances[enemy.stable_id] = {"chapter":"CH02","archetype":enemy.archetype,"instance_id":enemy.stable_id,"home":enemy.home,"position":enemy.home,"hp":enemy.health_component.max_health,"status":"active","xp":15 if enemy.archetype == "ranged" else 10,"loot":[]}
+			state.meadow_dynamic_instances[enemy.stable_id] = {"chapter":"CH02","archetype":enemy.archetype,"instance_id":enemy.stable_id,"home":enemy.home,"position":enemy.home,"hp":enemy.health_component.max_health,"status":"active","xp":10 if enemy.archetype == "melee" else 15,"loot":[]}
+			if enemy.archetype == "ambusher":
+				state.meadow_dynamic_instances[enemy.stable_id].merge({"revealed":false,"variant":enemy.variant})
 		state.meadow_dynamic_groups += 1
 		state.meadow_dynamic_remaining = REVISIT
 		valid = world.training.commit()
@@ -316,8 +363,9 @@ func restore_history() -> void:
 		elif record.status == "active":
 			var hit := support_point(Vector2(record.home.x,record.home.z), [world.player.get_rid()])
 			if hit.is_empty(): continue
-			var enemy := new_unit(hit.position,id,record.archetype)
+			var enemy := new_unit(hit.position,id,record.archetype,record.get("variant",0))
 			var restored := record.duplicate(true)
+			restored.home = enemy.home
 			var position_hit := support_point(Vector2(record.position.x,record.position.z),[world.player.get_rid(),enemy.get_rid()])
 			restored.position = position_hit.position + Vector3.UP*0.08 if not position_hit.is_empty() else enemy.home
 			enemy.restore_record(restored)
@@ -328,7 +376,7 @@ func restore_history() -> void:
 		build_navigation(excludes)
 		for enemy in enemies:
 			enemy.share_navigation(navigation_region)
-			if enemy.archetype == "melee": enemy._choose_patrol_point()
+			if enemy.archetype != "ranged": enemy._choose_patrol_point()
 	initialized = true
 	last_placement = "restored"
 
@@ -338,6 +386,7 @@ func record_unit(enemy: CharacterBody3D) -> void:
 	if record.status != "active": return
 	record.position = enemy.global_position
 	record.hp = enemy.health
+	if enemy.archetype == "ambusher": record.revealed = enemy.revealed
 
 func settle_defeat(enemy: CharacterBody3D) -> void:
 	if not state.meadow_dynamic_instances.has(enemy.stable_id): return
@@ -424,4 +473,4 @@ func _mcp_state() -> Dictionary:
 	var actors := []
 	for enemy in enemies:
 		if is_instance_valid(enemy): actors.append(enemy._mcp_state())
-	return {"ready":ready,"eligibility":spawn_reason() if ready else "initializing","remaining":state.meadow_dynamic_remaining if ready else null,"recovery_hold":recovery_hold,"serial":state.meadow_dynamic_serial if ready else null,"groups":state.meadow_dynamic_groups if ready else null,"group_cap":GROUP_CAP,"instances":state.meadow_dynamic_instances.duplicate(true) if ready else null,"pickups":pickups.keys(),"active_count":registry().size(),"staged_count":staged.size(),"placement":last_placement,"navigation_cells":navigation_cells,"corridor_samples":corridor_samples,"enemies":actors}
+	return {"ready":ready,"combat_allowed":combat_allowed() if ready else false,"eligibility":spawn_reason() if ready else "initializing","remaining":state.meadow_dynamic_remaining if ready else null,"recovery_hold":recovery_hold,"serial":state.meadow_dynamic_serial if ready else null,"groups":state.meadow_dynamic_groups if ready else null,"group_cap":GROUP_CAP,"instances":state.meadow_dynamic_instances.duplicate(true) if ready else null,"pickups":pickups.keys(),"active_count":active_count(),"combat_count":registry().size(),"staged_count":staged.size(),"placement":last_placement,"navigation_cells":navigation_cells,"corridor_samples":corridor_samples,"enemies":actors}

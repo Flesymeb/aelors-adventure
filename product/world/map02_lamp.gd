@@ -12,7 +12,7 @@ func reveal() -> bool:
 		if world.barrier.reveal():
 			cooldown = 3.0
 			return true
-	if not world.ambush_encounter.approach_allowed():
+	if not world.ambush_encounter.approach_allowed() and not world.dynamic_encounters.combat_allowed():
 		world.training.tell("先调查岩石后的固定路碑，再追踪林缘魔痕")
 		return true
 	cooldown = 3.0
@@ -21,11 +21,16 @@ func reveal() -> bool:
 	world.player._play_animation("Interact", 1.8)
 	world.training.feedback.spark(world.player.global_position + Vector3.UP, Color(0.4,0.85,1))
 	var result: int = world.ambush_encounter.reveal(world.player.global_position)
-	if result == 0: world.training.tell("灯光照亮周围 7 米 · 尚未触及魔痕，靠近或绕开遮挡后重试",4)
+	# Barrier and fixed E03 retain priority; only an unclaimed pulse reaches
+	# optional instances. Dynamic revelation never writes the fixed E03 fact.
+	var dynamic_result: int = world.dynamic_encounters.reveal(world.player.global_position) if result == 0 else 0
+	if result == 0 and dynamic_result == 0: world.training.tell("灯光照亮周围 7 米 · 尚未触及魔痕，靠近或绕开遮挡后重试",4)
 	elif result == 1: world.training.tell("伏击者已持续显形 · 留意突进预告",3)
 	return true
 
 func interaction_prompt() -> String:
+	var dynamic_prompt: String = world.dynamic_encounters.ambusher_prompt() if is_instance_valid(world.dynamic_encounters) else ""
+	if dynamic_prompt != "": return dynamic_prompt
 	if not is_instance_valid(world.ambush_encounter) or not world.ambush_encounter.grounded or not state.mf01_acquired or state.ambush_defeated(): return ""
 	if Vector2(world.player.global_position.x,world.player.global_position.z).distance_to(world.ground_policy.AMBUSH_APPROACH) > 7: return ""
 	return "[3] 旧灯 · [F] 显形 · 7 米范围" if not state.e03_revealed else "伏击者抬手后突进 · 闪避或格挡，再反击"

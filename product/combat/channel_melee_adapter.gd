@@ -1,4 +1,5 @@
 extends "res://combat/bridge_enemy_adapter.gd"
+var passive_healing := true
 
 func _ready() -> void:
 	super()
@@ -23,5 +24,5 @@ func tick_attack(board: SnaielBlackboard) -> int:
 
 func _physics_process(delta: float) -> void:
 	super(delta)
-	if health > 0 and not engaged and not returning and global_position.distance_to(home) < 0.5:
+	if passive_healing and health > 0 and not engaged and not returning and global_position.distance_to(home) < 0.5:
 		health_component.health = health_component.max_health
