@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 59 |
+| Open | 63 |
 | Closed | 36 |
-| All | 95 |
+| All | 99 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 42 |
+| Active | 46 |
 | Verified closed | 27 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 74 |
+| All in this run | 78 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,7 +55,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Lifecycle purity is supported; independent audio listening remains unavailable. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent audio listening remains unavailable in this client. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -98,7 +98,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | untitled issue |
 | `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
 | `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | The existing later rescue-route issue cannot be closed from entrance-fixture evidence. |
-| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 earning and committed information restoration remain unobserved. |
+| `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | OPEN | MF01 earning and committed information restoration remain unverified. |
 | `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | untitled issue |
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | The original crowded CH01 defect was not independently qualified or reproduced. |
@@ -107,7 +107,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | Training-label obstruction and final cue recovery remain unqualified. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | OPEN | untitled issue |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | OPEN | untitled issue |
-| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Local post-LN02 approach is supported; earned tomb entry and recovery remain unverified. |
+| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Prepared arena traversal does not qualify earned tomb entry. |
 | `qa.case-finalization-unavailable` | [#89](https://github.com/Flesymeb/aelors-adventure/issues/89) | OPEN | Host case queue exhaustion prevented formal finish and remaining finalization receipts. |
 | `warden-acceptance-unverified` | [#87](https://github.com/Flesymeb/aelors-adventure/issues/87) | OPEN | untitled issue |
 | `qa.aerial-validation-gap` | [#88](https://github.com/Flesymeb/aelors-adventure/issues/88) | OPEN | untitled issue |
@@ -115,8 +115,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.warden-counterplay-evidence-gap` | [#91](https://github.com/Flesymeb/aelors-adventure/issues/91) | OPEN | untitled issue |
 | `finisher-obstruction-unverified` | [#92](https://github.com/Flesymeb/aelors-adventure/issues/92) | OPEN | untitled issue |
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
-| `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | Veyne counterplay, victory/key persistence and complete recovery acceptance remain unverified. |
-| `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | Phase camera framing crops the moved caster and foreground player. |
+| `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | Natural moved-phase framing improved; skipped qualification remains missing. |
+| `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
+| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Arena shell fragments and oversized leaf sheets obstruct player views. |
+| `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Dive landing warning follows the airborne dragon instead of the floor. |
+| `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | Dragon animation and charge acceptance remain partially unobserved. |
+| `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Opaque breath and beam effects hide the active fight. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -124,7 +128,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 59 | 36 | 95 |
+| GitHub HoH namespace | 63 | 36 | 99 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -161,7 +165,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-51-46e4bb92d504` | `development_snapshot:attempt-718c1a20cbc3ca25dbf2664f` | NEEDS VISUAL QA |
+| `loop-51-46e4bb92d504` | `development_snapshot:attempt-718c1a20cbc3ca25dbf2664f` | BLOCKED |
 
 ### Project Planner
 
@@ -188,7 +192,28 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-51-46e4bb92d504` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 12 (11 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `veyne-arena-foreground-fragments` | MAJOR | DEGRADED | HIGH | Arena shell fragments and oversized leaf sheets obstruct player views. |
+| `veyne-dive-warning-drifts` | MAJOR | DEGRADED | HIGH | Dive landing warning follows the airborne dragon instead of the floor. |
+| `veyne-effects-obscure-combat` | MAJOR | DEGRADED | HIGH | Opaque breath and beam effects hide the active fight. |
+| `veyne-dragon-validation-incomplete` | MAJOR | INTERNAL | HIGH | Dragon animation and charge acceptance remain partially unobserved. |
+| `veyne-phase-camera-retest-incomplete` | MINOR | INTERNAL | MEDIUM | Natural moved-phase framing improved; skipped qualification remains missing. |
+| `settings-listening-unavailable` | MAJOR | INTERNAL | HIGH | Independent audio listening remains unavailable in this client. |
+| `opening-handoff-qualification-incomplete` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
+| `mf01-earned-verification-incomplete` | MAJOR | INTERNAL | HIGH | MF01 earning and committed information restoration remain unverified. |
+| `tomb-earned-verification-incomplete` | MAJOR | INTERNAL | HIGH | Prepared arena traversal does not qualify earned tomb entry. |
+| `retained_texture_dependencies_missing` | MAJOR | INTERNAL | HIGH | Mandatory retained-grass closure remains insufficiently evidenced. |
+| `pillar_approach_camera_occluded` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -2793,5 +2818,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-51-46e4bb92d504`
 - Latest warm start: `loop-51-19c10f4c7a61`
 - Last published: `loop-51-46e4bb92d504`
-- Best verified: `loop-50-19c10f4c7a61`
+- Best verified: `loop-51-46e4bb92d504`
 - Generated by the HoH host from immutable run evidence.
