@@ -10,6 +10,9 @@ class PickupTraining extends Node:
 	func tell(_message: String, _seconds := 3) -> void: pass
 
 class PickupWorld extends Node3D:
+	# Match the production world contract for the inherited pickup adapter.
+	# This isolated channel fixture uses saved positions, not meadow grounding.
+	var meadow_slice := false
 	var player: CharacterBody3D
 	var training: PickupTraining
 

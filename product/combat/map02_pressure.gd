@@ -21,6 +21,7 @@ func configure(owner_world: Node3D) -> void:
 		var enemy: CharacterBody3D
 		if i == 0:
 			enemy = preload("res://combat/Map02MeleeGuard.tscn").instantiate()
+			enemy.remembered_search_enabled = true
 		else:
 			enemy = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
 			enemy.set_script(preload("res://combat/map02_ranged_adapter.gd"))
@@ -67,6 +68,10 @@ func ground() -> void:
 		return
 	for enemy in enemies: enemy.home = enemy.global_position
 	restore_history()
+	# Grounding moved the authored rock collider this frame. Let physics publish
+	# its transform before the E02 owner samples standing/navigation clearance.
+	await get_tree().physics_frame
+	if is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion(): return
 	enemies[0].build_navigation()
 	enemies[1].share_navigation(enemies[0].navigation_region)
 

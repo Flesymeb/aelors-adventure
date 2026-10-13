@@ -121,14 +121,7 @@ func build_navigation() -> void:
 			var sample: Dictionary = ground_query.call(home + Vector3(x * 0.75, 0, z * 0.75))
 			if sample.is_empty(): continue
 			var point: Vector3 = sample.position
-			var shape = SphereShape3D.new()
-			shape.radius = 0.38
-			var query = PhysicsShapeQueryParameters3D.new()
-			query.shape = shape
-			query.transform.origin = point + Vector3.UP * 0.85
-			query.collision_mask = 1
-			query.exclude = [get_rid(), target.get_rid()]
-			if not get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty(): continue
+			if not navigation_sample_clear(point): continue
 			cells[Vector2i(x, z)] = vertices.size()
 			vertices.append(point + Vector3.UP * 0.04)
 	mesh.vertices = vertices
@@ -149,6 +142,16 @@ func build_navigation() -> void:
 	navigation_region.global_transform = Transform3D.IDENTITY
 	navigation_region.set_navigation_map(navigation_agent.get_navigation_map())
 	_choose_patrol_point()
+
+func navigation_sample_clear(point: Vector3) -> bool:
+	var shape = SphereShape3D.new()
+	shape.radius = 0.38
+	var query = PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform.origin = point + Vector3.UP * 0.85
+	query.collision_mask = 1
+	query.exclude = [get_rid(), target.get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 func share_navigation(region: NavigationRegion3D) -> void:
 	# The region owner alone frees it. Each agent validates its own home/path.
@@ -247,19 +250,7 @@ func _physics_process(delta: float) -> void:
 	navigation_clock -= delta
 	var distance = global_position.distance_to(target.global_position)
 	var perceives = distance <= 5.0 and target.global_position.distance_to(home) <= 6.0 and line_clear(target.global_position)
-	if perceives:
-		lost_time = 0
-		if not engaged:
-			engaged = true
-			behavior.interrupt()
-			returning = false
-			if acquired_cue.is_valid(): acquired_cue.call()
-	else:
-		lost_time += delta
-		if engaged and (lost_time > 1.1 or target.global_position.distance_to(home) > 6.0):
-			engaged = false
-			returning = true
-			interrupt_action()
+	update_perception(distance, perceives, delta)
 	# Loss of sight during an attack closes contact immediately, before recovery.
 	if melee.attacking and not perceives:
 		melee.interrupt_attack()
@@ -282,6 +273,22 @@ func _physics_process(delta: float) -> void:
 	# AnimationTree is configured for physics processing; posed socket is sampled
 	# once after physics and its contact window is owned by the melee event unit.
 	_sample_contact()
+
+func update_perception(_distance: float, perceives: bool, delta: float) -> void:
+	# Default policy remains unchanged for every non-opted-in melee user.
+	if perceives:
+		lost_time = 0
+		if not engaged:
+			engaged = true
+			behavior.interrupt()
+			returning = false
+			if acquired_cue.is_valid(): acquired_cue.call()
+	else:
+		lost_time += delta
+		if engaged and (lost_time > 1.1 or target.global_position.distance_to(home) > 6.0):
+			engaged = false
+			returning = true
+			interrupt_action()
 
 func _sample_contact() -> void:
 	var point = source.global_position

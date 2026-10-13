@@ -161,6 +161,85 @@ static func lightning_contact_checks(parent: Node) -> Dictionary:
 	# Exercise the E02 subclass with the same real Snaiel contact/reaction owner.
 	return preload("res://tests/ranged_lightning_contact_test.gd").lightning_contact_checks(parent,preload("res://combat/map02_ranged_adapter.gd"))
 
+static func melee_search_checks(world: Node3D) -> Dictionary:
+	# Disposable production instances: actual terrain, NavigationServer path and
+	# rock collision. These component decisions never establish earned history.
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var encounter: Node = world.pressure_encounter
+	var body: Node = encounter.enemies[0]
+	var player: CharacterBody3D = world.player
+	var original_position := player.global_position
+	var original_velocity := player.velocity
+	var xp: int = encounter.state.experience
+	# Exercise death cleanup without invoking the encounter's reward listener.
+	var death_connections: Array = body.dead.get_connections()
+	var checks := {"e02_opted_in":body.remembered_search_enabled}
+	var ordinary: Node = preload("res://combat/Map02MeleeGuard.tscn").instantiate()
+	checks.other_users_default_off = not ordinary.remembered_search_enabled
+	ordinary.free()
+	body.reset_encounter()
+	body._refresh_navigation()
+	# Same right shoulder used by the ordinary-input cover smoke.
+	var support: Dictionary = body.ground_query.call(encounter.cover.global_position + Vector3(3.4,0,0.4))
+	checks.real_supported_destination = not support.is_empty()
+	if support.is_empty(): return checks
+	for connection in death_connections: body.dead.disconnect(connection.callable)
+	player.global_position = support.position
+	body.update_perception(body.global_position.distance_to(player.global_position), true, 0.1)
+	var memory: Vector3 = body.last_visible_position
+	var hidden: Dictionary = body.ground_query.call(encounter.cover.global_position + Vector3(0,0,-1.2))
+	var hidden_position: Vector3 = hidden.position
+	player.global_position = hidden_position
+	body.update_perception(4.0, false, 0.2)
+	checks.real_navigation_search = body.search_active and body.search_path.size() >= 2 and body.search_plans == 1
+	checks.memory_fixed = body.last_visible_position == memory and body.navigation_agent.target_position == memory
+	body.update_perception(4.0, false, 0.2)
+	checks.single_plan = body.search_plans == 1 and body.last_visible_position == memory
+	body.update_perception(4.0, false, body.SEARCH_LIMIT)
+	checks.expiry_returns = not body.engaged and body.returning and not body.search_active and body.search_result == "timed_out" and body.search_elapsed == body.SEARCH_LIMIT and not body.source.can_damage
+	body.update_perception(4.0, false, 0.2)
+	checks.expiry_no_retry = body.search_plans == 1 and not body.search_active
+	# The real rock's south shoulder has a safe one-cell projected detour.
+	body.last_visible_position = body.ground_query.call(encounter.cover.global_position + Vector3(1.5,0,-1.5)).position
+	checks.rock_edge_projected_path = body._remembered_path().size() >= 2
+	body.last_visible_position = body.ground_query.call(encounter.cover.global_position).position
+	checks.occupied_rock_rejected = body._remembered_path().is_empty()
+	player.global_position = support.position
+	body.update_perception(4.0, true, 0.1)
+	player.global_position = hidden_position
+	body.update_perception(4.0, false, 0.2)
+	body.update_perception(4.0, true, 0.1)
+	checks.reacquired = body.engaged and not body.search_active and body.search_result == "reacquired" and body.navigation_clock == 0
+	body.update_perception(4.0, false, 0.1)
+	body.navigation_ready = false
+	body.navigation_check_clock = 1.0
+	body._physics_process(0.1)
+	checks.unavailable_returns = not body.engaged and body.returning and body.search_result == "unavailable" and not body.source.can_damage
+	body._refresh_navigation()
+	for interruption in ["hurt", "parry", "death", "reset", "restore"]:
+		player.global_position = support.position
+		body.update_perception(4.0, true, 0.1)
+		player.global_position = hidden_position
+		body.update_perception(4.0, false, 0.1)
+		match interruption:
+			"hurt": body.on_hurt({"outcome":"hit"})
+			"parry": body.on_parried()
+			"death": body.on_death()
+			"reset": body.reset_encounter()
+			"restore": encounter.restore_history()
+		checks[interruption + "_clears_memory"] = not body.search_active and not body.search_memory_valid and not body.search_attempted and body.search_path.is_empty() and body.last_visible_position == Vector3.ZERO and not body.source.can_damage
+		if interruption in ["hurt", "parry"]:
+			body._physics_process(0.1)
+			checks[interruption + "_recovery_retained"] = body.blackboard.get_value("got_hit", false) and body.hurt_remaining > 0.4 and body.phase in ["hurt", "stagger"] and Vector2(body.velocity.x, body.velocity.z).length() == 0
+		body.reset_encounter()
+		body._refresh_navigation()
+	checks.no_reward = encounter.state.experience == xp and not encounter.state.reward_history.has(body.stable_id)
+	for connection in death_connections: body.dead.connect(connection.callable, connection.flags)
+	player.global_position = original_position
+	player.velocity = original_velocity
+	body.reset_encounter()
+	return checks
+
 static func cover_decision_checks(world: Node3D) -> Dictionary:
 	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
 	var body: Node = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
