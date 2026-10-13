@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 63 |
+| Open | 64 |
 | Closed | 36 |
-| All | 99 |
+| All | 100 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 46 |
+| Active | 47 |
 | Verified closed | 27 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 78 |
+| All in this run | 79 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,7 +55,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | BLOCKED | Independent audio listening remains unavailable in this client. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | BLOCKED | Independent audio listening remains unverified. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -117,10 +117,11 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
 | `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | Natural moved-phase framing improved; skipped qualification remains missing. |
 | `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
-| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Arena shell fragments and oversized leaf sheets obstruct player views. |
-| `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Dive landing warning follows the airborne dragon instead of the floor. |
-| `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | Dragon animation and charge acceptance remain partially unobserved. |
-| `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Opaque breath and beam effects hide the active fight. |
+| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Arena fragment removal and route support remain independently unqualified. |
+| `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Fixed flight samples do not establish complete dive-warning acceptance; retained camera coverage also shows partial visibility. |
+| `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Breath and beam readability and preserved contact behavior remain incompletely verified. |
+| `attack-lifecycle-retest-incomplete` | [#100](https://github.com/Flesymeb/aelors-adventure/issues/100) | OPEN | Partial breath pause observations leave interruption, CP03 cleanup and final log coverage unresolved. |
+| `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -128,7 +129,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 63 | 36 | 99 |
+| GitHub HoH namespace | 64 | 36 | 100 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -165,7 +166,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-52-40eedac2149e` | `development_snapshot:attempt-b25fefd4c6df78a2b1723739` | NEEDS VISUAL QA |
+| `loop-52-40eedac2149e` | `development_snapshot:attempt-b25fefd4c6df78a2b1723739` | BLOCKED |
 
 ### Project Planner
 
@@ -192,7 +193,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-52-40eedac2149e` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (7 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `arena-retest-incomplete` | MAJOR | INTERNAL | HIGH | Arena fragment removal and route support remain independently unqualified. |
+| `dive-retest-incomplete` | MAJOR | INTERNAL | HIGH | Fixed flight samples do not establish complete dive-warning acceptance; retained camera coverage also shows partial visibility. |
+| `effects-retest-incomplete` | MAJOR | INTERNAL | HIGH | Breath and beam readability and preserved contact behavior remain incompletely verified. |
+| `attack-lifecycle-retest-incomplete` | MAJOR | INTERNAL | HIGH | Partial breath pause observations leave interruption, CP03 cleanup and final log coverage unresolved. |
+| `listening-evidence-incomplete` | MAJOR | INTERNAL | HIGH | Independent audio listening remains unverified. |
+| `opening-evidence-incomplete` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r21-opening-held-space-skip |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -2855,5 +2872,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-52-40eedac2149e`
 - Latest warm start: `loop-52-46e4bb92d504`
 - Last published: `loop-52-40eedac2149e`
-- Best verified: `loop-51-46e4bb92d504`
+- Best verified: `loop-52-40eedac2149e`
 - Generated by the HoH host from immutable run evidence.
