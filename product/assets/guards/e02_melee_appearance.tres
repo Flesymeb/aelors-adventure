@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/npc_appearance.gd" id="1"]
+[resource]
+script = ExtResource("1")
+cloth_color = Color(0.38, 0.30, 0.22, 1)
+metal_color = Color(0.36, 0.38, 0.34, 1)
+armored = true

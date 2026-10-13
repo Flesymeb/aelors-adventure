@@ -3,7 +3,7 @@ extends Node3D
 const GROUND = preload("res://world/map02_ground.gd")
 const SWITCH = preload("res://interaction/nodragem/short_interaction_switch.gd")
 const ROCK = preload("res://assets/maps/map02/Meshes/Rocks/rock_moss_set_01_rock06.glb")
-const SIGN = preload("res://Prefabs/Prop/Sign/EA03_Prop_Sign_Chapel_01_PRE.prefab.scn")
+const SIGN = preload("res://world/Map02RouteLandmark.tscn")
 const FONT = preload("res://assets/dialogue/zhuque/ZhuqueFangsong-Regular.ttf")
 var world: Node3D
 var state: Node
@@ -30,7 +30,8 @@ func configure(owner_world: Node3D) -> void:
 	state = world.dialogue_state
 	clue = SIGN.instantiate()
 	clue.name = "CircuitClue"
-	clue.scale *= 0.5
+	# Same authored collision/size; stone tint separates the circuit landmark.
+	clue.get_node("EA03_Prop_Sign_Chapel_01_PRE").get_active_material(0).albedo_color = Color(0.46, 0.43, 0.40)
 	add_child(clue)
 	supply = Node3D.new(); supply.name = "SpiralSupply"; add_child(supply)
 	location = Node3D.new(); location.name = "ArrowLocation"; add_child(location)

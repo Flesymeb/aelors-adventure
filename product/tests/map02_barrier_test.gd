@@ -109,7 +109,13 @@ static func run() -> Dictionary:
 	checks.scene_loads = module != null and module.get_script() == preload("res://world/map02_barrier.gd")
 	if module: module.free()
 	checks.texture_variants = load("res://assets/effects/ln01_supply.tres").albedo_texture != load("res://assets/effects/ln01_location.tres").albedo_texture
-	checks.transparent_edges = load("res://assets/effects/ln01_supply.tres").albedo_texture.get_image().get_pixel(0,0).a == 0 and load("res://assets/effects/ln01_location.tres").albedo_texture.get_image().get_pixel(0,0).a == 0
+	checks.transparent_edges = true
+	for path in ["res://assets/effects/ln01_supply.tres", "res://assets/effects/ln01_location.tres"]:
+		var image: Image = load(path).albedo_texture.get_image()
+		if image.is_compressed() and image.decompress() != OK:
+			checks.transparent_edges = false
+		elif image.get_pixel(0, 0).a != 0:
+			checks.transparent_edges = false
 	checks.node_stances = GROUND.LN01_SUPPLY.distance_to(GROUND.LN01_LOCATION) > 4 and GROUND.LN01_CLUE.y < GROUND.LN01_PASSAGE.y and GROUND.LN01_SUPPLY.y < GROUND.LN01_PASSAGE.y and GROUND.LN01_LOCATION.y < GROUND.LN01_PASSAGE.y
 	checks.restored_position = GROUND.entry_xz(Vector3(9,3,107),GROUND.MAP02_ID) == GROUND.LN01_LOCATION
 	state.free(); restored.free()

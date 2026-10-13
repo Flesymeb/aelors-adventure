@@ -284,3 +284,57 @@ static func lifecycle_checks(world: Node3D) -> Dictionary:
 	checks.recovery = not state.recovery_pending and state.health == 100 and state.reward_history == histories and state.experience == xp + 20
 	checks.clean_restore = not melee.visible and not ranged.visible and ranged.projectiles.is_empty() and not ranged.action.executing_action and encounter.death_remaining.is_empty()
 	return checks
+
+static func presentation_checks(world: Node3D) -> Dictionary:
+	# Disposable fixture only: sample the actual private clips and posed socket,
+	# then restore the animation owner. This does not award or earn E02/MF01.
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var enemy: Node = world.pressure_encounter.enemies[0]
+	var driver: Node = enemy.character
+	var rig: Skeleton3D = driver.skeleton
+	var checks := {}
+	checks.mature_model = enemy.model.scene_file_path == "res://assets/guards/ranged_guard.glb"
+	checks.complete_head = rig.find_children("BaseHead_*", "MeshInstance3D", true, false).size() > 0
+	checks.bound_wrist = driver.contact_socket.bone_name == "hand_r" and enemy.source.get_parent() == driver.contact_socket
+	checks.product_contact_authority = enemy.melee.weapons.size() == 1 and enemy.source.entity == enemy
+	checks.clip_catalog = driver.anim_player.get_animation_list().size() == 5
+	checks.walk_loop = driver.anim_player.get_animation("Walk").loop_mode == Animation.LOOP_LINEAR
+	var processing: bool = enemy.is_physics_processing()
+	enemy.set_physics_process(false)
+	driver.anim_tree.active = false
+	var start := Vector3.ZERO
+	var extension := 0.0
+	var rotation_changed := false
+	var first_rotation := Quaternion.IDENTITY
+	var pelvis: int = rig.find_bone("pelvis")
+	var horizontal_stable := true
+	var first_pelvis := Vector3.ZERO
+	for time in [0.0, 0.14, 0.36, 0.50, 0.70]:
+		enemy.animator.play("Punch")
+		enemy.animator.seek(time, true)
+		rig.force_update_all_bone_transforms()
+		var frame: Transform3D = enemy.model.global_transform.affine_inverse() * rig.global_transform
+		var fist: Vector3 = frame * rig.get_bone_global_pose(rig.find_bone("hand_r")) * driver.palm_offset
+		# Test the translation track in model axes. Global posed hips also move
+		# through the punch's root rotation; that is skeletal motion, not travel.
+		var hip: Vector3 = frame.basis * rig.get_bone_pose_position(pelvis)
+		var rotation := rig.get_bone_pose_rotation(rig.find_bone("upperarm_r"))
+		if time == 0:
+			start = fist
+			first_pelvis = hip
+			first_rotation = rotation
+		else:
+			rotation_changed = rotation_changed or first_rotation.angle_to(rotation) > 0.1
+			horizontal_stable = horizontal_stable and Vector2(hip.x, hip.z).distance_to(Vector2(first_pelvis.x, first_pelvis.z)) < 0.001
+		if time == 0.36: extension = fist.z - start.z
+	checks.anticipated_right_punch = extension > 0.45 and rotation_changed
+	checks.physics_translation_owner = horizontal_stable
+	checks.preserved_lengths = true
+	for index in rig.get_bone_count():
+		if index == pelvis: continue
+		if rig.get_bone_pose_position(index).distance_to(rig.get_bone_rest(index).origin) > 0.001: checks.preserved_lengths = false
+	enemy.animator.stop()
+	driver.anim_tree.active = true
+	driver.play("Idle", 1, true)
+	enemy.set_physics_process(processing)
+	return checks

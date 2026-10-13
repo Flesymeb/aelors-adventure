@@ -43,5 +43,18 @@ static func run() -> Dictionary:
 	before.set_value("post_bow", "mf01_acquired", true)
 	checks.reject_unearned_record = state.config_unavailable_reason(before) != ""
 	checks.native_resources = load("res://ui/map_page.gd").can_instantiate() and load("res://world/map02_route_clue.gd").can_instantiate()
+	# Load the actual inherited prop, checking that visual adaptation did not
+	# replace its collision or discard the authored colorsheet dependency.
+	var source_sign: Node3D = load("res://Prefabs/Prop/Sign/EA03_Prop_Sign_Chapel_01_PRE.prefab.scn").instantiate()
+	var route_sign: Node3D = load("res://world/Map02RouteLandmark.tscn").instantiate()
+	var source_mesh: MeshInstance3D = source_sign.get_node("EA03_Prop_Sign_Chapel_01_PRE")
+	var route_mesh: MeshInstance3D = route_sign.get_node("EA03_Prop_Sign_Chapel_01_PRE")
+	var material: Material = route_mesh.get_active_material(0)
+	checks.route_native_geometry = source_mesh.mesh == route_mesh.mesh and source_sign.get_node("MeshCollider/CollisionShape3D").shape == route_sign.get_node("MeshCollider/CollisionShape3D").shape
+	var route_height: float = route_mesh.get_aabb().size.y * route_sign.scale.y
+	checks.route_standing_scale = route_height >= 1.8 and route_height <= 2.2
+	checks.route_material = material is StandardMaterial3D and material.albedo_texture == load("res://Textures/EA03_FREE_Slavica.png") and material.albedo_color.get_luminance() < 0.6 and is_equal_approx(material.roughness, 1.0)
+	source_sign.free()
+	route_sign.free()
 	for node in [state, restored, legacy]: node.free()
 	return checks

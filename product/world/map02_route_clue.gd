@@ -14,7 +14,9 @@ var approach_recalled := false
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
 	state = world.dialogue_state
-	signpost = preload("res://Prefabs/Prop/Sign/EA03_Prop_Sign_Chapel_01_PRE.prefab.scn").instantiate()
+	# MF01 retains the selected native mesh/collider with its own weathered
+	# atlas binding and standing scale; other chapter signs keep their sources.
+	signpost = preload("res://world/Map02RouteLandmark.tscn").instantiate()
 	signpost.name = "FixedRouteSign"
 	add_child(signpost)
 	glyph = Sprite3D.new()
@@ -22,7 +24,9 @@ func configure(owner_world: Node3D) -> void:
 	glyph.pixel_size = 0.004
 	glyph.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	glyph.shaded = false
-	glyph.position = Vector3(0, 1.7, 0)
+	# Keep the interaction glyph's world height/size when the prop is scaled.
+	glyph.position = Vector3(0, 1.7 / signpost.scale.y, 0)
+	glyph.scale = Vector3.ONE / signpost.scale
 	signpost.add_child(glyph)
 	record_switch = preload("res://interaction/nodragem/short_interaction_switch.gd").new()
 	add_child(record_switch)

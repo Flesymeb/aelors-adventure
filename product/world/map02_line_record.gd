@@ -2,7 +2,7 @@ extends Node3D
 ## Two permanent authored anchors; record and recovery are independent of corpses.
 const GROUND = preload("res://world/map02_ground.gd")
 const SWITCH = preload("res://interaction/nodragem/short_interaction_switch.gd")
-const RECORD_PROP = preload("res://Prefabs/Prop/Sign/EA03_Prop_Sign_Chapel_01_PRE.prefab.scn")
+const RECORD_PROP = preload("res://world/Map02RouteLandmark.tscn")
 const SUPPLY_PROP = preload("res://Prefabs/Prop/Container/EA03_Prop_Container_Chest_02a_PRE.prefab.scn")
 var world: Node3D
 var state: Node
@@ -18,7 +18,8 @@ func configure(owner_world: Node3D) -> void:
 	signpost = RECORD_PROP.instantiate()
 	signpost.name = "FixedTombRouteSign"
 	# Match the retained prop to a standing investigation, preserving materials.
-	signpost.scale *= 0.5
+	# The qualified wrapper already owns the retained two-metre prop scale.
+	signpost.get_node("EA03_Prop_Sign_Chapel_01_PRE").get_active_material(0).albedo_color = Color(0.50, 0.53, 0.45)
 	add_child(signpost)
 	supply = SUPPLY_PROP.instantiate()
 	supply.name = "FixedRecoveryChest"

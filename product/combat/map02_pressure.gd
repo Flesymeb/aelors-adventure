@@ -20,8 +20,7 @@ func configure(owner_world: Node3D) -> void:
 	for i in 2:
 		var enemy: CharacterBody3D
 		if i == 0:
-			enemy = preload("res://combat/snaiel/scenes/entities/enemies/HybridEnemy.tscn").instantiate()
-			enemy.set_script(preload("res://combat/map02_enemy_adapter.gd"))
+			enemy = preload("res://combat/Map02MeleeGuard.tscn").instantiate()
 		else:
 			enemy = preload("res://combat/ChannelRangedGuard.tscn").instantiate()
 			enemy.set_script(preload("res://combat/map02_ranged_adapter.gd"))
