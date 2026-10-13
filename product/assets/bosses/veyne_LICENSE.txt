@@ -1,0 +1,28 @@
+Veyne presentation binding: Quaternius Ultimate Monsters native Demon
+Source: https://quaternius.com/packs/ultimatemonsters.html
+Author: Quaternius (@Quaternius)
+License: CC0 1.0 Universal Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The original registered sample receipt, original FBX files, atlas, SOURCE.md
+and License.txt are retained in veyne_monster_source. Its original folder
+notice misnames Ultimate Platformer Pack; the original SOURCE.md identifies
+the official Ultimate Monsters page and explains that discrepancy.
+
+The generated veyne_animations.glb carries the native Demon mesh, complete
+skeleton, skin, trident, embedded atlas/material and fourteen native actions.
+veyne_export_source.py records the reproducible Blender 4.5 conversion.
+Blender export selects and normalizes the four largest skin weights where
+the original FBX has more than four; this requires native pose review.
+
+Product adaptation: private animation aliases and loop flags, horizontal
+root anchoring, native raised-left-arm/staff Wave for Cast, native No gesture for Reveal,
+and LowerArm.R/Middle1.R contact for Punch. The trident remains natively
+skinned to Middle1.L. No third-party movement, player, health or save owner
+is imported with the presentation.
+
+Native local visual forward: +Z after the Blender glTF Y-up conversion,
+as measured from both native foot-rest toe directions (-Y in Blender).
+Native scale is normalized by the existing product enemy adapter.
+Runtime import, rendered poses, arena clearance and quality remain subject
+to product qualification; source presence does not establish acceptance.

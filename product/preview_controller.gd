@@ -297,7 +297,7 @@ func _process(_delta: float) -> void:
 		failure_armed = true
 	# Retain product pause intent after restart or an external debug step.
 	# Leave external freezes alone when there is no product pause owner.
-	if pause_owners.keys().any(func(owner): return owner != "warden_reveal") and not get_tree().paused:
+	if pause_owners.keys().any(func(owner): return owner not in ["warden_reveal","veyne_presentation"]) and not get_tree().paused:
 		get_tree().paused = true
 	if weapon_label and player:
 		var view_name := "FIRST PERSON" if player.first_person else ("LEFT SHOULDER" if player.shoulder_side < 0 else "RIGHT SHOULDER")

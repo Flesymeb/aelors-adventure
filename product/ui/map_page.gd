@@ -49,6 +49,7 @@ class RouteDiagram extends Control:
 		var font := get_theme_default_font()
 		var ink := Color(0.2,0.15,0.08)
 		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口已净化 · 石阶" if state.ln02_purified else "入口结界 · 双供能"]]
+		if state.ln02_purified: marks.append([Vector2(0.22,0.015),"裂隙祭坛 · 钥印已取得" if state.veyne_release_key else "裂隙祭坛 · 检查钥印" if state.veyne_defeated else "裂隙祭坛 · 维恩"])
 		if state.ln02_purified: marks.append([Vector2(0.60,0.015),"看守院 · 锁印已解除" if state.warden_lock_released else "看守院 · 检查装置" if state.warden_defeated else "看守院"])
 		if state.ln02_revealed:
 			marks.append_array([[Vector2(0.25,0.27),"北侧 · 已切断" if state.ln02_north_cut else "北侧 · 螺旋供能"],[Vector2(0.25,0.51),"南侧 · 已切断" if state.ln02_south_cut else "南侧 · 箭纹供能"]])

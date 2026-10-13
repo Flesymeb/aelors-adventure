@@ -297,9 +297,11 @@ func restore_history() -> void:
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if world.get("warden_encounter"): world.warden_encounter.restore_history()
+	if world.get("veyne_encounter"): world.veyne_encounter.restore_history()
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
+	if world.get("veyne_encounter") and not world.veyne_encounter.can_save(): return false
 	if world.get("warden_encounter") and not world.warden_encounter.can_save(): return false
 	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.pressure_encounter == null or world.pressure_encounter.can_save()) and (world.ambush_encounter == null or world.ambush_encounter.can_save()) and (world.line_encounter == null or world.line_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
 
@@ -436,6 +438,7 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	if world.get("veyne_encounter") and _reason in ["death","load","recovery"]: world.veyne_encounter.interrupt()
 	if world.get("warden_encounter") and _reason in ["death","load","recovery"]: world.warden_encounter.interrupt()
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()
 	if world.channel_guards and _reason in ["death", "load", "recovery"]: world.channel_guards.interrupt()
@@ -540,6 +543,7 @@ func advance_player(delta: float) -> void:
 		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
 		if world.get("warden_encounter"): registry.merge(world.warden_encounter.registry())
+		if world.get("veyne_encounter"): registry.merge(world.veyne_encounter.registry())
 		if aerial_active:
 			# Contact follows the retained hand mount and blade's local +Y axis.
 			# No body-centred aerial sphere or landing shockwave can award a hit.
@@ -647,6 +651,7 @@ func recover_at_checkpoint() -> void:
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if world.get("warden_encounter"): world.warden_encounter.restore_history()
+	if world.get("veyne_encounter"): world.veyne_encounter.restore_history()
 	sim_phase = "idle"
 	hers.idle()
 	player.traversal.reset()

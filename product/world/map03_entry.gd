@@ -5,6 +5,7 @@ var ritual_record: Node3D
 var return_passage: Node3D
 var entrance_circuit: Node3D
 var warden_encounter: Node3D
+var veyne_encounter: Node3D
 var route_ready := false
 var route_samples := 0
 var collision_meshes := 0
@@ -99,6 +100,9 @@ func _ready() -> void:
 	warden_encounter = preload("res://combat/map03_warden.tscn").instantiate()
 	add_child(warden_encounter)
 	warden_encounter.configure(self)
+	veyne_encounter = preload("res://combat/map03_veyne.tscn").instantiate()
+	add_child(veyne_encounter)
+	veyne_encounter.configure(self)
 	_place_player.call_deferred()
 
 func create_environment() -> Node3D:
@@ -123,7 +127,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not TOMB_GROUND.place(self,player,xz): xz = TOMB_GROUND.ENTRY; continue
-		if not ritual_record.grounded or not return_passage.grounded or not entrance_circuit.grounded or not warden_encounter.grounded: continue
+		if not ritual_record.grounded or not return_passage.grounded or not entrance_circuit.grounded or not warden_encounter.grounded or not veyne_encounter.grounded: continue
 		var stance := Node3D.new()
 		add_child(stance)
 		route_samples = 0
@@ -141,13 +145,14 @@ func _place_player() -> void:
 	entry_failed.emit("墓殿落脚点无法准备，已保留上一处边界。")
 
 func destination_ready() -> bool:
-	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded and entrance_circuit.grounded and warden_encounter.grounded
+	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded and entrance_circuit.grounded and warden_encounter.grounded and veyne_encounter.grounded
 
 func restore_destination_history() -> void:
 	super()
 	ritual_record.restore_history()
 	entrance_circuit.restore_history()
 	warden_encounter.restore_history()
+	veyne_encounter.restore_history()
 
 func restored_xz(position: Vector3, map_id: String) -> Vector2:
 	var xz := TOMB_GROUND.entry_xz(position,map_id)
@@ -156,7 +161,7 @@ func restored_xz(position: Vector3, map_id: String) -> Vector2:
 func checkpoint_xz() -> Vector2: return TOMB_GROUND.ENTRY
 func active_map_id() -> String: return dialogue_state.MAP03
 func contextual_interaction_target() -> Node3D:
-	for target in [warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
+	for target in [veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 
@@ -165,6 +170,7 @@ func _load_opening(slot: int) -> void:
 	if is_instance_valid(ritual_record): ritual_record.restore_history()
 	if is_instance_valid(entrance_circuit): entrance_circuit.restore_history()
 	if is_instance_valid(warden_encounter): warden_encounter.restore_history()
+	if is_instance_valid(veyne_encounter): veyne_encounter.restore_history()
 
 func _mcp_state() -> Dictionary:
 	var result := super()
@@ -188,10 +194,10 @@ func _bind_entrance_lights() -> void:
 
 func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 	# A cinematic locks input while its rig/clock continue. Menu owners pause.
-	var was_paused: bool = pause_owners.keys().any(func(owner): return owner != "warden_reveal")
+	var was_paused: bool = pause_owners.keys().any(func(owner): return owner not in ["warden_reveal","veyne_presentation"])
 	if enabled: pause_owners[owner_id] = true
 	else: pause_owners.erase(owner_id)
-	var now_paused: bool = pause_owners.keys().any(func(owner): return owner != "warden_reveal")
+	var now_paused: bool = pause_owners.keys().any(func(owner): return owner not in ["warden_reveal","veyne_presentation"])
 	_sync_dialogue_world_labels()
 	player.set_controls_open(not pause_owners.is_empty())
 	if was_paused != now_paused: get_tree().paused = now_paused
@@ -200,3 +206,5 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 		warden_encounter.music.stream_paused = now_paused
 		warden_encounter.cue.stream_paused = now_paused
 		warden_encounter.effects.stream_paused = now_paused
+
+	if is_instance_valid(veyne_encounter): veyne_encounter.set_menu_paused(now_paused)

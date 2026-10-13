@@ -129,7 +129,7 @@ func _process(delta: float) -> void:
 		reveal_elapsed += delta
 		if not Input.is_key_pressed(KEY_SPACE): skip_armed = true
 		if reveal_elapsed >= 3.2: finish_reveal()
-	elif phase == "waiting" and state.ln02_purified and not state.warden_defeated and not paused and state.health > 0 and not state.recovery_pending:
+	elif phase == "waiting" and state.ln02_purified and not state.warden_defeated and not paused and state.health > 0 and not state.recovery_pending and (world.get("veyne_encounter") == null or world.veyne_encounter.phase not in ["reveal","battle","phase_transition"]):
 		if world.player.global_position.z < -8.6 and world.player.global_position.x > 1.2 and world.player.global_position.distance_to(actor.home) < 4.6: begin_reveal()
 	elif phase == "battle" and not paused:
 		if state.health <= 0 or state.recovery_pending or world.player.global_position.z > -7.2: interrupt()

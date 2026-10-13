@@ -71,12 +71,17 @@ func _process(_delta: float) -> void:
 	root.visible = training.world.pause_owners.is_empty()
 	var viewport = get_viewport().get_visible_rect().size
 	var boss: Node = training.world.get("warden_encounter")
-	boss_rows.visible = boss != null and boss.phase in ["battle","reveal"]
+	var caster: Node = training.world.get("veyne_encounter")
+	if caster != null and caster.phase in ["battle","reveal","phase_transition"]: boss = caster
+	boss_rows.visible = boss != null and boss.phase in ["battle","reveal","phase_transition"]
 	if boss_rows.visible:
 		boss_hp.max_value = boss.actor.health_component.max_health
 		boss_hp.value = boss.actor.health
-		boss_name.text = "锁印看守 · %d / %d" % [int(boss.actor.health),int(boss_hp.max_value)]
-		if boss.actor.phase == "telegraph": boss_name.text += " · 震荡：离开或闪避" if boss.actor.attack_kind == "wave" else " · 正面重击：可振刀"
+		boss_name.text = ("维恩 · %d / %d" if boss == caster else "锁印看守 · %d / %d") % [int(boss.actor.health),int(boss_hp.max_value)]
+		if boss == caster:
+			if boss.phase == "phase_transition": boss_name.text += " · 裂隙苏醒"
+			elif boss.actor.phase == "telegraph": boss_name.text += " · 灯束：横移躲避" if boss.actor.attack_kind == "beam" else " · 近身挥击：可振刀"
+		elif boss.actor.phase == "telegraph": boss_name.text += " · 震荡：离开或闪避" if boss.actor.attack_kind == "wave" else " · 正面重击：可振刀"
 		boss_name.add_theme_font_size_override("font_size",int(20*minf(state.text_scale,1.5)))
 		boss_rows.size = boss_rows.get_combined_minimum_size()
 		boss_rows.position = Vector2((viewport.x-boss_rows.size.x)*0.5,viewport.y*0.15)

@@ -39,7 +39,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -68,6 +68,8 @@ var ln02_revealed := false
 var ln02_north_cut := false
 var ln02_south_cut := false
 var ln02_purified := false
+var veyne_defeated := false
+var veyne_release_key := false
 var warden_defeated := false
 var warden_lock_released := false
 var emergency_release_tool := false
@@ -318,8 +320,24 @@ func inspect_warden_device() -> bool:
 	emergency_release_tool = true
 	return true
 
+func defeat_veyne() -> bool:
+	if veyne_defeated or not ln02_available() or not ln02_purified: return false
+	veyne_defeated = true
+	tracked_quest = "veyne"
+	return true
+
+func take_veyne_key() -> bool:
+	if not veyne_defeated or veyne_release_key or current_map != MAP03 or health <= 0 or recovery_pending: return false
+	veyne_release_key = true
+	return true
+
+func veyne_information() -> String:
+	if veyne_release_key: return "维恩已败 · 解除钥印已取得。四位村民仍需逐人释放，召唤核心仍需关闭。"
+	if veyne_defeated: return "维恩已败 · 在左侧裂隙祭坛按 E 取得解除钥印。"
+	return "维恩 · 沿左侧石阶进入裂隙祭坛。青色灯束横移躲避，不能振刀；金色近身挥击可振刀。"
+
 func warden_information() -> String:
-	if warden_lock_released: return "锁印已解除 · 应急解除器已取得。奥伦与三位村民仍需逐人释放；维恩仍待挑战。"
+	if warden_lock_released: return "锁印已解除 · 应急解除器已取得。奥伦与三位村民仍需逐人释放。"
 	if warden_defeated: return "看守已败 · 检查右侧院内锁印装置，取得应急解除器。四位村民尚未释放。"
 	return "看守守住锁印 · 沿右侧石阶进入看守院。金色正面重击可振刀；紫色震荡离开范围或闪避，不能振刀。可退回入口灯台整顿。"
 
@@ -330,13 +348,13 @@ func ln02_remaining() -> Array[String]:
 	return remaining
 
 func ln02_information() -> String:
-	if ln02_purified: return "入口结界已净化 · " + warden_information()
+	if ln02_purified: return "入口结界已净化 · " + (veyne_information() if veyne_defeated else "左阶 · 维恩：横移躲开灯束，挥击可振刀。") + "\n" + (warden_information() if warden_defeated else "右阶 · 锁印看守：重击可振刀，震荡离开范围。")
 	if not ln02_revealed: return "入口有两条独立供能。按 3 装备旧灯，靠近入口按 F 显形；北侧螺旋与南侧箭纹均在封锁外。"
 	if ln02_north_cut and ln02_south_cut: return "两条供能已切断 · 靠近入口右侧通行装置，按 E 用旧灯主动净化。"
 	return "仍在供能：" + "、".join(ln02_remaining()) + "。可按任意顺序靠近节点按 E 切断；只断一条，另一条仍会维持结界。"
 
 func ritual_information() -> String:
-	return "维恩需要村长奥伦指出最后封印的位置，仪式尚未完成。奥伦与三名村民仍待救援。没有隐藏倒计时。" + ln02_information() + ("维恩、逐人营救与集合仍待完成。" if warden_defeated else "看守、维恩、逐人营救与集合仍待完成。") if ritual_record_read else "墓殿入口的石碑保存着敌方仪式记录。先在封锁外调查，再决定营救路线。"
+	return "维恩需要村长奥伦指出最后封印的位置，仪式尚未完成。奥伦与三名村民仍待救援。没有隐藏倒计时。" + ln02_information() + "逐人营救、集合与核心关闭仍待完成。" if ritual_record_read else "墓殿入口的石碑保存着敌方仪式记录。先在封锁外调查，再决定营救路线。"
 
 func checkpoint_name() -> String:
 	return "裂隙墓殿灯台" if current_map == MAP03 else "林缘草甸灯台" if current_map == MAP02 else "河谷村庄灯台"
@@ -896,6 +914,12 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var tool: bool = config.get_value("post_bow","emergency_release_tool",false)
 	if boss_defeated and not entrance_purified: return "存档看守前置无效"
 	if lock_released and not boss_defeated or tool != lock_released: return "存档解除装置条件无效"
+	for key in ["veyne_defeated", "veyne_release_key"]:
+		if typeof(config.get_value("post_bow",key,false)) != TYPE_BOOL: return "存档维恩事实无效"
+	var caster_defeated: bool = config.get_value("post_bow","veyne_defeated",false)
+	var release_key: bool = config.get_value("post_bow","veyne_release_key",false)
+	if caster_defeated and not entrance_purified: return "存档维恩前置无效"
+	if release_key and not caster_defeated: return "存档解除钥印条件无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -1016,6 +1040,8 @@ func quest_entries() -> Array[Dictionary]:
 	if cp03_claimed:
 		rows.append({"id":"ritual_record", "title":"墓殿入口 · 仪式记录", "complete":ritual_record_read, "context":ritual_information(), "action":objective(), "steps":["CP03 灯台已启用 · 首次加命已领取"] + (["仪式尚未完成 · 四位村民仍待救援"] if ritual_record_read else [])})
 		rows.append({"id":"ln02", "title":"墓殿入口 · 双供能结界", "complete":ln02_purified, "context":ln02_information(), "action":ln02_information(), "steps":["线路已显形" if ln02_revealed else "旧灯显形", "北侧供能已切断" if ln02_north_cut else "切断北侧供能", "南侧供能已切断" if ln02_south_cut else "切断南侧供能", "入口已净化" if ln02_purified else "主动净化入口"]})
+	if cp03_claimed and ln02_purified:
+		rows.append({"id":"veyne","title":"维恩 · 裂隙祭坛","complete":veyne_release_key,"context":veyne_information(),"action":veyne_information(),"steps":["维恩已败" if veyne_defeated else "击败维恩", "解除钥印已取得" if veyne_release_key else "检查祭坛钥印"]})
 	if cp03_claimed and ln02_purified:
 		rows.append({"id":"warden","title":"锁印看守","complete":warden_lock_released,"context":warden_information(),"action":warden_information(),"steps":["看守已败" if warden_defeated else "击败看守", "锁印已解除 · 应急解除器已取得" if warden_lock_released else "检查锁印装置"]})
 	return rows
