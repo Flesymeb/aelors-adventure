@@ -1,7 +1,7 @@
 [gd_scene load_steps=13 format=3]
-; E02 uses the retained Snaiel component unit with direct Ranger/driver bindings.
+; E02 uses distinct tunic geometry with retained Snaiel combat/animation owners.
 [ext_resource type="Script" path="res://combat/map02_enemy_adapter.gd" id="1"]
-[ext_resource type="PackedScene" path="res://assets/guards/ranged_guard.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/guards/melee_guard.glb" id="2"]
 [ext_resource type="Script" path="res://combat/snaiel/health_component.gd" id="3"]
 [ext_resource type="Script" path="res://combat/snaiel/hitbox_component.gd" id="4"]
 [ext_resource type="Script" path="res://combat/snaiel/blackboard.gd" id="5"]

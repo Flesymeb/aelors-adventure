@@ -3,12 +3,21 @@ extends RefCounted
 ## Rigid Head binding deliberately omits independent neck/face deformation.
 
 const BASE_PATH := "res://Characters/QuaterniusBase/Superhero_Male_FullBody.gltf"
+const HAIR_PATH := "res://assets/characters/aelor_hair.glb"
+const AELOR_HAIR_COLOR := Color(0.29, 0.16, 0.085, 1.0)
 
 
-static func assemble(target: Skeleton3D) -> Array[MeshInstance3D]:
+static func assemble(target: Skeleton3D, include_hair := false) -> Array[MeshInstance3D]:
 	var result: Array[MeshInstance3D] = []
 	if target == null or target.find_bone("Head") < 0 or not ResourceLoader.exists(BASE_PATH):
 		push_error("Ranger head assembly needs the base character and target Head bone")
+		return result
+	var existing := target.get_node_or_null("BaseHeadAttachment")
+	if existing != null:
+		_collect_meshes(existing, result)
+		if include_hair:
+			_tint_aelor_eyebrows(result)
+			result.append_array(_assemble_hair(target))
 		return result
 	var source := (load(BASE_PATH) as PackedScene).instantiate()
 	var meshes: Array[MeshInstance3D] = []
@@ -45,7 +54,100 @@ static func assemble(target: Skeleton3D) -> Array[MeshInstance3D]:
 	if result.is_empty():
 		attachment.queue_free()
 		push_error("Base character returned no Head-weighted face geometry")
+	elif include_hair:
+		_tint_aelor_eyebrows(result)
+		result.append_array(_assemble_hair(target))
 	return result
+
+
+static func _assemble_hair(target: Skeleton3D) -> Array[MeshInstance3D]:
+	var result: Array[MeshInstance3D] = []
+	var existing := target.get_node_or_null("HairHeadAttachment")
+	if existing != null:
+		_collect_meshes(existing, result)
+		return result
+	if not ResourceLoader.exists(HAIR_PATH):
+		push_error("Ranger hair assembly needs the qualified hair resource")
+		return result
+	# The static source vertices are authored at standing head height. Convert
+	# them once into this skeleton's Head rest space, rather than copying the
+	# source character's Skin or applying head translation twice.
+	var source := (load(HAIR_PATH) as PackedScene).instantiate() as Node3D
+	var meshes: Array[MeshInstance3D] = []
+	_collect_meshes(source, meshes)
+	var attachment := BoneAttachment3D.new()
+	attachment.name = "HairHeadAttachment"
+	attachment.bone_name = "Head"
+	target.add_child(attachment)
+	var inverse_rest := target.get_bone_global_rest(target.find_bone("Head")).affine_inverse()
+	for mesh in meshes:
+		var authored_transform := Transform3D.IDENTITY
+		var current: Node = mesh
+		while current != null:
+			if current is Node3D:
+				authored_transform = (current as Node3D).transform * authored_transform
+			if current == source:
+				break
+			current = current.get_parent()
+		var component := MeshInstance3D.new()
+		component.name = "AelorHair_" + str(mesh.name)
+		component.mesh = _transform_static_mesh(mesh, inverse_rest * authored_transform)
+		_tint_aelor_hair(component)
+		attachment.add_child(component)
+		result.append(component)
+	source.free()
+	if result.is_empty():
+		attachment.queue_free()
+		push_error("Qualified hair resource returned no mesh geometry")
+	return result
+
+
+static func _tint_aelor_eyebrows(components: Array[MeshInstance3D]) -> void:
+	for component in components:
+		if str(component.name) == "BaseHead_Eyebrows":
+			_tint_aelor_hair(component)
+
+
+static func _tint_aelor_hair(component: MeshInstance3D) -> void:
+	# ArrayMeshes here belong to this assembly, but imported materials/textures
+	# remain shared. Duplicate only the material to preserve other actors and
+	# the source maps, then tint hair and brows consistently for Aelor.
+	for surface in range(component.mesh.get_surface_count()):
+		var original := component.mesh.surface_get_material(surface) as StandardMaterial3D
+		if original == null or original.albedo_color == AELOR_HAIR_COLOR:
+			continue
+		var material := original.duplicate() as StandardMaterial3D
+		material.resource_local_to_scene = true
+		material.albedo_color = AELOR_HAIR_COLOR
+		material.roughness = maxf(material.roughness, 0.82)
+		(component.mesh as ArrayMesh).surface_set_material(surface, material)
+
+
+static func _transform_static_mesh(source: MeshInstance3D, local_from_authored: Transform3D) -> ArrayMesh:
+	var mesh := ArrayMesh.new()
+	for surface in range(source.mesh.get_surface_count()):
+		var arrays := source.mesh.surface_get_arrays(surface)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		for index in range(vertices.size()):
+			vertices[index] = local_from_authored * vertices[index]
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		var normal_basis := local_from_authored.basis.inverse().transposed()
+		if arrays[Mesh.ARRAY_NORMAL] != null:
+			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+			for index in range(normals.size()):
+				normals[index] = (normal_basis * normals[index]).normalized()
+			arrays[Mesh.ARRAY_NORMAL] = normals
+		if arrays[Mesh.ARRAY_TANGENT] != null:
+			var tangents: PackedFloat32Array = arrays[Mesh.ARRAY_TANGENT]
+			for index in range(0, tangents.size(), 4):
+				var tangent := (local_from_authored.basis * Vector3(tangents[index], tangents[index + 1], tangents[index + 2])).normalized()
+				tangents[index] = tangent.x
+				tangents[index + 1] = tangent.y
+				tangents[index + 2] = tangent.z
+			arrays[Mesh.ARRAY_TANGENT] = tangents
+		mesh.add_surface_from_arrays(source.mesh.surface_get_primitive_type(surface), arrays)
+		mesh.surface_set_material(surface, source.get_active_material(surface))
+	return mesh
 
 
 static func _collect_meshes(node: Node, result: Array[MeshInstance3D]) -> void:

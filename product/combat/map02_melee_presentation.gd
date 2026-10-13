@@ -1,6 +1,7 @@
 extends "res://combat/snaiel/scripts/animations/character_animations.gd"
 ## E02-only recipient adapter. Combat, movement, interruption and reward owners
-## remain Snaiel/product-owned. Original models and UAL clips are never edited.
+## remain Snaiel/product-owned. The distinct tunic uses the same named humanoid
+## hierarchy, but its own Rest transforms. Original UAL clips are never edited.
 const UAL = preload("res://Characters/QuaterniusAnimations/UAL1_Standard.glb")
 const CLIPS = {"Idle":"Idle", "Walk":"Walk", "Punch":"Punch_Cross", "HitReact":"Hit_Chest", "Death":"Death01"}
 
@@ -18,7 +19,7 @@ func configure(model: Node3D) -> void:
 	player.add_animation_library("", library)
 	source.free()
 	# Retain CharacterAnimations' recipients, blend tree, physics playback and
-	# current-position interface. This rig has a real wrist, unlike the Orc.
+	# current-position interface. The tunic has a real articulated wrist.
 	anim_player = player
 	skeleton = target
 	for key in ["Idle", "Walk"]: library.get_animation(key).loop_mode = Animation.LOOP_LINEAR

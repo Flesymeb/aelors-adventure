@@ -372,7 +372,8 @@ static func presentation_checks(world: Node3D) -> Dictionary:
 	var driver: Node = enemy.character
 	var rig: Skeleton3D = driver.skeleton
 	var checks := {}
-	checks.mature_model = enemy.model.scene_file_path == "res://assets/guards/ranged_guard.glb"
+	checks.mature_model = enemy.model.scene_file_path == "res://assets/guards/melee_guard.glb"
+	checks.distinct_geometry = enemy.model.find_child("Male_Peasant_Body", true, false) != null and enemy.model.find_child("Male_Ranger_Body", true, false) == null
 	checks.complete_head = rig.find_children("BaseHead_*", "MeshInstance3D", true, false).size() > 0
 	checks.bound_wrist = driver.contact_socket.bone_name == "hand_r" and enemy.source.get_parent() == driver.contact_socket
 	checks.product_contact_authority = enemy.melee.weapons.size() == 1 and enemy.source.entity == enemy

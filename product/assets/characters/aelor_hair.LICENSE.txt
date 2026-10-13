@@ -1,0 +1,26 @@
+Aelor hair: Quaternius Universal Base Characters Standard, Hair_SimpleParted.
+Source: https://quaternius.itch.io/universal-base-characters
+Adaptation: registered glTF bundle packed to GLB with embedded original base-color/normal PNGs; source geometry, embedded textures and opaque mode preserved. Runtime uses a private chestnut material tint for Aelor hair and eyebrows; original shared source materials remain unchanged. Runtime rigid attachment converts authored standing coordinates into the existing Head bone rest space.
+
+This is the standard FREE version of the Universal Base Characters Kit, which only contains 
+a portion of the models . You can buy the SOURCE version which has all the models with rigged .blends,
+and Unity(URP), Unreal Engine and Godot projects
+with custom shaders already set up.
+
+You can get the other version from the website https://quaternius.com
+
+-------------------------------------------------------
+License:
+CC0 1.0 Universal (CC0 1.0) 
+Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+------------------------------------------------------
+Models by @Quaternius
+Consider supporting me on Patreon!
+
+https://www.patreon.com/quaternius
+
+-------------------------------------------------------
+Join the Discord Server:
+https://discord.gg/vJqnRUYRfT

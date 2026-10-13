@@ -158,7 +158,7 @@ func _ready() -> void:
 		skeleton = model.get_node_or_null("Armature/Skeleton3D") as Skeleton3D
 		if head_mesh:
 			head_components.append(head_mesh)
-		head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton))
+		head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton, true))
 		if ResourceLoader.exists(ANIMATION_PATH):
 			var animation_scene := (load(ANIMATION_PATH) as PackedScene).instantiate() as Node3D
 			var imported_player := animation_scene.get_node("AnimationPlayer") as AnimationPlayer
@@ -673,7 +673,7 @@ func prepare_restored_camera(yaw: float) -> void:
 
 
 func _update_head_visibility() -> void:
-	# Face, eyes, eyebrows and hood remain shadow casters in first person.
+	# Face, eyes, eyebrows, fitted hair and hood hide/restore as one head group.
 	for component in head_components:
 		component.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY if perspective_blend > 0.75 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 

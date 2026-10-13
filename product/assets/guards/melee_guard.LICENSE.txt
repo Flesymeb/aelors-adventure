@@ -1,0 +1,25 @@
+E02 melee actor geometry: Quaternius Male_Peasant, Modular Character Outfits - Fantasy Standard.
+Source: https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+Adaptation: dependency-complete embedded glTF converted to GLB without changing meshes, rig or image data. Product adds retained complete base head and private Rest-aware UAL clips. Native outfit contains no animations.
+Semantic singleton family e02_melee_actor: one E02 live instance, one tunic geometry variant, maximum variant share 1.0. Opaque textured cloth/leather with authored basecolor, normal and ORM images; mature humanoid proportions, distinct from the hooded Ranger.
+
+This is the standard FREE version of the the Modular Character Outfits - Fantasy, which only contains 
+a portion of the models. Get all remaining outfits and separate parts by buying the Source version. 
+
+You can get the other versions from the website https://quaternius.com
+
+-------------------------------------------------------
+License:
+CC0 1.0 Universal (CC0 1.0) 
+Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+------------------------------------------------------
+Models by @Quaternius
+Consider supporting me on Patreon!
+
+https://www.patreon.com/quaternius
+
+-------------------------------------------------------
+Join the Discord Server:
+https://discord.gg/vJqnRUYRfT

@@ -14,16 +14,18 @@ var search_path := PackedVector3Array()
 var search_result := "idle"
 
 func _ready() -> void:
-	# The scene binds the retained Ranger and driver directly. Complete its
-	# head/appearance before the combat unit initializes sockets.
+	# Complete outfit-only heads before the combat unit initializes sockets.
 	var guard: Node3D = get_node("Model")
 	var rig: Skeleton3D = guard.find_child("Skeleton3D", true, false)
 	preload("res://ranger_head_assembly.gd").assemble(rig)
-	var dresser := preload("res://actors/npc_presentation.gd").new()
-	dresser.character_model = guard
-	dresser.appearance = preload("res://assets/guards/e02_melee_appearance.tres")
-	dresser._apply_appearance()
-	dresser.free()
+	# Other encounters retain their Ranger palette. The E02 tunic keeps its
+	# own authored cloth/leather materials rather than inheriting Ranger armor.
+	if guard.scene_file_path != "res://assets/guards/melee_guard.glb":
+		var dresser := preload("res://actors/npc_presentation.gd").new()
+		dresser.character_model = guard
+		dresser.appearance = preload("res://assets/guards/e02_melee_appearance.tres")
+		dresser._apply_appearance()
+		dresser.free()
 	super()
 	ground_query = func(point: Vector3):
 		var excluded: Array[RID] = [get_rid(), target.get_rid()]
