@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | BLOCKED | This client cannot supply the required independent listening evidence. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | BLOCKED | This client explicitly cannot provide the required independent listening evidence. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | BLOCKED | Qualified unfinished-opening Continue remains unavailable. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | BLOCKED | Qualified unfinished-opening Continue history was unavailable. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -117,13 +117,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
 | `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | The moved-Veyne second-phase skip remains unverified. |
 | `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
-| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Veyne dive framing still hides the player in steep overhead warning and flight views. |
+| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | The original Veyne dive framing repair remains independently unverified. |
 | `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Warning placement and recovery are supported locally, but complete visual qualification remains unresolved. |
-| `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Breath and beam readability and preserved contact behavior remain incompletely verified. |
+| `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Veyne breath and beam causality and readability remain unqualified. |
 | `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
 | `attack-lifecycle-retest-incomplete` | [#100](https://github.com/Flesymeb/aelors-adventure/issues/100) | OPEN | untitled issue |
 | `qa.e02-visual-coherence` | [#102](https://github.com/Flesymeb/aelors-adventure/issues/102) | CLOSED | Independently verified resolved at loop 54. |
-| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | Complete E02 search termination and recovery acceptance remains unverified. |
+| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | The uninterrupted E02 timeout and recovery comparison remains unobserved. |
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
 | `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
@@ -178,7 +178,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-64-6ccd7d9548d9` | `development_snapshot:attempt-92256c8fb9fb7f9d66ddf7c2` | DEVELOPER REPORT READY |
+| `loop-64-6ccd7d9548d9` | `development_snapshot:attempt-92256c8fb9fb7f9d66ddf7c2` | BLOCKED |
 
 ### Project Planner
 
@@ -205,7 +205,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-64-6ccd7d9548d9` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (7 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `dive-framing-unverified` | MAJOR | INTERNAL | HIGH | The original Veyne dive framing repair remains independently unverified. |
+| `e02-timeout-unverified` | MAJOR | INTERNAL | HIGH | The uninterrupted E02 timeout and recovery comparison remains unobserved. |
+| `boss-effects-unverified` | MAJOR | INTERNAL | HIGH | Veyne breath and beam causality and readability remain unqualified. |
+| `opening-continue-unverified` | MAJOR | INTERNAL | HIGH | Qualified unfinished-opening Continue history was unavailable. |
+| `independent-listening-unavailable` | MAJOR | INTERNAL | HIGH | This client explicitly cannot provide the required independent listening evidence. |
+| `ordinary-travel-recapture` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3509,5 +3525,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-64-6ccd7d9548d9`
 - Latest warm start: `loop-64-3f20ae46f115`
 - Last published: `loop-64-6ccd7d9548d9`
-- Best verified: `loop-63-3f20ae46f115`
+- Best verified: `loop-64-6ccd7d9548d9`
 - Generated by the HoH host from immutable run evidence.
