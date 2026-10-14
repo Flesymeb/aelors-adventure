@@ -15,6 +15,19 @@ var cover_search_result := "idle"
 var withdrawal_active := false
 var withdrawal_elapsed := 0.0
 var withdrawal_recovery_remaining := 0.0
+# Raw geometry only: range, cooldown, navigation and attack-slot eligibility
+# remain separate combat decisions. Sampling never ticks or plans an action.
+var ranged_line_clear: Variant:
+	get:
+		if not is_inside_tree() or is_queued_for_deletion(): return null
+		if not is_instance_valid(encounter) or encounter.is_queued_for_deletion() or not encounter.is_inside_tree(): return null
+		var world: Node3D = encounter.world
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return null
+		var player: CharacterBody3D = world.player
+		if not is_instance_valid(player) or player.is_queued_for_deletion() or not player.is_inside_tree(): return null
+		var space := get_world_3d()
+		if space == null or space != player.get_world_3d() or space.direct_space_state == null: return null
+		return line_clear(player.global_position)
 
 func _ready() -> void:
 	super()
@@ -197,6 +210,7 @@ func can_save() -> bool:
 
 func _mcp_state() -> Dictionary:
 	var result := super()
+	result.ranged_line_clear = ranged_line_clear
 	result.withdrawal_active = withdrawal_active
 	result.withdrawal_elapsed = withdrawal_elapsed
 	result.withdrawal_recovery_remaining = withdrawal_recovery_remaining

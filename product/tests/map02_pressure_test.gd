@@ -282,6 +282,7 @@ static func cover_decision_checks(world: Node3D) -> Dictionary:
 	body.available_path = PackedVector3Array([body.position, body.position + Vector3.LEFT * 2])
 	body._update_cover_search(0.2)
 	var checks := {"finite_search_started":body.cover_search_active and body.cover_search_plans == 1 and body.lost_sight_timeout() == body.COVER_SEARCH_LIMIT}
+	checks.merge(ranged_sight_observation_checks(world))
 	body._update_cover_search(body.COVER_SEARCH_LIMIT)
 	checks.timeout_ends = not body.cover_search_active and body.cover_search_result == "timed_out" and body.lost_sight_timeout() == 1.1
 	body._update_cover_search(0.2)
@@ -306,6 +307,72 @@ static func cover_decision_checks(world: Node3D) -> Dictionary:
 	ranged.navigation_ready = false
 	checks.unsynchronized_path_rejected = ranged._firing_path(world.player.global_position).is_empty()
 	ranged.navigation_ready = ready
+	return checks
+
+static func _ranged_observation_snapshot(world: Node3D, body: Node) -> Dictionary:
+	return {"actor":body._mcp_state(), "position":body.global_position, "velocity":body.velocity,
+		"lost_time":body.lost_time, "board":body.blackboard._data.duplicate(true),
+		"navigation_target":body.navigation_agent.target_position,
+		"player_position":world.player.global_position, "player_velocity":world.player.velocity,
+		"history":world.dialogue_state.training_snapshot().duplicate(true),
+		"save_requests":world.dialogue_state.diagnostic_save_requests,
+		"hurt_time":world.training.hurt_time, "feedback":world.training.feedback.cue_serial}
+
+static func ranged_sight_observation_checks(world: Node3D) -> Dictionary:
+	# Actual production ray against the authored rock in the existing isolated
+	# world. No mocked line_clear, invented occlusion flag or earned-save claim.
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var encounter: Node = world.pressure_encounter
+	var body: Node = encounter.enemies[1]
+	var player: CharacterBody3D = world.player
+	var original_position := player.global_position
+	var original_velocity := player.velocity
+	var cooldown: float = body.action.cooldown
+	var can_perform: bool = body.action.can_perform_action
+	var checks := {}
+	var poses := {"blocked":Vector3(0,0,-3), "clear":Vector3(5,0,-4), "too_close":Vector3(0,0,6), "too_far":Vector3(5,0,-8)}
+	for label in poses:
+		var support: Dictionary = encounter.enemies[0].ground_query.call(encounter.cover.global_position + poses[label])
+		checks["ranged_sight_%s_supported" % label] = not support.is_empty()
+		if support.is_empty(): continue
+		player.global_position = support.position
+		body.action.cooldown = 1.25
+		body.action.can_perform_action = false
+		var expected: bool = body.line_clear(player.global_position)
+		checks["ranged_sight_%s_geometry" % label] = expected == (label != "blocked") and body.ranged_line_clear == expected
+		checks["ranged_sight_%s_scalar" % label] = body._mcp_state().ranged_line_clear == expected and typeof(body.ranged_line_clear) == TYPE_BOOL
+		checks["ranged_sight_%s_ineligible" % label] = not body.ranged_can_perform and body.ranged_cooldown_remaining == 1.25
+		if label == "too_close": checks.ranged_sight_clear_below_attack_range = body.global_position.distance_to(player.global_position) < 5.5 and body.ranged_line_clear == true
+		if label == "too_far": checks.ranged_sight_clear_beyond_attack_range = body.global_position.distance_to(player.global_position) > 12 and body.ranged_line_clear == true
+		var before := _ranged_observation_snapshot(world, body)
+		for read in 16:
+			var sample: Variant = body.ranged_line_clear
+			var observation: Dictionary = body._mcp_state()
+			if sample != expected or observation.ranged_line_clear != expected: checks["ranged_sight_%s_scalar" % label] = false
+		checks["ranged_sight_%s_read_only" % label] = before == _ranged_observation_snapshot(world, body)
+	# Missing dependencies are unknown, including queued and detached owners.
+	body.encounter = null
+	checks.ranged_sight_absent_encounter = body.ranged_line_clear == null and body._mcp_state().ranged_line_clear == null
+	body.encounter = encounter
+	encounter.world = null
+	checks.ranged_sight_absent_world = body.ranged_line_clear == null
+	encounter.world = world
+	world.player = null
+	checks.ranged_sight_absent_player = body.ranged_line_clear == null
+	world.player = player
+	var queued := Node3D.new()
+	world.add_child(queued)
+	queued.queue_free()
+	body.encounter = queued
+	checks.ranged_sight_queued_dependency = body.ranged_line_clear == null
+	body.encounter = encounter
+	var detached := preload("res://combat/map02_ranged_adapter.gd").new()
+	checks.ranged_sight_detached = detached.ranged_line_clear == null
+	detached.free()
+	body.action.cooldown = cooldown
+	body.action.can_perform_action = can_perform
+	player.global_position = original_position
+	player.velocity = original_velocity
 	return checks
 
 static func projectile_contact_checks(world: Node3D) -> Dictionary:
