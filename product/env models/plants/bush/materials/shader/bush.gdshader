@@ -313,6 +313,8 @@ void vertex() {
 // ============================================================
 
 void fragment() {
+    // Keep the authored foliage texture/motion in the opaque cutout pipeline.
+    ALPHA_SCISSOR_THRESHOLD = 0.5;
 
     vec2 base_uv = UV;
 

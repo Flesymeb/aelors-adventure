@@ -25,6 +25,8 @@ var travel_started_ms := 0
 var travel_finishing := false
 var source_ui_visibility: Array[Dictionary] = []
 var source_collision_state: Array[Dictionary] = []
+var recovery_id := ""
+var replaying_opening := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -67,20 +69,38 @@ func enter_adventure(kind: String, slot: int) -> void:
 	entry_kind = kind
 	selected_slot = slot
 	previous_history = state.adventure_snapshot()
+	recovery_id = ""
+	replaying_opening = false
 	entry_error = ""
 	initialized = false
 	player_ready = false
-	route = "loading"
-	title.hide()
 	if kind == "new":
-		route = "opening"
-		opening = preload("res://ui/illustrated_opening.tscn").instantiate()
-		opening.router = self
-		opening.name = "IllustratedOpening"
-		canvas.add_child(opening)
-		opening.completed.connect(_opening_finished)
+		if state.begin_opening_recovery() != OK:
+			entry_error = state.persistence_error
+			title.status_label.text = entry_error
+			audio.play_cue("failure")
+			return
+		var boundary: Dictionary = state.opening_recovery()
+		recovery_id = boundary.id
+	elif kind == "continue":
+		var boundary: Dictionary = state.opening_recovery()
+		if boundary.pending:
+			entry_kind = "new"
+			recovery_id = boundary.id
+	title.hide()
+	if entry_kind == "new" or state.slot_needs_opening(selected_slot):
+		replaying_opening = true
+		_show_opening()
 		return
 	_start_loading()
+
+func _show_opening() -> void:
+	route = "opening"
+	opening = preload("res://ui/illustrated_opening.tscn").instantiate()
+	opening.router = self
+	opening.name = "IllustratedOpening"
+	canvas.add_child(opening)
+	opening.completed.connect(_opening_finished)
 
 func _opening_finished() -> void:
 	if route != "opening": return
@@ -116,11 +136,16 @@ func _construct_world(_resource: PackedScene) -> void:
 	if entry_kind == "new":
 		state.reset_adventure()
 		state.opening_completed = true
+		state.opening_recovery_id = recovery_id
 	else:
 		restored = state.load_progress(selected_slot)
 		if restored.is_empty():
 			_entry_failed("存档无法恢复。原进度已保留，请重试。")
 			return
+		if replaying_opening: state.opening_completed = true
+		if entry_kind == "load":
+			var boundary: Dictionary = state.opening_recovery()
+			if boundary.pending: state.opening_recovery_id = boundary.id
 	var preview := load(destination_resource(state.current_map)) as PackedScene
 	if not preview:
 		_entry_failed("冒险资源无法读取。请重试。")
@@ -172,10 +197,11 @@ func _process(delta: float) -> void:
 		if not player_ready or _confirmation_held(): return
 		if not world.destination_ready(): return
 		# Only promote a new/selected manual history after genuine safe readiness.
-		if entry_kind == "new" or entry_kind == "load":
+		if entry_kind == "new" or entry_kind == "load" or replaying_opening:
 			if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:
 				_entry_failed("保存恢复进度失败。原存档仍保留，请重试。")
 				return
+		if entry_kind in ["new", "load"]: state.clear_opening_recovery()
 		initialized = true
 		world.restore_destination_history()
 		if entry_kind == "new": world.gameplay_hud.notify("河谷村庄灯台已启用")

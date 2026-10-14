@@ -21,6 +21,16 @@ func build() -> void:
 	add_child(page)
 	var column: BoxContainer = host.create_page(page, "存档与加载" if host.pause_world else "加载冒险", true)
 	slots.clear()
+	# Continue belongs to an unfinished new presentation while it is pending.
+	# Keep the previous committed auto history reachable without destroying it.
+	if not host.pause_world and host.state.opening_recovery().pending and host.state.has_adventure_history():
+		var reason: String = host.state.slot_unavailable_reason(0, true)
+		host.paragraph(column, "此前的冒险 · 自动恢复档")
+		var previous: Button = host.button(column, "恢复此前的冒险", request.bind(0, false), 1)
+		previous.name = "LoadPreviousAdventure"
+		previous.disabled = reason != ""
+		previous.focus_mode = Control.FOCUS_NONE if previous.disabled else Control.FOCUS_ALL
+		previous.tooltip_text = reason
 	for slot in [1, 2]:
 		var facts: Dictionary = host.state.slot_preview(slot)
 		slots.append(facts)

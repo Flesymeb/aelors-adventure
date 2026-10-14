@@ -6,6 +6,8 @@ render_mode use_debanding;
 
 group_uniforms general;
 uniform bool sky_visible = true;
+// Product quality adapter advances this pause-aware clock with cloud updates.
+uniform float presentation_time = 0.0;
 uniform vec2 color_correction = vec2(0.0, 1.0);
 uniform vec4 ground_color: source_color = vec4(0.3, 0.3, 0.3, 1.0);
 uniform float horizon_offset = 0.0;
@@ -487,7 +489,7 @@ void render_grid(vec3 dir, vec3 pole_dir, float rotation_angle, vec4 line_color,
 }
 
 void sky() {
-	float current_time = TIME;
+	float current_time = presentation_time;
 	vec3 col = vec3(0.0); // Set up the initial sky color which will be added to later to produce the final result.
 	vec3 world_pos = EYEDIR; // Original shader set this up in the vertex() function. For sky shaders the overall equivalent is EYEDIR.
 	vec3 clouds_pos = EYEDIR; // The same is used for cloud rendering.

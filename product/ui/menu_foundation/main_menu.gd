@@ -247,15 +247,19 @@ func refresh() -> void:
 		status_label.text = "第一章 · 河谷聚落\n检查点：河谷村庄灯台 · 命数 %d / 5" % state.lives
 		return
 	status_label.add_theme_font_size_override("font_size", int(16 * state.text_scale))
-	var reason: String = state.slot_unavailable_reason(0, true)
+	var boundary: Dictionary = state.opening_recovery()
+	var reason: String = state.continue_unavailable_reason()
 	continue_button.disabled = reason != ""
 	continue_button.focus_mode = Control.FOCUS_NONE if continue_button.disabled else Control.FOCUS_ALL
 	continue_button.tooltip_text = reason
 	status_label.text = reason if reason != "" else "河谷聚落 · 自动恢复档"
-	if reason == "" and state.slot_preview(0).get("lives", 3) == 0:
+	if boundary.pending:
+		status_label.text = "开场尚未完成 · 继续可重播或跳过\n原有冒险可从加载页恢复"
+	elif boundary.reason != "": status_label.text = boundary.reason
+	elif reason == "" and state.slot_preview(0).get("lives", 3) == 0:
 		status_label.text = "命数已耗尽 · 继续可选择恢复方式"
 func new_game() -> void:
-	if FileAccess.file_exists(state.SAVE_PATH):
+	if state.has_adventure_history():
 		show_confirmation("开始新的冒险？", "新的冒险将替换自动恢复进度。两个手动存档会保留。", func(): router.enter_adventure("new", 0))
 	else: router.enter_adventure("new", 0)
 func show_confirmation(heading: String, message: String, action: Callable) -> void:
@@ -304,7 +308,7 @@ func _build_cinematic(column: BoxContainer, resume: Button, settings: Button, un
 	actions.append(button(column, "继续开场", cinematic.close_pause, 1, resume))
 	actions.append(button(column, "设置", func(): _open_sub_menu(preload("res://ui/title_settings.tscn")), 3, settings))
 	actions.append(button(column, "跳过开场", cinematic.finish))
-	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", "开场尚未完成。原有存档会保留，下次新游戏从开场重新开始。", router.return_to_title)))
+	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", "开场恢复边界已保留。下次可选择继续重播或跳过，原有存档仍可加载。", router.return_to_title)))
 	actions.append(button(column, "退出", try_exit_game, 4, quit_button))
 	for index in actions.size(): column.move_child(actions[index], index)
 	status_label = paragraph(column, "")

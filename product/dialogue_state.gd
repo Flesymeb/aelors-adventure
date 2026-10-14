@@ -2,6 +2,7 @@ extends Node
 ## Only confirmed choices commit rewards. Focus and reveal position are UI state.
 const GROUND := preload("res://forest_ground.gd")
 const SAVE_PATH := "user://isha_opening.cfg"
+const OPENING_RECOVERY_PATH := "user://unfinished_opening.cfg"
 const HISTORY_READER := preload("res://systems/history_config_reader.gd")
 const NODES := preload("res://data/isha_dialogue.json")
 const RONEN_NODES := preload("res://data/ronen_dialogue.json")
@@ -18,6 +19,7 @@ var q01_accepted := false
 var q01_reward_committed := false
 var experience := 0
 var opening_completed := false
+var opening_recovery_id := ""
 var confirmed_choices: Array[String] = []
 var text_scale := 1.0
 var mouse_sensitivity := 1.0
@@ -566,6 +568,7 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	var config := ConfigFile.new()
 	config.set_value("cinematic", "version", 1)
 	config.set_value("cinematic", "completed", opening_completed)
+	config.set_value("cinematic", "recovery_id", opening_recovery_id)
 	config.set_value("journal", "tracked", tracked_quest)
 	config.set_value("journal", "collapsed", tracker_collapsed)
 	config.set_value("opening", "node", logical_node)
@@ -585,7 +588,7 @@ func save_progress(position: Vector3, yaw: float, slot := 0) -> Error:
 	config.set_value("reading", "scale", text_scale)
 	config.set_value("reading", "speed", reveal_speed)
 	config.set_value("reading", "instant", instant_text)
-	var path := SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
+	var path := _history_path(slot)
 	var error := config.save(path + ".tmp")
 	if error == OK:
 		error = DirAccess.rename_absolute(path + ".tmp", path)
@@ -612,6 +615,7 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	# Existing adventure histories predate the presentation marker. They have
 	# already crossed the village boundary and must never replay/reset progress.
 	opening_completed = bool(config.get_value("cinematic", "completed", true))
+	opening_recovery_id = str(config.get_value("cinematic", "recovery_id", ""))
 	tracked_quest = str(config.get_value("journal", "tracked", "rescue"))
 	tracker_collapsed = bool(config.get_value("journal", "collapsed", false))
 	save_feedback = ""
@@ -703,6 +707,7 @@ func reset_adventure() -> void:
 	for key in POST_DEFAULTS: set(key, POST_DEFAULTS[key].duplicate(true) if POST_DEFAULTS[key] is Dictionary else POST_DEFAULTS[key])
 	if inventory: inventory.restore()
 	opening_completed = false
+	opening_recovery_id = ""
 	tracked_quest = "rescue"
 	tracker_collapsed = false
 	dialogue_kind = "isha"
@@ -742,7 +747,7 @@ func current_nodes() -> Dictionary:
 func adventure_snapshot() -> Dictionary:
 	if inventory: bag_history = inventory.snapshot()
 	var snapshot := training_snapshot()
-	for key in ["opening_completed", "logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
+	for key in ["opening_completed", "opening_recovery_id", "logical_node", "conversation_active", "q01_accepted", "q01_reward_committed", "experience", "confirmed_choices", "reward_feedback", "text_scale", "reveal_speed", "instant_text", "persistence_error", "tracked_quest", "tracker_collapsed"]:
 		snapshot[key] = get(key)
 	return snapshot.duplicate(true)
 
@@ -755,6 +760,57 @@ func restore_adventure(snapshot: Dictionary) -> void:
 
 func _history_path(slot: int) -> String:
 	return SAVE_PATH if slot == 0 else "user://isha_slot_%d.cfg" % slot
+
+func has_adventure_history() -> bool:
+	return FileAccess.file_exists(_history_path(0))
+
+func opening_recovery_path() -> String:
+	return OPENING_RECOVERY_PATH
+
+func begin_opening_recovery() -> Error:
+	# Presentation intent only: never overwrite committed adventure/manual slots,
+	# mutate inventory, or award a checkpoint before the world has safe support.
+	var config := ConfigFile.new()
+	config.set_value("presentation", "version", 1)
+	config.set_value("presentation", "id", Crypto.new().generate_random_bytes(16).hex_encode())
+	var path := opening_recovery_path()
+	var error := config.save(path + ".tmp")
+	if error == OK: error = DirAccess.rename_absolute(path + ".tmp", path)
+	persistence_error = "" if error == OK else "无法保存开场恢复边界。原有进度已保留，请重试。"
+	return error
+
+func opening_recovery() -> Dictionary:
+	var path := opening_recovery_path()
+	if not FileAccess.file_exists(path): return {"pending":false, "id":"", "reason":""}
+	var record: Dictionary = HISTORY_READER.read(path)
+	if record.reason != "": return {"pending":false, "id":"", "reason":"开场恢复记录无法读取；可加载原有存档或重试新游戏。"}
+	var config: ConfigFile = record.config
+	var id: Variant = config.get_value("presentation", "id", "")
+	var version: Variant = config.get_value("presentation", "version", 0)
+	if not version is int or version != 1 or not id is String or id.length() != 32 or not id.is_valid_hex_number():
+		return {"pending":false, "id":"", "reason":"开场恢复记录无效；可加载原有存档或重试新游戏。"}
+	# A crash between the atomic world commit and marker cleanup must not replay
+	# New Game or erase the adventure just committed. The commit token is the
+	# authority, not whether deleting the now-stale intent file succeeded.
+	var committed: Dictionary = HISTORY_READER.read(_history_path(0))
+	if committed.reason == "" and config_unavailable_reason(committed.config, true) == "":
+		if committed.config.get_value("cinematic", "completed", true) == true and committed.config.get_value("cinematic", "recovery_id", "") == id:
+			return {"pending":false, "id":"", "reason":""}
+	return {"pending":true, "id":id, "reason":""}
+
+func continue_unavailable_reason() -> String:
+	if opening_recovery().pending: return ""
+	return slot_unavailable_reason(0, true)
+
+func slot_needs_opening(slot: int) -> bool:
+	var history: Dictionary = HISTORY_READER.read(_history_path(slot))
+	if history.reason != "" or config_unavailable_reason(history.config, true) != "": return false
+	# Legacy histories have already crossed the presentation boundary.
+	return history.config.get_value("cinematic", "completed", true) == false
+
+func clear_opening_recovery() -> Error:
+	var path := opening_recovery_path()
+	return DirAccess.remove_absolute(path) if FileAccess.file_exists(path) else OK
 
 func slot_unavailable_reason(slot: int, allow_depleted := false) -> String:
 	var path := _history_path(slot)

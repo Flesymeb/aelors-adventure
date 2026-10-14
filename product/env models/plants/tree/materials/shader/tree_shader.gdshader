@@ -313,6 +313,8 @@ void vertex() {
 // ============================================================
 
 void fragment() {
+    // Opaque bark and hard-edged foliage do not need a blended second pass.
+    ALPHA_SCISSOR_THRESHOLD = 0.5;
 
     vec2 base_uv = UV;
 

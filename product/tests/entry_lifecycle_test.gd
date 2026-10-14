@@ -1,5 +1,71 @@
 extends RefCounted
 ## Explicit diagnostic only; never attached to the normal entry path.
+class RecoveryDiskState extends "res://dialogue_state.gd":
+	# Dedicated disposable namespace; never production saves or preferences.
+	var fail_recovery_write := false
+	func _ready() -> void:
+		inventory = preload("res://inventory/product_inventory.gd").new()
+		inventory.state = self
+		add_child(inventory)
+		inventory.restore()
+	func opening_recovery_path() -> String:
+		return "user://developer_recovery_checks/missing/intent.cfg" if fail_recovery_write else "user://developer_recovery_checks/intent.cfg"
+	func _history_path(slot: int) -> String:
+		return "user://developer_recovery_checks/slot_%d.cfg" % slot
+	func save_preferences() -> Error:
+		return OK
+
+static func opening_recovery_disk_checks() -> Dictionary:
+	# Opt-in test only. Exercise the real atomic producer and quiet reader using
+	# disposable files, including a prior committed adventure and failed writes.
+	var checks := {}
+	DirAccess.make_dir_recursive_absolute("user://developer_recovery_checks")
+	var state := RecoveryDiskState.new()
+	for slot in [0, 1, 2]:
+		DirAccess.remove_absolute(state._history_path(slot))
+	state.clear_opening_recovery()
+	checks.absent = not state.opening_recovery().pending and state.continue_unavailable_reason() != ""
+	state.reset_adventure()
+	state.opening_completed = true
+	state.experience = 10
+	checks.committed_write = state.save_progress(Vector3.ZERO, 0) == OK
+	checks.manual_write = state.save_progress(Vector3.ZERO, 0, 1) == OK
+	var committed := FileAccess.get_file_as_bytes(state._history_path(0))
+	var manual := FileAccess.get_file_as_bytes(state._history_path(1))
+	var preferences := state.preference_snapshot()
+	checks.begin = state.begin_opening_recovery() == OK
+	var boundary := state.opening_recovery()
+	checks.pending = boundary.pending and boundary.id.length() == 32 and state.continue_unavailable_reason() == ""
+	checks.preserves_committed = committed == FileAccess.get_file_as_bytes(state._history_path(0)) and manual == FileAccess.get_file_as_bytes(state._history_path(1))
+	checks.no_grants_or_preferences = state.experience == 10 and state.preference_snapshot() == preferences
+	var restarted := RecoveryDiskState.new()
+	checks.cold_reader = restarted.opening_recovery() == boundary
+	state.fail_recovery_write = true
+	checks.failed_write = state.begin_opening_recovery() != OK
+	state.fail_recovery_write = false
+	checks.failed_write_preserves_boundary = state.opening_recovery() == boundary and committed == FileAccess.get_file_as_bytes(state._history_path(0))
+	state.reset_adventure()
+	checks.uncommitted_no_grants = not state.opening_completed and state.experience == 0 and not state.sword_owned and not state.bow_owned and not state.lamp_owned
+	state.opening_completed = true
+	state.opening_recovery_id = boundary.id
+	checks.safe_commit = state.save_progress(Vector3.ZERO, 0) == OK
+	checks.stale_intent_ignored = not restarted.opening_recovery().pending
+	var legacy: ConfigFile = state.HISTORY_READER.read(state._history_path(0)).config
+	legacy.erase_section("cinematic")
+	checks.legacy_completed = state.restore_config(legacy).size() > 0 and state.opening_completed
+	checks.legacy_no_replay = not state.slot_needs_opening(1)
+	state.clear_opening_recovery()
+	var damaged := FileAccess.open(state.opening_recovery_path(), FileAccess.WRITE)
+	damaged.store_string("[presentation]\nid=\"broken\"\nversion=1\n")
+	damaged.close()
+	checks.corrupt_intent_safe = not state.opening_recovery().pending and state.opening_recovery().reason != "" and state.slot_unavailable_reason(0, true) == ""
+	checks.replacement_retry = state.begin_opening_recovery() == OK and state.opening_recovery().pending
+	state.clear_opening_recovery()
+	for slot in [0, 1, 2]: DirAccess.remove_absolute(state._history_path(slot))
+	state.free()
+	restarted.free()
+	return checks
+
 static func settings_audio_lifecycle_checks() -> Dictionary:
 	# Assign disposable dependencies while detached. Never enter the tree,
 	# register buses, apply/load preferences, or start/pause/seek playback.
