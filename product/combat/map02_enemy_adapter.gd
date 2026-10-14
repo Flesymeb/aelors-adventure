@@ -195,4 +195,9 @@ func _mcp_state() -> Dictionary:
 	result.search_path_points = search_path.size()
 	result.returning = returning
 	result.lost_time = lost_time
+	# Pair the search clock with the actual perception and hurt owners. Missing
+	# dependencies remain unavailable; observation never advances their timers.
+	result.perceives_player = blackboard.get_value("perceives_player", null) if is_instance_valid(blackboard) and not blackboard.is_queued_for_deletion() else null
+	var training: Node = encounter.world.training if is_instance_valid(encounter) and not encounter.is_queued_for_deletion() and is_instance_valid(encounter.world) and not encounter.world.is_queued_for_deletion() else null
+	result.player_hurt_time = training.hurt_time if is_instance_valid(training) and not training.is_queued_for_deletion() else null
 	return result

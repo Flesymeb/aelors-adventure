@@ -174,6 +174,7 @@ static func melee_search_checks(world: Node3D) -> Dictionary:
 	# Exercise death cleanup without invoking the encounter's reward listener.
 	var death_connections: Array = body.dead.get_connections()
 	var checks := {"e02_opted_in":body.remembered_search_enabled}
+	checks.merge(search_observation_checks(world))
 	var ordinary: Node = preload("res://combat/Map02MeleeGuard.tscn").instantiate()
 	checks.other_users_default_off = not ordinary.remembered_search_enabled
 	ordinary.free()
@@ -238,6 +239,32 @@ static func melee_search_checks(world: Node3D) -> Dictionary:
 	player.global_position = original_position
 	player.velocity = original_velocity
 	body.reset_encounter()
+	return checks
+
+static func search_observation_checks(world: Node3D) -> Dictionary:
+	# Only the existing opt-in, save-intercepted fixture may assign these
+	# diagnostic values. This is observer qualification, not a hurt/cover event.
+	if not world.dialogue_state is TRAVEL.DiagnosticState: return {"isolated_state":false}
+	var body: Node = world.pressure_encounter.enemies[0]
+	var board: Node = body.blackboard
+	var saved_board: Dictionary = board._data.duplicate(true)
+	var saved_hurt: float = world.training.hurt_time
+	var checks := {}
+	for perceives in [false, true, null]:
+		board.set_value("perceives_player", perceives)
+		for hurt in [0.0, 0.45]:
+			world.training.hurt_time = hurt
+			var first: Dictionary = body._mcp_state()
+			var second: Dictionary = body._mcp_state()
+			var key := "search_observation_%s_%s" % [str(perceives), str(hurt)]
+			checks[key + "_owners"] = first.perceives_player == board.get_value("perceives_player", null) and first.player_hurt_time == hurt
+			checks[key + "_read_only"] = first == second and world.training.hurt_time == hurt and board.get_value("perceives_player", null) == perceives
+	var encounter: Node = body.encounter
+	body.encounter = null
+	checks.search_observation_absent_hurt_unavailable = body._mcp_state().player_hurt_time == null
+	body.encounter = encounter
+	board._data = saved_board
+	world.training.hurt_time = saved_hurt
 	return checks
 
 static func cover_decision_checks(world: Node3D) -> Dictionary:
