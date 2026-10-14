@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 75 |
+| Open | 76 |
 | Closed | 38 |
-| All | 113 |
+| All | 114 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 58 |
+| Active | 59 |
 | Verified closed | 29 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 92 |
+| All in this run | 93 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | This client cannot supply the required independent listening. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Audio artifacts are retained, but this session cannot provide independent listening. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Unfinished-opening Continue remains unverified. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Recovery title availability worked locally; independent qualified Continue remains unverified. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -127,14 +127,15 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
 | `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
-| `journey-loader-gap` | [#108](https://github.com/Flesymeb/aelors-adventure/issues/108) | OPEN | Journey document access is available; complete loader validation remains unavailable. |
+| `journey-loader-gap` | [#108](https://github.com/Flesymeb/aelors-adventure/issues/108) | OPEN | Complete supported journey-loader validation remains unavailable. |
 | `journey-validation-gap` | [#106](https://github.com/Flesymeb/aelors-adventure/issues/106) | OPEN | untitled issue |
 | `native-source-review-gap` | [#109](https://github.com/Flesymeb/aelors-adventure/issues/109) | OPEN | Actual canonical source declarations were reviewed; native implementation-payload availability remains unresolved. |
 | `earned-travel-gap` | [#107](https://github.com/Flesymeb/aelors-adventure/issues/107) | OPEN | untitled issue |
 | `ordinary-route-recapture` | [#111](https://github.com/Flesymeb/aelors-adventure/issues/111) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r01-earned-mf01-e03-reveal-recognition |
 | `arena-route-coverage-gap` | [#110](https://github.com/Flesymeb/aelors-adventure/issues/110) | OPEN | untitled issue |
 | `ordinary-travel-recapture` | [#112](https://github.com/Flesymeb/aelors-adventure/issues/112) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
-| `village-performance-target-missed` | [#113](https://github.com/Flesymeb/aelors-adventure/issues/113) | OPEN | Village rendering misses the integrated-GPU performance target. |
+| `village-performance-target-missed` | [#113](https://github.com/Flesymeb/aelors-adventure/issues/113) | OPEN | Required whole-window rendered performance remains unqualified. |
+| `runtime-source-attribution-gap` | [#114](https://github.com/Flesymeb/aelors-adventure/issues/114) | OPEN | Current runtime-log attribution and changed sky-source inspection remain incomplete. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -142,7 +143,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 75 | 38 | 113 |
+| GitHub HoH namespace | 76 | 38 | 114 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -179,7 +180,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-66-b340f7a97a57` | `development_snapshot:attempt-0bf6665e429f51af79cd4b1c` | DEVELOPER REPORT READY |
+| `loop-66-b340f7a97a57` | `development_snapshot:attempt-0bf6665e429f51af79cd4b1c` | BLOCKED |
 
 ### Project Planner
 
@@ -206,7 +207,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-66-b340f7a97a57` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (6 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `performance-qualification-gap` | MAJOR | INTERNAL | HIGH | Required whole-window rendered performance remains unqualified. |
+| `opening-consumer-qualification-gap` | MAJOR | INTERNAL | HIGH | Recovery title availability worked locally; independent qualified Continue remains unverified. |
+| `supported-loader-verdict-gap` | MAJOR | INTERNAL | HIGH | Complete supported journey-loader validation remains unavailable. |
+| `independent-listening-gap` | MAJOR | INTERNAL | HIGH | Audio artifacts are retained, but this session cannot provide independent listening. |
+| `earned-reveal-observation-gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r01-earned-mf01-e03-reveal-recognition |
+| `runtime-source-attribution-gap` | MINOR | INTERNAL | MEDIUM | Current runtime-log attribution and changed sky-source inspection remain incomplete. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3617,5 +3634,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-66-b340f7a97a57`
 - Latest warm start: `loop-66-4c11a2aaa37d`
 - Last published: `loop-66-b340f7a97a57`
-- Best verified: `loop-65-4c11a2aaa37d`
+- Best verified: `loop-66-b340f7a97a57`
 - Generated by the HoH host from immutable run evidence.
