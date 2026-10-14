@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 67 |
+| Open | 68 |
 | Closed | 38 |
-| All | 105 |
+| All | 106 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 50 |
+| Active | 51 |
 | Verified closed | 29 |
 | Policy invalidated | 5 |
 | Waived | 0 |
-| All in this run | 84 |
+| All in this run | 85 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent audio listening is blocked by the client capability. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | This client's explicit audio-input limitation prevents independent listening acceptance. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening recovery remains unqualified despite observed control return. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Opening skip and pause/resume worked; unfinished-opening Continue remains unobserved. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,12 +80,12 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach committed-Continue and duplicate-grant acceptance remain unobserved. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Ordinary coach acquisition was observed; committed-acquisition Continue remains unqualified. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
 | `full_acceptance_closeout_missing` | [#60](https://github.com/Flesymeb/aelors-adventure/issues/60) | OPEN | Partial route observations do not establish complete milestone acceptance. |
-| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | Ordinary meadow admission and persistent settlement remain unqualified. |
+| `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | OPEN | Local ambusher behavior was observed; earned admission and production recovery remain unqualified. |
 | `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | OPEN | Mandatory retained-grass closure remains insufficiently evidenced. |
 | `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | CLOSED | Independently verified resolved at loop 29. |
 | `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | REGRESSED | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
@@ -117,7 +117,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `grounded-release-deadline-unverified` | [#93](https://github.com/Flesymeb/aelors-adventure/issues/93) | OPEN | untitled issue |
 | `veyne-phase-camera-crop` | [#95](https://github.com/Flesymeb/aelors-adventure/issues/95) | OPEN | The moved-Veyne second-phase skip remains unverified. |
 | `qa.veyne-acceptance-gap` | [#94](https://github.com/Flesymeb/aelors-adventure/issues/94) | OPEN | untitled issue |
-| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Local stair conditions pass; original arena closure remains incomplete. |
+| `veyne-arena-foreground-fragments` | [#96](https://github.com/Flesymeb/aelors-adventure/issues/96) | OPEN | Narrow stair conditions pass; the original arena issue remains incompletely qualified. |
 | `veyne-dive-warning-drifts` | [#97](https://github.com/Flesymeb/aelors-adventure/issues/97) | OPEN | Fixed flight samples do not establish complete dive-warning acceptance; retained camera coverage also shows partial visibility. |
 | `veyne-effects-obscure-combat` | [#99](https://github.com/Flesymeb/aelors-adventure/issues/99) | OPEN | Breath and beam readability and preserved contact behavior remain incompletely verified. |
 | `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
@@ -127,6 +127,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
 | `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
+| `journey-validation-gap` | [#106](https://github.com/Flesymeb/aelors-adventure/issues/106) | OPEN | Manifest vocabulary inspection does not establish complete loader-grammar validation. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -134,7 +135,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 67 | 38 | 105 |
+| GitHub HoH namespace | 68 | 38 | 106 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -171,7 +172,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-60-763b7c2b7817` | `development_snapshot:attempt-962bf1f641f4d787a62ce7ce` | DEVELOPER REPORT READY |
+| `loop-60-763b7c2b7817` | `development_snapshot:attempt-962bf1f641f4d787a62ce7ce` | BLOCKED |
 
 ### Project Planner
 
@@ -198,7 +199,24 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-60-763b7c2b7817` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 8 (8 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `coach-continue-gap` | MAJOR | INTERNAL | HIGH | Ordinary coach acquisition was observed; committed-acquisition Continue remains unqualified. |
+| `opening-recovery-gap` | MAJOR | INTERNAL | HIGH | Opening skip and pause/resume worked; unfinished-opening Continue remains unobserved. |
+| `audio-listening-gap` | MAJOR | INTERNAL | HIGH | This client's explicit audio-input limitation prevents independent listening acceptance. |
+| `arena-closure-gap` | MAJOR | INTERNAL | HIGH | Narrow stair conditions pass; the original arena issue remains incompletely qualified. |
+| `earned-travel-gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-departure-skip-boundary |
+| `journey-validation-gap` | MAJOR | INTERNAL | HIGH | Manifest vocabulary inspection does not establish complete loader-grammar validation. |
+| `meadow-qualification-gap` | MAJOR | INTERNAL | HIGH | Local ambusher behavior was observed; earned admission and production recovery remain unqualified. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3286,5 +3304,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-60-763b7c2b7817`
 - Latest warm start: `loop-60-7b331072457c`
 - Last published: `loop-60-763b7c2b7817`
-- Best verified: `loop-59-7b331072457c`
+- Best verified: `loop-60-763b7c2b7817`
 - Generated by the HoH host from immutable run evidence.
