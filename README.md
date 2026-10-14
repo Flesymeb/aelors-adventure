@@ -55,13 +55,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Audio artifacts are retained, but this session cannot provide independent listening. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent listening is unavailable in this client; the original audio stop case remains unverified. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-d6ccfb2695ca` | [#40](https://github.com/Flesymeb/aelors-adventure/issues/40) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-fbd2eca17385` | [#41](https://github.com/Flesymeb/aelors-adventure/issues/41) | CLOSED | Independently verified resolved at loop 7. |
-| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Recovery title availability worked locally; independent qualified Continue remains unverified. |
+| `opening_acceptance_evidence_incomplete` | [#36](https://github.com/Flesymeb/aelors-adventure/issues/36) | OPEN | Interrupted-opening Continue lacks a qualified independent consumer. |
 | `shortcut_panel_narrow_ownership_states` | [#42](https://github.com/Flesymeb/aelors-adventure/issues/42) | CLOSED | Independently verified resolved at loop 12. |
 | `vitals_retains_enlarged_geometry` | [#43](https://github.com/Flesymeb/aelors-adventure/issues/43) | CLOSED | Independently verified resolved at loop 13. |
 | `forest-review-evidence-incomplete` | [#44](https://github.com/Flesymeb/aelors-adventure/issues/44) | OPEN | untitled issue |
@@ -80,7 +80,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach acquisition worked, but qualified Continue restoration remains unavailable. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Coach acquisition works locally; qualified Continue restoration remains unavailable. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | OPEN | Exact E02 contact and both live E03 binding qualifications remain unresolved despite supported local attribution and read-only observation code. |
@@ -123,13 +123,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `veyne-dragon-validation-incomplete` | [#98](https://github.com/Flesymeb/aelors-adventure/issues/98) | OPEN | untitled issue |
 | `attack-lifecycle-retest-incomplete` | [#100](https://github.com/Flesymeb/aelors-adventure/issues/100) | OPEN | untitled issue |
 | `qa.e02-visual-coherence` | [#102](https://github.com/Flesymeb/aelors-adventure/issues/102) | CLOSED | Independently verified resolved at loop 54. |
-| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r20-earned-e02-nonlethal-lightning. Supplemental archer-contact observation; the required timeout timeline remains unresolved. |
+| `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r20-earned-e02-nonlethal-lightning |
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
 | `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
 | `journey-loader-gap` | [#108](https://github.com/Flesymeb/aelors-adventure/issues/108) | OPEN | Complete supported journey-loader validation remains unavailable. |
 | `journey-validation-gap` | [#106](https://github.com/Flesymeb/aelors-adventure/issues/106) | OPEN | untitled issue |
-| `native-source-review-gap` | [#109](https://github.com/Flesymeb/aelors-adventure/issues/109) | OPEN | Actual canonical source declarations were reviewed; native implementation-payload availability remains unresolved. |
+| `native-source-review-gap` | [#109](https://github.com/Flesymeb/aelors-adventure/issues/109) | OPEN | Actual canonical declarations are available; native source-gate recognition remains unverified. |
 | `earned-travel-gap` | [#107](https://github.com/Flesymeb/aelors-adventure/issues/107) | OPEN | untitled issue |
 | `ordinary-route-recapture` | [#111](https://github.com/Flesymeb/aelors-adventure/issues/111) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r01-earned-mf01-e03-reveal-recognition |
 | `arena-route-coverage-gap` | [#110](https://github.com/Flesymeb/aelors-adventure/issues/110) | OPEN | untitled issue |
@@ -180,7 +180,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-67-b340f7a97a57` | `development_snapshot:attempt-021b1b23a53d0a3801135324` | DEVELOPER REPORT READY |
+| `loop-67-b340f7a97a57` | `development_snapshot:attempt-021b1b23a53d0a3801135324` | BLOCKED |
 
 ### Project Planner
 
@@ -207,7 +207,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-67-b340f7a97a57` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 6 (6 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `opening-qualified-consumer-gap` | MAJOR | INTERNAL | HIGH | Interrupted-opening Continue lacks a qualified independent consumer. |
+| `e02-continuous-cover-gap` | MAJOR | INTERNAL | HIGH | RECAPTURE_REQUEST: GAME_JOURNEY:r20-earned-e02-nonlethal-lightning |
+| `source-gate-recognition-gap` | MAJOR | INTERNAL | HIGH | Actual canonical declarations are available; native source-gate recognition remains unverified. |
+| `coach-qualified-consumer-gap` | MAJOR | INTERNAL | HIGH | Coach acquisition works locally; qualified Continue restoration remains unavailable. |
+| `independent-listening-gap` | MAJOR | INTERNAL | HIGH | Independent listening is unavailable in this client; the original audio stop case remains unverified. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3671,5 +3686,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-67-b340f7a97a57`
 - Latest warm start: `loop-67-b340f7a97a57`
 - Last published: `loop-67-b340f7a97a57`
-- Best verified: `loop-66-b340f7a97a57`
+- Best verified: `loop-67-b340f7a97a57`
 - Generated by the HoH host from immutable run evidence.
