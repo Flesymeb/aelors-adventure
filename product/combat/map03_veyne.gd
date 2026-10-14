@@ -35,8 +35,7 @@ var rift_waves := 0
 var rift_contacts := 0
 var paused_by_menu := false
 var presentation_box := AABB()
-var flight_camera_owned := false
-var flight_camera_rotation := Vector3.ZERO
+var flight_skin_boxes := {}
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -46,6 +45,7 @@ func configure(owner_world: Node3D) -> void:
 	actor.encounter = self
 	actor.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(actor)
+	cache_flight_skin_bounds()
 	device = preload("res://world/veyne_release_key.tscn").instantiate()
 	add_child(device)
 	device.configure(self)
@@ -135,7 +135,6 @@ func _process(delta: float) -> void:
 	music.stream_paused = paused
 	cue.stream_paused = paused
 	effects.stream_paused = paused
-	frame_flight_camera()
 	if presentation:
 		if paused: actor.animator.pause(); return
 		frame_presentation()
@@ -175,6 +174,7 @@ func _start_presentation(kind: String, caption: String, clip: String) -> void:
 	skip_armed = false
 	world.training.interrupt("reveal")
 	actor.interrupt_action()
+	world.player.release_encounter_camera()
 	world.player.velocity = Vector3.ZERO
 	world._set_pause_owner("veyne_presentation",true)
 	presentation_box = actor.character.posed_bounds(actor.model)
@@ -196,19 +196,57 @@ func presentation_points() -> Array[Vector3]:
 	points.append(world.player.global_position+Vector3.UP*1.8)
 	return points
 
-func frame_flight_camera() -> void:
-	var flying: bool = phase == "battle" and actor.dragon_actions.kind == "dive" and actor.dragon_actions.stage in ["warning","flight","active"]
-	if flying:
-		if not flight_camera_owned:
-			flight_camera_owned = true
-			flight_camera_rotation = world.player.camera.rotation
-		# Keep the collision-backed player camera position and mouse-controlled
-		# spring arm. Aim upward enough to include the live airborne body.
-		var focus: Vector3 = world.player.global_position.lerp(actor.global_position,0.45)+Vector3.UP*1.6
-		world.player.camera.look_at(focus)
-	elif flight_camera_owned:
-		world.player.camera.rotation = flight_camera_rotation
-		flight_camera_owned = false
+func cache_flight_skin_bounds() -> void:
+	# A weighted skinned vertex is inside the union of its bone-transformed
+	# influence boxes. Cache bind-space extents once; pose only their corners
+	# each tick rather than CPU-skinning every vertex during the attack.
+	var skeleton: Skeleton3D = actor.character.skeleton
+	for mesh in actor.model.find_children("*","MeshInstance3D",true,false):
+		if not mesh.skin: continue
+		for surface in mesh.mesh.get_surface_count():
+			var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+			var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+			var influences: int = weights.size()/vertices.size()
+			for vertex in vertices.size():
+				for influence in influences:
+					var index := vertex*influences+influence
+					if weights[index] <= 0: continue
+					var bind: int = bones[index]
+					var bone: int = mesh.skin.get_bind_bone(bind)
+					if bone < 0: bone = skeleton.find_bone(mesh.skin.get_bind_name(bind))
+					if bone < 0: continue
+					var point: Vector3 = mesh.skin.get_bind_pose(bind)*vertices[vertex]
+					flight_skin_boxes[bone] = flight_skin_boxes[bone].expand(point) if flight_skin_boxes.has(bone) else AABB(point,Vector3.ZERO)
+
+func flight_camera_subjects() -> Array[Vector3]:
+	# Supply subjects, never a Camera3D transform. The player remains the sole
+	# owner of orientation, projection and the native collision-backed arm.
+	var points: Array[Vector3] = []
+	if not grounded or phase != "battle" or state.health <= 0 or state.recovery_pending: return points
+	var action: Node3D = actor.dragon_actions
+	if action.kind != "dive" or action.stage not in ["warning","flight","active","recovery"]: return points
+	var skeleton: Skeleton3D = actor.character.skeleton
+	var box := AABB()
+	var first := true
+	for bone in flight_skin_boxes:
+		var pose: Transform3D = skeleton.global_transform*skeleton.get_bone_global_pose(bone)
+		var bounds: AABB = flight_skin_boxes[bone]
+		for corner in 8:
+			var point: Vector3 = pose*bounds.get_endpoint(corner)
+			box = AABB(point,Vector3.ZERO) if first else box.expand(point)
+			first = false
+	for corner in 8:
+		var point := box.get_endpoint(corner)
+		points.append(point)
+		# Anticipate the committed apex without chasing an airborne origin.
+		points.append(point-actor.global_position+action.landing+Vector3.UP*5.0)
+	for x in [-3.0,3.0]:
+		for z in [-3.0,3.0]: points.append(action.landing + Vector3(x,0,z))
+	for x in [-0.45,0.45]:
+		for y in [0.0,1.9]: points.append(world.player.global_position + Vector3(x,y,0))
+	return points
 
 func frame_presentation() -> void:
 	var points := presentation_points()
@@ -356,6 +394,7 @@ func settle_defeat() -> void:
 	if state.veyne_defeated: return
 	phase = "victory"
 	actor.interrupt_action()
+	world.player.release_encounter_camera()
 	actor.engaged = false
 	clear_rifts()
 	reinforcements.clear_wave()
@@ -375,6 +414,7 @@ func settle_defeat() -> void:
 func interrupt() -> void:
 	if not grounded: return
 	actor.interrupt_action()
+	world.player.release_encounter_camera()
 	clear_rifts()
 	reinforcements.clear_wave(true)
 	world.player.camera.current = true

@@ -4,6 +4,65 @@ const CIRCUIT = preload("res://tests/map03_barrier_test.gd")
 const HISTORY = preload("res://tests/chapter_travel_test.gd")
 const STATE = preload("res://dialogue_state.gd")
 
+static func camera_projection_checks() -> Dictionary:
+	var controller = preload("res://player_controller.gd")
+	var checks := {}
+	var pivot := Vector3(2,5,-20)
+	for fov in [48.0,70.0,78.0]:
+		for aspect in [16.0/9.0,4.0/3.0]:
+			var basis := Basis.from_euler(Vector3(-0.2,0.7,0))
+			var points: Array[Vector3] = []
+			for x in [-6.0,6.0]:
+				for y in [-4.0,7.0]:
+					for z in [-5.0,5.0]: points.append(pivot + basis * Vector3(x,y,z))
+			var distance: float = controller.subject_camera_distance(points,pivot,basis,fov,aspect)
+			var fits := true
+			for point in points:
+				var local := basis.inverse() * (point-pivot)
+				var depth := distance-local.z
+				fits = fits and depth > 0.1 and absf(local.y)/depth < tan(deg_to_rad(fov)*0.5)*0.78 and absf(local.x)/depth < tan(deg_to_rad(fov)*0.5)*aspect*0.78
+			checks[str(fov)+":"+str(aspect)+"_all_subjects_fit"] = fits
+	return checks
+
+static func camera_owner_checks(world: Node3D) -> Dictionary:
+	var boss: Node = world.veyne_encounter
+	if not boss.combat_allowed(): return {"ready":false}
+	var p: Node3D = world.player
+	var old_rotation: Vector3 = p.arm.rotation
+	var old_distance: float = p.free_camera_distance
+	var old_shoulder: float = p.shoulder_side
+	var preferences: Dictionary = world.dialogue_state.preference_snapshot()
+	var old_player: Vector3 = p.global_position
+	var old_actor: Vector3 = boss.actor.global_position
+	boss.actor.interrupt_action()
+	# Component setup on existing authored support, separate from ordinary
+	# stair/evasion evidence. A stair-edge target has no valid dive landing.
+	world.ground_policy.place(world,p,Vector2(-4,-22))
+	world.ground_policy.place(world,boss.actor,Vector2(-4,-25))
+	var started: bool = boss.actor.dragon_actions.begin("dive")
+	p._update_archery(0.016)
+	p.arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+	var checks := {"started":started,"player_owns_framing":p.encounter_camera_active,"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.encounter_camera_look.is_equal_approx(old_rotation) and is_equal_approx(p.arm.rotation.y,old_rotation.y),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
+	boss.actor.dragon_actions.tick(0.5)
+	p._update_archery(0.016)
+	checks.tracked_body_does_not_collapse_sweep = p.arm.get_hit_length() >= p.arm.spring_length-0.01 and p.encounter_camera_exclusion==boss.actor.get_rid()
+	p.aim_requested = true
+	p._update_archery(0.016)
+	checks.explicit_aim_retained = not p.encounter_camera_active
+	p.aim_requested = false
+	p.aim_blend = 0
+	p._update_archery(0.016)
+	boss.actor.interrupt_action()
+	p._update_archery(0.016)
+	checks.interruption_releases = not p.encounter_camera_active and p.camera.rotation.is_zero_approx() and is_equal_approx(p.arm.spring_length,p.smooth_camera_distance)
+	checks.look_restored = p.arm.rotation.is_equal_approx(old_rotation)
+	checks.tracked_body_filter_released = not p.encounter_camera_exclusion.is_valid()
+	p.prepare_restored_camera(old_rotation.y)
+	checks.restored_camera_neutral = not p.encounter_camera_active and p.camera.rotation.is_zero_approx() and is_equal_approx(p.arm.rotation.y,old_rotation.y)
+	p.global_position = old_player
+	boss.actor.global_position = old_actor
+	return checks
+
 static func state_checks() -> Dictionary:
 	var state: Node = CIRCUIT.prepared()
 	var checks := {"before_ln02_rejected":not state.defeat_veyne() and not state.take_veyne_key()}

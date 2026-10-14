@@ -120,6 +120,10 @@ var window_focused := true
 var recapture_guard := false
 
 var camera_height := 1.65
+var encounter_camera_active := false
+var encounter_camera_pivot := Vector3.ZERO
+var encounter_camera_exclusion := RID()
+var encounter_camera_look := Vector3.ZERO
 
 
 func owns_weapon(mode: String) -> bool:
@@ -377,8 +381,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var sensitivity: float = lerpf(0.003, 0.0017, aim_blend) * _mouse_sensitivity()
-		arm.rotation.y -= event.relative.x * sensitivity
-		arm.rotation.x = clampf(arm.rotation.x - event.relative.y * sensitivity, -1.25 if first_person else -0.85, 1.1 if first_person else 0.45)
+		var look_rotation: Vector3 = encounter_camera_look if encounter_camera_active else arm.rotation
+		look_rotation.y -= event.relative.x * sensitivity
+		look_rotation.x = clampf(look_rotation.x - event.relative.y * sensitivity, -1.25 if first_person else -0.85, 1.1 if first_person else 0.45)
+		if encounter_camera_active: encounter_camera_look = look_rotation
+		else: arm.rotation = look_rotation
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		if not first_person and not aim_requested and aim_blend < 0.01:
 			free_camera_distance = clampf(free_camera_distance + (-0.45 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 0.45), 2.0, 6.5)
@@ -606,6 +613,7 @@ func _update_archery(delta: float) -> void:
 		if hit:
 			offset = (hit.position - pivot) * 0.75
 	arm.position = pivot - global_position + offset
+	_update_encounter_camera(delta, pivot + offset)
 	_update_head_visibility()
 	if bow_state == "draw":
 		bow_charge = minf(1.0, bow_charge + delta / BOW_DRAW_TIME)
@@ -636,12 +644,107 @@ func _update_archery(delta: float) -> void:
 		bow_ik.influence = pose_weight if bow_state != "release" else 0.0
 
 
+static func subject_camera_distance(points: Array[Vector3], pivot: Vector3, view_basis: Basis, vertical_fov: float, aspect: float) -> float:
+	# Camera looks along -Z; the arm sweeps along +Z. Fit every subject to
+	# the same projection with a readable margin, including points behind
+	# the pivot. No actor-origin focus weights or child look_at are involved.
+	var tangent := tan(deg_to_rad(vertical_fov) * 0.5) * 0.78
+	var distance := 0.1
+	for point in points:
+		var local := view_basis.inverse() * (point - pivot)
+		distance = maxf(distance, local.z + maxf(absf(local.y) / tangent, absf(local.x) / (tangent * maxf(aspect,0.1))) + 0.1)
+	return distance
+
+
+func _update_encounter_camera(delta: float, ordinary_pivot: Vector3) -> void:
+	var owner = get_parent().get("veyne_encounter")
+	var state: Node = get_parent().get("dialogue_state")
+	var points: Array[Vector3] = []
+	# Explicit aim and first-person retain their existing camera contract.
+	if is_instance_valid(owner) and not aim_requested and aim_blend < 0.01 and not first_person and perspective_blend < 0.01:
+		points = owner.flight_camera_subjects()
+	if points.is_empty():
+		var releasing := encounter_camera_active
+		if releasing: arm.rotation = encounter_camera_look
+		_clear_encounter_camera_filter()
+		encounter_camera_pivot = ordinary_pivot
+		if releasing:
+			arm.force_update_transform()
+			arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+		return
+	var box := AABB(points[0],Vector3.ZERO)
+	for point in points: box = box.expand(point)
+	var center := box.get_center()
+	if not encounter_camera_active: encounter_camera_look = arm.rotation
+	if not encounter_camera_active or (state and state.reduced_motion): encounter_camera_pivot = center
+	else: encounter_camera_pivot = encounter_camera_pivot.lerp(center,1.0-exp(-6.0*delta))
+	encounter_camera_active = true
+	# The tracked creature is a subject, just as the player is. Its moving
+	# body must not collapse the camera sweep into its own foreground skin.
+	# Authored stone, stairs and walls retain the native mask/shape/margin.
+	var subject_rid: RID = owner.actor.get_rid()
+	if subject_rid != encounter_camera_exclusion:
+		_clear_encounter_camera_filter()
+		encounter_camera_active = true
+		encounter_camera_exclusion = subject_rid
+		arm.add_excluded_object(subject_rid)
+	arm.position = encounter_camera_pivot - global_position
+	var viewport_size := get_viewport().get_visible_rect().size
+	var aspect := viewport_size.x/maxf(viewport_size.y,1.0)
+	var ordinary_length := arm.spring_length
+	var best_rotation := encounter_camera_look
+	var best_score := -INF
+	var action: Node3D = owner.actor.dragon_actions
+	var targets: Array[Vector3] = [global_position+Vector3.UP*0.2,global_position+Vector3.UP*1.0,global_position+Vector3.UP*1.8,action.landing+Vector3.UP*0.2]
+	for x in [-2.0,2.0]:
+		for z in [-2.0,2.0]: targets.append(action.landing+Vector3(x,0.2,z))
+	# Prefer the user's view. If stone occludes the floor/player or truncates
+	# the native sweep, search a steeper pitch with the SAME user yaw. This
+	# avoids backing outside an arena wall and hiding the player's evasion.
+	for step in 6:
+		var rotation := encounter_camera_look
+		rotation.x = lerpf(rotation.x,minf(rotation.x,-1.25),float(step)/5.0)
+		_apply_subject_camera_pose(points,rotation,ordinary_length,aspect)
+		var clear := 0
+		for target in targets:
+			var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
+			if get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): clear += 1
+		var fits := arm.get_hit_length() >= arm.spring_length-0.05
+		var score: float = clear*100.0 + (50.0 if fits else 0.0) - absf(rotation.x-encounter_camera_look.x)
+		if score > best_score: best_score = score; best_rotation = rotation
+		if clear == targets.size() and fits: break
+	_apply_subject_camera_pose(points,best_rotation,ordinary_length,aspect)
+
+
+func _apply_subject_camera_pose(points: Array[Vector3], rotation: Vector3, ordinary_length: float, aspect: float) -> void:
+	arm.rotation = rotation
+	arm.spring_length = maxf(ordinary_length,subject_camera_distance(points,encounter_camera_pivot,arm.global_basis,camera.fov,aspect))
+	# Use the installed native shape sweep with this tick's request. The
+	# camera remains a direct child, with its original mask and margin.
+	arm.force_update_transform()
+	arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+
+
+func _clear_encounter_camera_filter() -> void:
+	if encounter_camera_exclusion.is_valid(): arm.remove_excluded_object(encounter_camera_exclusion)
+	encounter_camera_exclusion = RID()
+	encounter_camera_active = false
+
+
+func release_encounter_camera() -> void:
+	# Called after the encounter clears its action, including paths where a
+	# locked/dead player cannot reach the next normal camera physics update.
+	_update_archery(0.0)
+
+
 func prepare_restored_camera(yaw: float) -> void:
 	# Saved histories retain yaw, not transient aim/perspective/camera shake.
 	# Grounding can immediately be followed by dialogue pause, before this
 	# native SpringArm has ever processed. Initialize only its collision sweep;
 	# never thaw the tree or tick player/combat/ability/animation controllers.
 	cancel_aim()
+	_clear_encounter_camera_filter()
+	camera.rotation = Vector3.ZERO
 	first_person = false
 	perspective_blend = 0.0
 	aim_blend = 0.0
