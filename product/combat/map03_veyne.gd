@@ -248,6 +248,17 @@ func flight_camera_subjects() -> Array[Vector3]:
 		for y in [0.0,1.9]: points.append(world.player.global_position + Vector3(x,y,0))
 	return points
 
+func flight_camera_occluders() -> Array:
+	# Reuse the actual rig's cached skin influence volumes. These are
+	# visibility bounds, not new collision or an alternate creature visual.
+	# Invert each pose once before the player's bounded candidate search.
+	var occluders: Array = []
+	var skeleton: Skeleton3D = actor.character.skeleton
+	for bone in flight_skin_boxes:
+		var pose: Transform3D = skeleton.global_transform*skeleton.get_bone_global_pose(bone)
+		occluders.append({"bounds":flight_skin_boxes[bone],"inverse_pose":pose.affine_inverse()})
+	return occluders
+
 func frame_presentation() -> void:
 	var points := presentation_points()
 	if points.is_empty(): return

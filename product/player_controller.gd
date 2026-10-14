@@ -605,7 +605,8 @@ func _update_archery(delta: float) -> void:
 	camera_height = lerpf(camera_height, desired_height, 1.0 - exp(-10.0 * delta))
 	var pivot := global_position + Vector3(0, camera_height - 0.2 * (1.0 - perspective_blend) + (traversal.camera_step_offset if traversal else 0.0), 0)
 	var local_offset := Vector3(lerpf(0.30, 0.52, aim_blend) * shoulder_blend * (1.0 - perspective_blend), 0, -0.06 * perspective_blend)
-	var offset := Basis(Vector3.UP, arm.rotation.y) * local_offset
+	var control_yaw: float = encounter_camera_look.y if encounter_camera_active else arm.rotation.y
+	var offset := Basis(Vector3.UP, control_yaw) * local_offset
 	if offset.length_squared() > 0.001:
 		var query := PhysicsRayQueryParameters3D.create(pivot, pivot + offset)
 		query.exclude = [get_rid()]
@@ -656,6 +657,35 @@ static func subject_camera_distance(points: Array[Vector3], pivot: Vector3, view
 	return distance
 
 
+static func subject_camera_occluded(origin: Vector3, target: Vector3, occluders: Array) -> bool:
+	# Physics excludes the tracked actor from the arm sweep. Its posed skin
+	# volumes still participate in visibility, including their actual depth:
+	# a creature behind the player does not obscure the player.
+	for occluder in occluders:
+		var inverse_pose: Transform3D = occluder.inverse_pose
+		var bounds: AABB = occluder.bounds
+		if bounds.intersects_segment(inverse_pose * origin, inverse_pose * target) != null: return true
+	return false
+
+
+static func subject_camera_points_fit(points: Array[Vector3], origin: Vector3, view_basis: Basis, vertical_fov: float, aspect: float) -> bool:
+	# Judge the camera after its native sweep, not whether the sweep reached
+	# the requested length. A wall-compressed view may still fit the subjects.
+	var inverse_view := view_basis.inverse()
+	var tangent := tan(deg_to_rad(vertical_fov)*0.5)*0.98
+	for point in points:
+		var local := inverse_view*(point-origin)
+		var depth := -local.z
+		if depth <= 0.1 or absf(local.y) > depth*tangent or absf(local.x) > depth*tangent*aspect: return false
+	return true
+
+
+static func movement_camera_basis(ordinary_basis: Basis, encounter_active: bool, user_look: Vector3) -> Basis:
+	# Encounter composition may orbit the subjects; W/D keep the direction
+	# chosen by the user's mouse-look rather than following that correction.
+	return Basis(Vector3.UP,user_look.y) if encounter_active else ordinary_basis
+
+
 func _update_encounter_camera(delta: float, ordinary_pivot: Vector3) -> void:
 	var owner = get_parent().get("veyne_encounter")
 	var state: Node = get_parent().get("dialogue_state")
@@ -695,24 +725,37 @@ func _update_encounter_camera(delta: float, ordinary_pivot: Vector3) -> void:
 	var best_rotation := encounter_camera_look
 	var best_score := -INF
 	var action: Node3D = owner.actor.dragon_actions
-	var targets: Array[Vector3] = [global_position+Vector3.UP*0.2,global_position+Vector3.UP*1.0,global_position+Vector3.UP*1.8,action.landing+Vector3.UP*0.2]
+	var player_targets: Array[Vector3] = []
+	for x in [-0.3,0.3]:
+		for y in [0.2,1.0,1.8]: player_targets.append(global_position+Vector3(x,y,0))
+	var landing_targets: Array[Vector3] = [action.landing+Vector3.UP*0.2]
 	for x in [-2.0,2.0]:
-		for z in [-2.0,2.0]: targets.append(action.landing+Vector3(x,0.2,z))
-	# Prefer the user's view. If stone occludes the floor/player or truncates
-	# the native sweep, search a steeper pitch with the SAME user yaw. This
-	# avoids backing outside an arena wall and hiding the player's evasion.
-	for step in 6:
-		var rotation := encounter_camera_look
-		rotation.x = lerpf(rotation.x,minf(rotation.x,-1.25),float(step)/5.0)
-		_apply_subject_camera_pose(points,rotation,ordinary_length,aspect)
-		var clear := 0
-		for target in targets:
-			var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
-			if get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): clear += 1
-		var fits := arm.get_hit_length() >= arm.spring_length-0.05
-		var score: float = clear*100.0 + (50.0 if fits else 0.0) - absf(rotation.x-encounter_camera_look.x)
-		if score > best_score: best_score = score; best_rotation = rotation
-		if clear == targets.size() and fits: break
+		for z in [-2.0,2.0]: landing_targets.append(action.landing+Vector3(x,0.2,z))
+	var occluders: Array = owner.flight_camera_occluders()
+	# Test the user's yaw first, then a bounded orbit when a stone-clear view
+	# still hides the player behind the creature. Every candidate uses the
+	# same native collision-backed arm and the same committed landing area.
+	for yaw_offset in [0.0,-0.45,0.45,-0.9,0.9,-PI*0.5,PI*0.5]:
+		for step in 6:
+			var rotation := encounter_camera_look
+			rotation.y += yaw_offset
+			rotation.x = lerpf(rotation.x,minf(rotation.x,-1.25),float(step)/5.0)
+			_apply_subject_camera_pose(points,rotation,ordinary_length,aspect)
+			var player_clear := 0
+			var landing_clear := 0
+			for target in player_targets:
+				var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
+				if get_world_3d().direct_space_state.intersect_ray(ray).is_empty() and not subject_camera_occluded(camera.global_position,target,occluders): player_clear += 1
+			for target in landing_targets:
+				var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
+				if get_world_3d().direct_space_state.intersect_ray(ray).is_empty() and not subject_camera_occluded(camera.global_position,target,occluders): landing_clear += 1
+			var fits := subject_camera_points_fit(points,camera.global_position,camera.global_basis,camera.fov,aspect)
+			var player_visible := player_clear == player_targets.size()
+			var all_clear := player_visible and landing_clear == landing_targets.size() and fits
+			# Rank every candidate. Prefer a shallow readable flank over the
+			# first clear overhead view; keep stored mouse-look authoritative.
+			var score: float = (100000.0 if all_clear else 0.0) + (10000.0 if player_visible else 0.0) + player_clear*1000.0 + landing_clear*100.0 + (1000.0 if fits else 0.0) - absf(rotation.x-encounter_camera_look.x)*100.0 - absf(yaw_offset)
+			if score > best_score: best_score = score; best_rotation = rotation
 	_apply_subject_camera_pose(points,best_rotation,ordinary_length,aspect)
 
 
@@ -814,10 +857,11 @@ func _physics_process(delta: float) -> void:
 	if combat:
 		combat.advance_player(delta)
 		if combat.player_locked(): return
-	var forward := -camera.global_basis.z
+	var movement_basis := movement_camera_basis(camera.global_basis,encounter_camera_active,encounter_camera_look)
+	var forward := -movement_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
-	var right := camera.global_basis.x
+	var right := movement_basis.x
 	right.y = 0.0
 	right = right.normalized()
 	var move_axis := Vector2.ZERO

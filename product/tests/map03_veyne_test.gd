@@ -22,6 +22,24 @@ static func camera_projection_checks() -> Dictionary:
 				var depth := distance-local.z
 				fits = fits and depth > 0.1 and absf(local.y)/depth < tan(deg_to_rad(fov)*0.5)*0.78 and absf(local.x)/depth < tan(deg_to_rad(fov)*0.5)*aspect*0.78
 			checks[str(fov)+":"+str(aspect)+"_all_subjects_fit"] = fits
+	# A clear arm and fitted subject box do not prove the player is visible.
+	# Test depth and a posed local volume independently of stone collision.
+	var volume := AABB(Vector3(-1,-1,-1),Vector3(2,2,2))
+	var posed := Transform3D(Basis(Vector3.UP,0.45),Vector3(3,2,4))
+	var occluders: Array = [{"bounds":volume,"inverse_pose":posed.affine_inverse()}]
+	checks.foreground_actor_obscures = controller.subject_camera_occluded(posed*Vector3(0,0,5),posed*Vector3(0,0,-5),occluders)
+	checks.actor_behind_player_does_not_obscure = not controller.subject_camera_occluded(posed*Vector3(0,0,5),posed*Vector3(0,0,2),occluders)
+	checks.lateral_view_clears_actor = not controller.subject_camera_occluded(posed*Vector3(3,0,5),posed*Vector3(3,0,-5),occluders)
+	var origin_volume: Array = [{"bounds":AABB(Vector3.ZERO,Vector3.ONE),"inverse_pose":Transform3D.IDENTITY}]
+	checks.zero_vector_contact_still_obscures = controller.subject_camera_occluded(Vector3(-2,0,0),Vector3(2,0,0),origin_volume)
+	var projected: Array[Vector3] = [Vector3(-1,-1,-4),Vector3(1,1,-4)]
+	checks.compressed_view_can_still_fit = controller.subject_camera_points_fit(projected,Vector3.ZERO,Basis.IDENTITY,70.0,16.0/9.0)
+	checks.cropped_subject_rejected = not controller.subject_camera_points_fit(projected,Vector3(0,0,-3),Basis.IDENTITY,70.0,16.0/9.0)
+	checks.subject_behind_camera_rejected = not controller.subject_camera_points_fit(projected,Vector3(0,0,-5),Basis.IDENTITY,70.0,16.0/9.0)
+	var user_look := Vector3(-0.2,0.7,0)
+	var corrected := Basis.from_euler(Vector3(-1.1,1.6,0))
+	checks.evasion_retains_user_yaw = controller.movement_camera_basis(corrected,true,user_look).is_equal_approx(Basis(Vector3.UP,user_look.y))
+	checks.ordinary_movement_retains_camera = controller.movement_camera_basis(corrected,false,user_look).is_equal_approx(corrected)
 	return checks
 
 static func camera_owner_checks(world: Node3D) -> Dictionary:
@@ -42,7 +60,8 @@ static func camera_owner_checks(world: Node3D) -> Dictionary:
 	var started: bool = boss.actor.dragon_actions.begin("dive")
 	p._update_archery(0.016)
 	p.arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
-	var checks := {"started":started,"player_owns_framing":p.encounter_camera_active,"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.encounter_camera_look.is_equal_approx(old_rotation) and is_equal_approx(p.arm.rotation.y,old_rotation.y),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
+	var checks := {"started":started,"player_owns_framing":p.encounter_camera_active,"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.encounter_camera_look.is_equal_approx(old_rotation),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
+	checks.corrective_orbit_keeps_controls = p.movement_camera_basis(p.camera.global_basis,p.encounter_camera_active,p.encounter_camera_look).is_equal_approx(Basis(Vector3.UP,old_rotation.y))
 	boss.actor.dragon_actions.tick(0.5)
 	p._update_archery(0.016)
 	checks.tracked_body_does_not_collapse_sweep = p.arm.get_hit_length() >= p.arm.spring_length-0.01 and p.encounter_camera_exclusion==boss.actor.get_rid()
