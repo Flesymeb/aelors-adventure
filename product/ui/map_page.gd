@@ -58,19 +58,43 @@ class RouteDiagram extends Control:
 				draw_circle(point(xz), 7, ink)
 				draw_circle(point(xz), 4, Color(1,0.9,0.5))
 
+	static func tomb_point(xz: Vector2, area: Vector2) -> Vector2:
+		# Same world coordinates as ground/encounter anchors; north is -Z.
+		return Vector2(area.x * (0.22 + (xz.x + 13.0) / 26.0 * 0.52), 24.0 + (xz.y + 36.0) / 43.0 * (area.y - 48.0))
+
+	static func tomb_routes(unlocked: bool) -> Array:
+		var ground = preload("res://world/map03_ground.gd")
+		var routes := [[ground.RETURN, ground.ENTRY, Vector2(0,-3), ground.RECORD], [Vector2(0,-3), ground.DEVICE]]
+		if unlocked:
+			routes.append([Vector2(0,-3)] + ground.VEYNE_ROUTE + [Vector2(-4,-15), preload("res://world/veyne_arena.gd").HOME])
+			routes.append([Vector2(0,-3)] + ground.OPEN_ROUTE + [preload("res://combat/map03_warden.gd").HOME])
+		return routes
+
 	func _draw_tomb() -> void:
+		var ground = preload("res://world/map03_ground.gd")
 		var font := get_theme_default_font()
 		var ink := Color(0.2,0.15,0.08)
-		var marks := [[Vector2(0.50,0.82),"CP03 灯台"],[Vector2(0.25,0.82),"蓝光 · 返回草甸"],[Vector2(0.74,0.32),"仪式记录"],[Vector2(0.50,0.12),"入口已净化 · 石阶" if state.ln02_purified else "入口结界 · 双供能"]]
-		if state.ln02_purified: marks.append([Vector2(0.22,0.015),"裂隙祭坛 · 钥印已取得" if state.veyne_release_key else "裂隙祭坛 · 检查钥印" if state.veyne_defeated else "裂隙祭坛 · 维恩"])
-		if state.ln02_purified: marks.append([Vector2(0.60,0.015),"看守院 · 锁印已解除" if state.warden_lock_released else "看守院 · 检查装置" if state.warden_defeated else "看守院"])
+		var font_size := int(15 * state.text_scale)
+		var marks := [[ground.ENTRY,"CP03 灯台"],[ground.RETURN,"返回草甸"],[ground.RECORD,"仪式记录"],[ground.DEVICE,"入口已净化" if state.ln02_purified else "入口结界 · 双供能"]]
+		if state.ln02_purified:
+			marks.append([preload("res://world/veyne_arena.gd").HOME,"裂隙祭坛 · 钥印已取得" if state.veyne_release_key else "裂隙祭坛 · 检查钥印" if state.veyne_defeated else "裂隙祭坛 · 维恩"])
+			marks.append([preload("res://combat/map03_warden.gd").HOME,"看守院 · 锁印已解除" if state.warden_lock_released else "看守院 · 检查装置" if state.warden_defeated else "看守院"])
 		if state.ln02_revealed:
-			marks.append_array([[Vector2(0.25,0.27),"北侧 · 已切断" if state.ln02_north_cut else "北侧 · 螺旋供能"],[Vector2(0.25,0.51),"南侧 · 已切断" if state.ln02_south_cut else "南侧 · 箭纹供能"]])
-		draw_polyline(PackedVector2Array([size*marks[1][0],size*marks[0][0],size*Vector2(0.5,0.32),size*marks[2][0]]),ink,3,true)
-		for mark in marks:
-			var p: Vector2 = size*mark[0]
-			draw_circle(p,6,ink)
-			draw_string(font,p+Vector2(12,5),mark[1],HORIZONTAL_ALIGNMENT_LEFT,-1,get_theme_default_font_size(),ink)
+			marks.append_array([[ground.NORTH,"北供能 · 已切断" if state.ln02_north_cut else "北供能 · 螺旋"],[ground.SOUTH,"南供能 · 已切断" if state.ln02_south_cut else "南供能 · 箭纹"]])
+		for anchors in tomb_routes(state.ln02_purified):
+			var route := PackedVector2Array()
+			for anchor in anchors: route.append(tomb_point(anchor,size))
+			draw_polyline(route,ink,3,true)
+		for index in marks.size():
+			var p := tomb_point(marks[index][0],size)
+			draw_circle(p,5,ink)
+			draw_string(font,p+Vector2(9,4),str(index+1),HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,ink)
+		if is_instance_valid(player):
+			var p := tomb_point(Vector2(player.global_position.x,player.global_position.z),size)
+			draw_circle(p,9,ink)
+			draw_circle(p,6,Color(1,0.85,0.36))
+			var forward := Vector2(-sin(player.global_rotation.y),-cos(player.global_rotation.y))
+			draw_line(p,p+forward*17,ink,3,true)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -99,15 +123,19 @@ func refresh() -> void:
 	# Give scaled labels their own vertical space; the retained page scrolls.
 	diagram.custom_minimum_size.y = 310 * state.text_scale
 	diagram.marks = known_route_marks(state)
-	navigation_hint.visible = state.current_map != state.MAP03 and state.mf01_acquired
-	navigation_hint.text = mf01_approach(state) if navigation_hint.visible else ""
+	navigation_hint.visible = state.current_map == state.MAP03 or state.mf01_acquired
+	navigation_hint.text = ("入口净化后，两侧石阶均可通行。左阶通往裂隙祭坛，右阶通往看守院；可自行选择顺序。" if state.ln02_purified else "入口结界尚未净化；先调查仪式记录并解除双供能。") if state.current_map == state.MAP03 else mf01_approach(state) if navigation_hint.visible else ""
 	route_key.text = ""
-	route_key.visible = state.current_map != state.MAP03
-	if route_key.visible:
+	route_key.visible = true
+	if state.current_map == state.MAP03:
+		route_key.text = "1 · CP03 灯台    2 · 返回草甸    3 · 仪式记录    4 · 入口结界"
+		if state.ln02_purified: route_key.text += "\n5 · 裂隙祭坛 · " + ("钥印已取得" if state.veyne_release_key else "检查钥印" if state.veyne_defeated else "维恩") + "    6 · 看守院 · " + ("锁印已解除" if state.warden_lock_released else "检查装置" if state.warden_defeated else "锁印看守")
+		if state.ln02_revealed: route_key.text += "\n" + ("7" if state.ln02_purified else "5") + " · 北供能    " + ("8" if state.ln02_purified else "6") + " · 南供能"
+	else:
 		var marks := known_route_marks(state)
 		for index in marks.size(): route_key.text += "%d · %s\n" % [index + 1, marks[index][1]]
 		if state.mf01_acquired: route_key.text += "灰色圆点：岩石掩体"
-	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + "\n" + state.rescue_information() + ("\n右侧石阶通往看守院；右院逐人用旧灯营救；入口内侧蓝灯旁主动集合。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
+	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + "\n" + state.rescue_information() + ("\n左侧石阶通往裂隙祭坛，右侧石阶通往看守院。两院均可先行；右院逐人用旧灯营救；入口内侧蓝灯旁主动集合。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
 	diagram.queue_redraw()
 	reflow(self)
 

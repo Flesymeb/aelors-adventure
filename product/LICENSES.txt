@@ -36,3 +36,62 @@ https://godotshaders.com/shader/cartoon-3d-fire/
 Adaptations: explicit simulation clock, bounded geometry, no automatic TIME,
 warning/contact/decay lifecycle, lower quality and Reduced Motion controls.
 No site preview images or third-party texture dependencies are included.
+
+Sword ribbon implementation:
+MeshStreak and weapon_streak by Cat Prisbrey, Copyright (c) 2024 Cat Prisbrey.
+https://github.com/catprisbrey/Cats-Godot4-Modular-Souls-like-Template
+Revision d8bceffc5bf4afe585a3a926fd9aa60ebd26e001, Unlicense.
+Adapted utility scripts/mesh_streak.gd and player/equipment_system/equipment/weapon_streak.gd
+as combat/cats/mesh_streak.gd and combat/sword_presentation.gd. Changes:
+explicit Snaiel event ownership, timed bounded fade, pose-discontinuity cleanup,
+blade socket endpoints and a restrained product-authored gradient shader.
+No Cats player controller, artwork or external shader-site artwork is included.
+
+This is free and unencumbered software released into the public domain.
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+software, either in source code form or as a compiled binary, for any purpose,
+commercial or non-commercial, and by any means.
+In jurisdictions that recognize copyright laws, the author or authors of this
+software dedicate any and all copyright interest in the software to the public
+domain. We make this dedication for the benefit of the public at large and to
+the detriment of our heirs and successors. We intend this dedication to be an
+overt act of relinquishment in perpetuity of all present and future rights to
+this software under copyright law.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+For more information, please refer to <https://unlicense.org>
+
+Chapter transition fade component:
+Scene Switcher by Pandita-Studio
+https://github.com/Pandita-Studio/scene-switcher-godot-addon
+Revision aa88ab647143f8d0448c4deaa8805b97027852ea.
+The fullscreen ColorRect/CanvasLayer and awaited alpha-tween sequence is
+adapted in ui/chapter_transition.gd. The product router retains world-state,
+loading and completion authority; the addon autoload and settings writes
+are not installed. This software notice does not license the cinematic media.
+
+MIT License
+
+Copyright (c) 2025 Pandita-Studio
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

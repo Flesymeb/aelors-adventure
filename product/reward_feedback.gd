@@ -7,12 +7,22 @@ var sparks: Array[CPUParticles3D] = []
 var cue_serial := 0
 var sword_readout_emissions := 0
 var last_sword_readout: Dictionary = {}
+var finisher_hint: Label
 
 func _ready() -> void:
 	layer = 7
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	finisher_hint = Label.new()
+	finisher_hint.theme = preload("res://dialogue_theme.tres")
+	finisher_hint.add_theme_color_override("font_color", Color(1, 0.91, 0.67))
+	finisher_hint.add_theme_color_override("font_outline_color", Color(0.08, 0.07, 0.04))
+	finisher_hint.add_theme_constant_override("outline_size", 4)
+	finisher_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	finisher_hint.visible = false
+	add_child(finisher_hint)
 
 func clear_feedback() -> void:
+	if finisher_hint: finisher_hint.visible = false
 	for cue in cues:
 		if is_instance_valid(cue.label): cue.label.queue_free()
 	cues.clear()
@@ -163,6 +173,14 @@ func spark(point: Vector3, color: Color) -> void:
 	particles.restart()
 
 func _process(delta: float) -> void:
+	# Only show the remapped control while the existing late-link is legal.
+	finisher_hint.visible = training.can_link_finisher() and training.finisher_eligible() and training.world.pause_owners.is_empty()
+	if finisher_hint.visible:
+		finisher_hint.text = "〔%s〕 重击终结" % training.player.key_prompt("heavy")
+		finisher_hint.add_theme_font_size_override("font_size", int(20 * minf(training.state.text_scale, 1.5)))
+		finisher_hint.reset_size()
+		var view := get_viewport().get_visible_rect().size
+		finisher_hint.position = Vector2((view.x - finisher_hint.size.x) * 0.5, view.y * 0.72)
 	if training.state.muted_sound and not sounds.is_empty():
 		for source in sounds:
 			if is_instance_valid(source):

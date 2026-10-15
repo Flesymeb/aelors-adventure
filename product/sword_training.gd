@@ -37,6 +37,7 @@ var environment_hitbox: SnaielHitbox
 var sword_source: SnaielDamageSource
 var sword_melee: SnaielMelee
 var sword_events: SnaielMeleeAnimations
+var sword_presentation: Node3D
 var pickup_delay = 0.0
 var blocking = false
 var parry_window = 0.0
@@ -133,6 +134,10 @@ func bind_player_combat() -> void:
 	sword_melee.configure()
 	sword_events.stage_changed.connect(sword_stage)
 	sword_events.attacking_finished.connect(sword_finished)
+	sword_presentation = preload("res://combat/sword_presentation.gd").new()
+	sword_presentation.name = "SwordPresentation"
+	add_child(sword_presentation)
+	sword_presentation.configure(self)
 	player_hitbox = SnaielHitbox.new()
 	player_hitbox.name = "PlayerHitbox"
 	player_hitbox.entity = player
@@ -190,6 +195,7 @@ func request_finisher() -> void:
 
 func sword_stage(stage: String) -> void:
 	clock = 0
+	if sword_presentation: sword_presentation.attack_stage(stage)
 	if stage == "anticipation": phase = "anticipation"
 	elif stage == "contact":
 		phase = "contact"
@@ -201,6 +207,7 @@ func sword_stage(stage: String) -> void:
 		if combo < 2: player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
 
 func sword_finished() -> void:
+	if sword_presentation: sword_presentation.clear_presentation()
 	if combo == FINISHER_INDEX:
 		player.animation_player.callback_mode_process = finisher_animation_process
 	if aerial_active:
@@ -447,6 +454,7 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	if sword_presentation: sword_presentation.clear_presentation()
 	if world.get("veyne_encounter") and _reason in ["death","load","recovery"]: world.veyne_encounter.interrupt()
 	if world.get("warden_encounter") and _reason in ["death","load","recovery"]: world.warden_encounter.interrupt()
 	if world.element_abilities and _reason in ["death", "load", "recovery"]: world.element_abilities.clear_transients()

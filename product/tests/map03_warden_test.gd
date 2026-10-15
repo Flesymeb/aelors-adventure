@@ -85,7 +85,7 @@ static func run() -> Dictionary:
 	restored.restore_config(saved)
 	checks.native_decode = STATE.HISTORY_READER.decode(saved.encode_to_text()).reason == ""
 	checks.restore = restored.warden_defeated and restored.warden_lock_released and restored.emergency_release_tool and not restored.inspect_warden_device() and restored.experience == xp
-	checks.victory_journal = restored.quest_entries().any(func(row): return row.id == "warden" and row.complete and row.context.contains("逐人释放"))
+	checks.victory_journal = restored.quest_entries().any(func(row): return row.id == "warden" and row.complete and row.context.contains("旧灯逐人") and row.context.contains("应急解除器"))
 	for key in ["warden_defeated","warden_lock_released","emergency_release_tool"]: saved.erase_section_key("post_bow",key)
 	checks.old_save_valid = state.config_unavailable_reason(saved) == ""
 	restored.restore_config(saved)

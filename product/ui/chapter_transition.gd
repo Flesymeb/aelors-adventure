@@ -32,6 +32,68 @@ var returning := false
 var destination_map := ""
 var tween: Tween
 var phase := "story"
+var video: VideoStreamPlayer
+var video_finished := false
+var video_failed := false
+var video_clock := 0.0
+var video_stall := 0.0
+var video_active := false
+var motion_resource_path := ""
+
+# Motion is optional until its source has been qualified. Missing media never
+# prevents legitimate travel or replaces the retained illustrated fallback.
+static func motion_spec(storyboard: Dictionary) -> Dictionary:
+	var motion: Variant = storyboard.get("arrival_motion", {})
+	if not motion is Dictionary: return {}
+	if motion.get("file", "") != "arrival.ogv": return {}
+	var duration: Variant = motion.get("duration_seconds", 0)
+	if not (duration is float or duration is int): return {}
+	if not is_finite(float(duration)) or float(duration) < 1.0 or float(duration) > 12.0: return {}
+	return motion
+
+func _stop_video() -> void:
+	video_active = false
+	if is_instance_valid(video):
+		video.stop()
+		video.hide()
+
+func _start_arrival_video() -> void:
+	_stop_video()
+	if skipped or returning or shorter or destination_map != state.MAP02 or state.reduced_motion: return
+	var storyboard: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ART + "storyboard.json"))
+	var spec := motion_spec(storyboard)
+	if spec.is_empty(): return
+	var resource_path: String = ART + spec.file if motion_resource_path == "" else motion_resource_path
+	if not ResourceLoader.exists(resource_path): return
+	var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(ART + "SOURCE.json"))
+	if not source is Dictionary: return
+	var qualification: Variant = source.get("arrival_motion", {})
+	if not qualification is Dictionary or qualification.get("qualified_for_integration", false) != true: return
+	var stream := load(resource_path) as VideoStream
+	if stream == null: return
+	video.stream = stream
+	if spec.get("caption", "") is String and spec.get("caption", "") != "":
+		captions.text = chapter_title + "\n" + spec.caption
+	video_finished = false
+	video_failed = false
+	video_clock = 0.0
+	video_stall = 0.0
+	video_active = true
+	# Pause the decoder as well as captions, even during an arrival fade.
+	video.play()
+	video.paused = paused
+	# Keep the illustration visible until the first decoded frame advances.
+	video.hide()
+	picture.show()
+
+func request_skip() -> void:
+	if not armed or paused: return
+	if phase == "story":
+		skipped = true
+		finish()
+	elif phase == "arrival":
+		skipped = true
+		_stop_video()
 
 static func available() -> bool:
 	for file in ["farewell.png", "passage.png", "arrival.png"]:
@@ -65,6 +127,14 @@ func _ready() -> void:
 	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	root.add_child(picture)
+	video = VideoStreamPlayer.new()
+	video.name = "ArrivalMotion"
+	video.expand = true
+	video.bus = "Effects"
+	video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	video.finished.connect(func(): video_finished = true)
+	video.hide()
+	root.add_child(video)
 	wear = Control.new()
 	wear.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	wear.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -97,7 +167,7 @@ func _ready() -> void:
 	actions.add_child(pause_button)
 	var skip := Button.new()
 	skip.text = "跳过 · 继续旅程"
-	skip.pressed.connect(func(): skipped = true; finish())
+	skip.pressed.connect(request_skip)
 	actions.add_child(skip)
 	for button in actions.get_children():
 		var button_frame := frame.duplicate() as StyleBoxTexture
@@ -119,6 +189,7 @@ func _ready() -> void:
 	_refresh_presentation()
 
 func _show_beat() -> void:
+	_stop_video()
 	picture.texture = load(ART + ("passage.png" if returning or destination_map == state.MAP03 else slides[beat].image))
 	captions.text = ("第一章 · 河谷聚落\n蓝光引你回到村庄灯台。" if returning else chapter_title + "\n" + slides[beat].caption)
 	if destination_map == state.MAP03:
@@ -130,18 +201,29 @@ func _show_beat() -> void:
 		picture.hide()
 		world.get_viewport().disable_3d = false
 	if beat == 1: cue.play()
+	if beat == 2: _start_arrival_video()
 
 func _layout() -> void:
 	var size := get_viewport().get_visible_rect().size
+	# Cover without stretching, using the qualified source's 16:9 composition.
+	var video_size := Vector2(size.y * 16.0 / 9.0, size.y)
+	if video_size.x < size.x: video_size = Vector2(size.x, size.x * 9.0 / 16.0)
+	video.size = video_size
+	video.position = (size - video_size) * 0.5
 	captions.add_theme_font_size_override("font_size",int(24*state.text_scale))
 	captions.custom_minimum_size.x = size.x*0.88-36
 	plate.custom_minimum_size.x = size.x*0.88
 	plate.size = Vector2(size.x*0.88,0)
+	plate.reset_size()
 	plate.position = Vector2(size.x*0.06,size.y-plate.size.y-28)
 	for button in actions.get_children(): button.add_theme_font_size_override("font_size",int(18*state.text_scale))
+	actions.reset_size()
 	actions.position = Vector2(maxf(16,size.x-actions.size.x-24),24)
 
 func _process(delta: float) -> void:
+	# Containers settle their text/theme minima after the first frame. Keep
+	# arrival and paused captions fitted too, rather than retaining a tall wrap.
+	_layout()
 	if not armed:
 		if not Input.is_key_pressed(KEY_SPACE) and not Input.is_key_pressed(KEY_ENTER) and not Input.is_key_pressed(KEY_E): armed = true
 		return
@@ -150,7 +232,7 @@ func _process(delta: float) -> void:
 	total_elapsed += delta
 	if Input.is_key_pressed(KEY_SPACE):
 		skip_hold += delta
-		if skip_hold >= 0.8: skipped = true; finish(); return
+		if skip_hold >= 0.8: request_skip(); return
 	else: skip_hold = 0
 	if elapsed >= float(slides[beat].duration_seconds):
 		elapsed -= float(slides[beat].duration_seconds)
@@ -158,7 +240,6 @@ func _process(delta: float) -> void:
 		beat += 1
 		_show_beat()
 	_refresh_presentation()
-	_layout()
 
 func _refresh_presentation() -> void:
 	var motion: bool = not state.reduced_motion and state.graphics_quality != "low"
@@ -187,14 +268,22 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func toggle_pause() -> void:
 	if not armed or phase in ["done", "revealing"]: return
-	paused = not paused
+	_set_presentation_paused(not paused)
+
+func _set_presentation_paused(value: bool) -> void:
+	paused = value
 	cue.stream_paused = paused
+	if is_instance_valid(video): video.paused = paused
 	armed = false
 	pause_button.text = "继续 [Esc]" if paused else "暂停 [Esc]"
 	skip_hold = 0
 	if tween and tween.is_valid():
 		if paused: tween.pause()
 		else: tween.play()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and phase in ["story", "arrival"] and is_instance_valid(pause_button) and not paused:
+		_set_presentation_paused(true)
 
 # Overlay/tween unit adapted from Pandita Studio scene-switcher aa88ab6.
 # Product state remains in the router. Await every fade, including final reveal.
@@ -208,6 +297,7 @@ func finish() -> void:
 	if phase != "story" or not armed or paused: return
 	phase = "closing"
 	finished = true
+	_stop_video()
 	veil.color.a = 1
 	veil.modulate.a = 0
 	await fade_to(1)
@@ -223,12 +313,34 @@ func reveal_arrival() -> void:
 	veil.color.a = 1
 	await fade_to(0)
 	var duration := 0.0 if skipped else float(slides[2].duration_seconds)
-	while elapsed < duration or paused:
+	while not skipped and (paused or (not video_finished and video_active) or elapsed < duration):
 		await get_tree().process_frame
-		if not paused: elapsed += get_process_delta_time()
+		if not is_inside_tree() or phase != "arrival": return
+		if not paused:
+			var delta := get_process_delta_time()
+			if video_active and not video_finished:
+				var position := video.stream_position
+				video_stall = video_stall + delta if position <= video_clock + 0.0001 else 0.0
+				video_clock = position
+				elapsed = position
+				var texture := video.get_video_texture()
+				var decoded := texture != null and texture.get_size().x > 0
+				if position > 0.03 and decoded: video.show()
+				# Decoder failure/stall uses the retained image for a full readable beat.
+				if video_stall >= 1.0 or position > 12.0 or (position > 1.0 and not decoded):
+					video_failed = true
+					_stop_video()
+					elapsed = 0.0
+			else:
+				elapsed += delta
+			if Input.is_key_pressed(KEY_SPACE):
+				skip_hold += delta
+				if skip_hold >= 0.8: request_skip()
+			else: skip_hold = 0.0
 		picture.scale = Vector2.ONE if state.reduced_motion else Vector2.ONE * (1.02 + 0.02 * elapsed / maxf(duration, 0.1))
 	phase = "revealing"
 	await fade_to(1)
+	_stop_video()
 	picture.hide()
 	plate.hide()
 	actions.hide()
@@ -239,6 +351,7 @@ func reveal_arrival() -> void:
 	completed.emit()
 
 func _release_world() -> void:
+	_stop_video()
 	if released or not is_instance_valid(world) or world.is_queued_for_deletion(): return
 	released = true
 	world.get_viewport().disable_3d = previous_disable_3d
@@ -252,4 +365,4 @@ func _exit_tree() -> void:
 func _mcp_state() -> Dictionary:
 	var live := is_inside_tree() and not is_queued_for_deletion()
 	var slide_ready := live and beat >= 0 and beat < slides.size()
-	return {"ready":live and is_node_ready() and slide_ready,"beat":beat+1 if slide_ready else null,"image":slides[beat].image if slide_ready else null,"elapsed":total_elapsed,"caption":captions.text if live and is_instance_valid(captions) and not captions.is_queued_for_deletion() else null,"paused":paused,"finished":finished,"phase":phase,"skipped":skipped,"inputs_armed":armed,"zoom":picture.scale.x if live and is_instance_valid(picture) and not picture.is_queued_for_deletion() else null,"transition_alpha":veil.color.a if live and is_instance_valid(veil) and not veil.is_queued_for_deletion() else null}
+	return {"ready":live and is_node_ready() and slide_ready,"beat":beat+1 if slide_ready else null,"image":slides[beat].image if slide_ready else null,"elapsed":total_elapsed,"caption":captions.text if live and is_instance_valid(captions) and not captions.is_queued_for_deletion() else null,"paused":paused,"finished":finished,"phase":phase,"skipped":skipped,"inputs_armed":armed,"zoom":picture.scale.x if live and is_instance_valid(picture) and not picture.is_queued_for_deletion() else null,"transition_alpha":veil.color.a if live and is_instance_valid(veil) and not veil.is_queued_for_deletion() else null,"video_active":video_active,"video_position":video_clock,"video_finished":video_finished,"video_failed":video_failed}

@@ -1,0 +1,16 @@
+{
+  "name": "forest_arrival",
+  "fps": 12,
+  "provider": "bailian-i2v",
+  "model": "wan3.0-video",
+  "prompt": "Five-second continuous cinematic for a medieval rescue adventure. Preserve the exact hooded green ranger, brown hair, leather armor, sheathed sword, bow, quiver and old lantern from the first frame. The ranger takes two calm grounded steps down the meadow path and stops to survey the distant timber roadblock. Gentle cloak and grass motion, a few drifting leaves, subtle lantern sway and warm light, distant moving mist. Keep the camera a restrained steady over-shoulder composition and maintain mature realistic painted fantasy style, matching dusk palette and geography. No combat, no rescue or victory, no new people, no equipment morphing, no jump cuts, no text, no UI, no watermarks. End on a steady readable arrival hold.",
+  "task_id": "d3d934b9-6adf-4988-a647-59a3f67f8955",
+  "video_url_expires": true,
+  "chroma": "none",
+  "frame_count": 60,
+  "asset_kind": "environment",
+  "source_video": "source.mp4",
+  "keyframe": "../arrival.png",
+  "provider_request_id": "aedbe4db-82da-9baf-b862-43fe5a888ee9",
+  "provider_task_status": "SUCCEEDED"
+}

@@ -5,6 +5,11 @@ var source: SnaielDamageSource
 var effects: Node3D
 var warning: MeshInstance3D
 var breath: MeshInstance3D
+var breath_core: MeshInstance3D
+var warning_quad: Mesh
+var footprint_clock := 0.0
+var breath_length := 0.0
+var warning_triangles := 0
 var kind := ""
 var stage := "idle"
 var elapsed := 0.0
@@ -15,6 +20,9 @@ var floor_y := 0.0
 var contacts := 0
 var stopped_by_wall := false
 var serial := 0
+const BREATH_REACH := 8.0
+const BREATH_BASE_RADIUS := 0.4
+const BREATH_SPREAD := 0.18
 const WINDUP := {"fire_breath":1.1,"charge":1.2,"dive":0.9}
 const ACTIVE := {"fire_breath":1.1,"charge":1.15,"dive":0.7}
 const RECOVERY := {"fire_breath":1.5,"charge":1.6,"dive":1.8}
@@ -31,24 +39,28 @@ func configure(owner: CharacterBody3D) -> void:
 	effects.configure(entity.encounter.world)
 	warning = preload("res://assets/bosses/veyne_effects.tscn").instantiate()
 	warning.material_override = warning.material_override.duplicate()
+	warning_quad = warning.mesh
 	# Attempt-owned lifetime, world-owned landing footprint.
 	warning.top_level = true
 	add_child(warning)
 	breath = MeshInstance3D.new()
-	var cone := CylinderMesh.new()
-	cone.top_radius = 1.5
-	cone.bottom_radius = 0.15
-	cone.height = 1
-	cone.radial_segments = 12
-	breath.mesh = cone
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://assets/shaders/fire_breath.gdshader")
 	mat.set_shader_parameter("flame_height",1.0)
 	mat.set_shader_parameter("flame_height_offset",-0.5)
 	mat.set_shader_parameter("outline_enabled",false)
+	mat.set_shader_parameter("breath_envelope",true)
 	breath.material_override = mat
 	breath.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(breath)
+	breath_core = MeshInstance3D.new()
+	breath_core.name = "BreathCore"
+	var core_material := mat.duplicate() as ShaderMaterial
+	core_material.set_shader_parameter("core_layer",true)
+	core_material.set_shader_parameter("max_alpha",0.28)
+	breath_core.material_override = core_material
+	breath_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(breath_core)
 	interrupt()
 
 func begin(move: String) -> bool:
@@ -74,10 +86,15 @@ func begin(move: String) -> bool:
 	entity.model.rotation.y = atan2(direction.x,direction.z)
 	entity.phase = "telegraph"
 	warning.material_override.set_shader_parameter("warning_color",Color(1,0.3,0.04,0.85))
+	warning.mesh = warning_quad
+	warning.material_override.set_shader_parameter("footprint",kind == "fire_breath")
 	warning.material_override.set_shader_parameter("radial",1.0 if kind == "dive" else 0.0)
 	warning.global_position = landing+Vector3.UP*0.05 if kind == "dive" else start+direction*4+Vector3.UP*0.05
-	warning.rotation.y = atan2(direction.x,direction.z)
+	warning.rotation = Vector3(-PI*0.5,atan2(direction.x,direction.z),0)
 	warning.scale = Vector3(6,6,1) if kind == "dive" else Vector3(3.2,8,1)
+	if kind == "fire_breath":
+		update_breath_warning(breath_profile())
+		footprint_clock = 0
 	warning.show()
 	entity.character.play("Cast" if kind == "fire_breath" else ("Takeoff" if kind == "dive" else "Reveal"),1,true)
 	entity.encounter.play_effect("beam" if kind == "fire_breath" else "melee")
@@ -90,12 +107,17 @@ func tick(delta: float) -> void:
 	elapsed += delta
 	warning.material_override.set_shader_parameter("progress",minf(1.0,elapsed/float(WINDUP[kind])))
 	if kind == "dive": tick_dive(delta); return
+	if kind == "fire_breath" and stage in ["warning","active"]:
+		footprint_clock -= delta
+		if footprint_clock <= 0:
+			update_breath_warning(breath_profile())
+			footprint_clock = 0.1
 	if stage == "warning" and elapsed >= WINDUP[kind]:
 		stage = "active"; elapsed = 0
 		entity.phase = "attack"
 		source.can_damage = true
 		entity.character.play("Cast" if kind == "fire_breath" else "Charge",1,true)
-		if kind == "fire_breath": breath.show()
+		if kind == "fire_breath": breath.show(); breath_core.show()
 	if stage == "active":
 		if kind == "fire_breath": sample_breath()
 		else:
@@ -105,24 +127,110 @@ func tick(delta: float) -> void:
 		if elapsed >= ACTIVE[kind]: recover()
 	elif stage == "recovery" and elapsed >= RECOVERY[kind]: finish()
 
-func sample_breath() -> Dictionary:
+static func breath_radius(along: float) -> float:
+	return BREATH_BASE_RADIUS + maxf(0.0,along) * BREATH_SPREAD
+
+static func inside_breath(mouth: Vector3, endpoint: Vector3, point: Vector3) -> bool:
+	var length := mouth.distance_to(endpoint)
+	if length < 0.001: return false
+	var axis := mouth.direction_to(endpoint)
+	var along := (point-mouth).dot(axis)
+	return along > 0 and along <= length and point.distance_to(mouth+axis*along) <= breath_radius(along)
+
+func breath_profile() -> Dictionary:
 	var mouth: Vector3 = entity.character.casting_position()
-	var endpoint := mouth+direction*8.0+Vector3.DOWN*maxf(0.0,mouth.y-floor_y-1.0)
+	var endpoint := mouth+direction*BREATH_REACH+Vector3.DOWN*maxf(0.0,mouth.y-floor_y-1.0)
 	var wall := wall_between(mouth,endpoint)
 	if not wall.is_empty(): endpoint = wall.position
-	var axis := mouth.direction_to(endpoint)
+	return {"mouth":mouth,"endpoint":endpoint,"axis":mouth.direction_to(endpoint),"length":mouth.distance_to(endpoint)}
+
+func update_breath_warning(profile: Dictionary) -> void:
+	# Sample the existing chest-height contact volume onto authored support.
+	# Cover uses the very same mouth-to-contact ray as damage, including side
+	# cover; the mesh never extends through the center obstruction endpoint.
+	var rows := 12 if entity.encounter.state.graphics_quality == "low" else 20
+	var columns := 4 if entity.encounter.state.graphics_quality == "low" else 8
+	var side := Vector3(-direction.z,0,direction.x)
+	var horizontal: float = Vector2(profile.endpoint.x-profile.mouth.x,profile.endpoint.z-profile.mouth.z).length()
+	var vertices := PackedVector3Array()
+	var colors := PackedColorArray()
+	var uvs := PackedVector2Array()
+	for row in rows+1:
+		var fraction := float(row)/rows
+		var center: Vector3 = profile.mouth+direction*horizontal*fraction
+		var radius := breath_radius(float(profile.length)*fraction)
+		for column in columns+1:
+			var lateral := float(column)/columns*2.0-1.0
+			var point := center+side*radius*lateral
+			var support: Dictionary = entity.encounter.world.ground_policy.support(entity.encounter.world,Vector2(point.x,point.z),[entity.get_rid(),entity.target.get_rid()])
+			var visible_point := false
+			if not support.is_empty():
+				point.y = support.position.y+0.055
+				var chest := point+Vector3.UP*1.025
+				visible_point = inside_breath(profile.mouth,profile.endpoint,chest) and wall_between(profile.mouth,chest).is_empty()
+			else: point.y = floor_y+0.055
+			vertices.append(point)
+			colors.append(Color(1,1,1,1 if visible_point else 0))
+			uvs.append(Vector2(float(column)/columns,fraction))
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	warning_triangles = 0
+	for row in rows:
+		for column in columns:
+			var a := row*(columns+1)+column
+			var b := a+columns+1
+			for triangle in [[a,b,a+1],[a+1,b,b+1]]:
+				if colors[triangle[0]].a+colors[triangle[1]].a+colors[triangle[2]].a == 0: continue
+				for index in triangle:
+					tool.set_color(colors[index]); tool.set_uv(uvs[index]); tool.set_normal(Vector3.UP)
+					tool.add_vertex(vertices[index])
+				warning_triangles += 1
+	warning.global_transform = Transform3D.IDENTITY
+	warning.mesh = tool.commit() if warning_triangles else null
+
+func update_breath_mesh(profile: Dictionary) -> void:
+	var axis: Vector3 = profile.axis
 	var tangent := axis.cross(Vector3.RIGHT).normalized()
 	if tangent.length_squared() < 0.1: tangent = axis.cross(Vector3.FORWARD).normalized()
-	breath.global_basis = Basis(tangent,axis,tangent.cross(axis).normalized())
-	breath.global_position = (mouth+endpoint)*0.5
-	breath.scale.y = maxf(0.01,mouth.distance_to(endpoint))
-	breath.material_override.set_shader_parameter("effect_time",0.0 if entity.encounter.state.reduced_motion else elapsed)
-	breath.material_override.set_shader_parameter("reduced_motion",entity.encounter.state.reduced_motion or entity.encounter.state.graphics_quality == "low")
+	var across := tangent.cross(axis).normalized()
+	var segments := 8 if entity.encounter.state.graphics_quality == "low" else 12
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for segment in segments:
+		var points: Array[Vector3] = []
+		var texcoords: Array[Vector2] = []
+		for corner in 4:
+			var far_end := corner >= 2
+			var ring_index := segment+(corner%2)
+			var angle := TAU*float(ring_index)/segments
+			var ring := tangent*cos(angle)+across*sin(angle)
+			var along := float(profile.length) if far_end else 0.0
+			var point: Vector3 = profile.mouth+axis*along+ring*breath_radius(along)
+			var wall := wall_between(profile.mouth,point)
+			if not wall.is_empty(): point = wall.position
+			# Local +Y is the actual mouth-to-endpoint axis, centered at the mouth.
+			points.append(Vector3((point-profile.mouth).dot(tangent),(point-profile.mouth).dot(axis),(point-profile.mouth).dot(across)))
+			texcoords.append(Vector2(float(ring_index)/segments,1.0 if far_end else 0.0))
+		for index in [0,2,1,1,2,3]:
+			tool.set_uv(texcoords[index]); tool.set_normal(Vector3(points[index].x,0,points[index].z).normalized()); tool.add_vertex(points[index])
+	breath.mesh = tool.commit()
+	breath_core.mesh = breath.mesh
+	for node in [breath,breath_core]:
+		node.global_transform = Transform3D(Basis(tangent,axis,across),profile.mouth)
+		node.material_override.set_shader_parameter("flame_height",maxf(0.001,float(profile.length)))
+		node.material_override.set_shader_parameter("flame_height_offset",0.0)
+		node.material_override.set_shader_parameter("effect_time",0.0 if entity.encounter.state.reduced_motion else elapsed)
+		node.material_override.set_shader_parameter("reduced_motion",entity.encounter.state.reduced_motion or entity.encounter.state.graphics_quality == "low")
+
+func sample_breath() -> Dictionary:
+	var profile := breath_profile()
+	breath_length = profile.length
+	if breath_length < 0.01:
+		breath.hide(); breath_core.hide(); return {}
+	breath.show(); breath_core.show()
+	update_breath_mesh(profile)
 	var target_point: Vector3 = entity.target.global_position+Vector3.UP
-	var along: float = (target_point-mouth).dot(axis)
-	if along <= 0 or along > mouth.distance_to(endpoint): return {}
-	var lateral: float = (target_point-(mouth+axis*along)).length()
-	if lateral > 0.4+along*0.18 or not wall_between(mouth,target_point).is_empty(): return {}
+	if not inside_breath(profile.mouth,profile.endpoint,target_point) or not wall_between(profile.mouth,target_point).is_empty(): return {}
 	return contact(target_point,"fire")
 
 func sample_charge(previous: Vector3, current: Vector3) -> Dictionary:
@@ -191,7 +299,7 @@ func contact(point: Vector3, element: String) -> Dictionary:
 
 func recover() -> void:
 	source.can_damage = false
-	breath.hide(); warning.hide()
+	breath.hide(); breath_core.hide(); warning.hide()
 	stage = "recovery"; elapsed = 0; entity.phase = "recovery"
 	ground_after_flight()
 	entity.character.play("Land" if kind == "dive" else "Idle",1,true)
@@ -209,9 +317,10 @@ func interrupt() -> void:
 	if source: source.can_damage = false
 	if warning: warning.hide()
 	if breath: breath.hide()
+	if breath_core: breath_core.hide()
 	if effects: effects.clear_transients()
 	if entity: ground_after_flight()
 	kind = ""; stage = "idle"; elapsed = 0
 
 func _mcp_state() -> Dictionary:
-	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {}}
+	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"breath_length":breath_length,"warning_triangles":warning_triangles,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {}}

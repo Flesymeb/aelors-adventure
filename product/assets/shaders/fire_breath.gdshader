@@ -4,6 +4,8 @@ render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
 uniform float effect_time = 0.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 uniform bool reduced_motion = false;
+uniform bool core_layer = false;
+uniform bool breath_envelope = false;
 // Native alpha blending keeps actor silhouettes and escape lanes visible.
 uniform float max_alpha : hint_range(0.0, 1.0) = 0.42;
 
@@ -72,6 +74,7 @@ void vertex() {
 		}
 	}
 
+	if (core_layer) { v_pos.xz *= 0.3; }
 	local_pos = v_pos;
 	VERTEX = v_pos;
 }
@@ -211,7 +214,7 @@ void fragment() {
 		}
 } else {
 		float d = getDepth(noise, cutoff, steps);
-		vec3 col = d >= color_threshold ? color_inner.rgb : color_outer.rgb;
+		vec3 col = core_layer ? color_inner.rgb : (d >= color_threshold ? color_inner.rgb : color_outer.rgb);
 
 		if (use_additional_texture) {
 			vec3 blend_weights = abs(NORMAL);
@@ -227,7 +230,7 @@ void fragment() {
 		}
 
 		ALBEDO = col;
-		EMISSION = col * 1.2;
+		EMISSION = col * (core_layer ? 1.7 : (breath_envelope ? 0.85 : 1.2));
 		// Avoid the surviving solid cone/strip branch, even under reduced motion.
 		float density = smoothstep(cutoff, cutoff + 0.22, noise);
 		float ends = smoothstep(0.0, 0.06, height01) * (1.0 - smoothstep(0.78, 1.0, height01));

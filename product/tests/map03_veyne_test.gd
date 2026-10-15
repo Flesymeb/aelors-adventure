@@ -4,6 +4,24 @@ const CIRCUIT = preload("res://tests/map03_barrier_test.gd")
 const HISTORY = preload("res://tests/chapter_travel_test.gd")
 const STATE = preload("res://dialogue_state.gd")
 
+static func breath_presentation_checks() -> Dictionary:
+	var actions = preload("res://combat/veyne_dragon_actions.gd")
+	var mouth := Vector3(0,2,0)
+	var endpoint := Vector3(0,1,8)
+	var axis := mouth.direction_to(endpoint)
+	var near := mouth+axis*2.0
+	var far := mouth+axis*7.0
+	return {
+		"near_width_preserved":is_equal_approx(actions.breath_radius(2),0.76),
+		"far_width_expands":is_equal_approx(actions.breath_radius(7),1.66),
+		"near_lateral_escape":not actions.inside_breath(mouth,endpoint,near+Vector3.RIGHT),
+		"far_lane_inside":actions.inside_breath(mouth,endpoint,far+Vector3.RIGHT),
+		"far_lateral_escape":not actions.inside_breath(mouth,endpoint,far+Vector3.RIGHT*2),
+		"behind_mouth_miss":not actions.inside_breath(mouth,endpoint,mouth-axis),
+		"obstruction_endpoint_limits_contact":not actions.inside_breath(mouth,mouth+axis*3,far),
+		"zero_length_safe":not actions.inside_breath(mouth,mouth,mouth)
+	}
+
 static func camera_projection_checks() -> Dictionary:
 	var controller = preload("res://player_controller.gd")
 	var checks := {}
@@ -288,6 +306,13 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 	var checks := {"started":accepted,"warning_no_damage":false,"recovery":false,"flight_clip_advanced":false}
 	var before_contacts: int = action.contacts
 	var warning_position: Vector3 = action.warning.global_position
+	if move == "fire_breath":
+		# Complete cover can remove every reachable chest-height sample. An
+		# intentionally empty footprint must not be mistaken for a rectangle.
+		var covered_empty: bool = scenario.ends_with("wall") and action.warning.mesh == null and action.warning_triangles == 0 and not action.wall_between(actor.character.casting_position(),world.player.global_position+Vector3.UP).is_empty()
+		checks.warning_uses_contact_footprint = action.warning.material_override.get_shader_parameter("footprint") == true and (action.warning.mesh is ArrayMesh or covered_empty)
+		checks.warning_world_owned = action.warning.top_level and action.warning.global_transform.is_equal_approx(Transform3D.IDENTITY)
+		checks.warning_shape_not_rectangle = action.warning_triangles > 2 or covered_empty
 	if move == "dive":
 		checks.warning_world_owned = action.warning.top_level
 		checks.warning_matches_landing = warning_position.is_equal_approx(action.landing+Vector3.UP*0.05) and action.warning.scale.x==6.0 and action.warning.scale.y==6.0
@@ -314,6 +339,9 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 				var hit: Dictionary = actor.receive_contact(source,actor.global_position+Vector3.UP)
 				checks.hurt_interrupts = hit.get("accepted",false) and action.kind=="" and not action.source.can_damage and not action.warning.visible and not action.breath.visible and action.effects.records.is_empty()
 				source.free(); break
+			if move == "fire_breath" and action.stage == "active":
+				checks.core_envelope_share_geometry = action.breath.mesh == action.breath_core.mesh and action.breath_core.visible and action.breath_core.material_override.get_shader_parameter("core_layer") == true
+				checks.local_mouth_origin = action.breath.global_position.is_equal_approx(actor.character.casting_position())
 			if action.stage == "recovery":
 				checks.recovery = not action.source.can_damage and not action.warning.visible and not action.breath.visible
 				break
@@ -345,7 +373,7 @@ static func dragon_case(world: Node3D, scenario: String) -> Dictionary:
 	boss.set_menu_paused(false)
 	world._set_pause_owner("dragon_case",false)
 	actor.interrupt_action()
-	checks.interruption_cleanup = action.kind=="" and not action.source.can_damage and action.effects.records.is_empty()
+	checks.interruption_cleanup = action.kind=="" and not action.source.can_damage and action.effects.records.is_empty() and not action.breath_core.visible
 	if obstacle: obstacle.queue_free()
 	world.dialogue_state.health = 100
 	world.training.hurt_time = 0; world.training.protection = 0; world.training.phase = "idle"

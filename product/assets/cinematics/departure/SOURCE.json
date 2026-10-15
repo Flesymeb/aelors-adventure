@@ -81,5 +81,35 @@
       "sha256": "e331c76785e07d6e339f0ae32336c3041f9d4715db8d9b7573961228176dc72e",
       "role": "inspected character identity and medieval palette/style reference"
     }
-  ]
+  ],
+  "arrival_motion": {
+    "file": "arrival.ogv",
+    "origin": "generated",
+    "generator_tool_id": "video-sprite-pipeline",
+    "provider": "bailian-i2v",
+    "model": "wan3.0-video",
+    "task_id": "d3d934b9-6adf-4988-a647-59a3f67f8955",
+    "request_id": "aedbe4db-82da-9baf-b862-43fe5a888ee9",
+    "first_frame": "arrival.png",
+    "source_video": "arrival_source/source.mp4",
+    "duration_seconds": 5.0,
+    "width": 1278,
+    "height": 720,
+    "fps": 30,
+    "runtime_codec": "theora",
+    "audio": "Provider audio omitted from runtime copy; existing game Effects cue and area music retain ownership.",
+    "usage_terms": "Generated through Alibaba Cloud Model Studio; applicable provider service terms govern. The first frame retains its existing generated-image provenance. No CC0, MIT or asset-specific public licence is claimed.",
+    "qualified_for_integration": true,
+    "review": "Reviewed all 60 sampled frames: hooded green ranger takes grounded steps; cloak, lantern, leaves and atmosphere move. Sword, bow, quiver, leather armor and distant roadblock remain consistent. No victory, rescue or reunion is depicted. Full Theora software decode passed; target runtime review remains separate.",
+    "conversion": "FFmpeg libtheora quality 7, yuv420p, no embedded audio. Original provider MP4 retained unchanged."
+  },
+  "transition_component": {
+    "source_url": "https://github.com/Pandita-Studio/scene-switcher-godot-addon",
+    "revision": "aa88ab647143f8d0448c4deaa8805b97027852ea",
+    "source_file": "addons/sceneswitcher/sceneswitcher.gd",
+    "binding": "ui/chapter_transition.gd",
+    "adaptation": "Retained fullscreen overlay and awaited alpha-tween boundary; product router owns loading, world state and once-only completion. Addon autoload and project-settings writes are not installed.",
+    "license": "MIT; full notice in LICENSES.txt",
+    "scope": "Implementation component only; generated arrival video retains its separate provider provenance and terms."
+  }
 }

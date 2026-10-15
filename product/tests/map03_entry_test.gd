@@ -124,8 +124,28 @@ static func prepared() -> Node:
 	state.purify_ln01_location()
 	return state
 
+static func tomb_map_checks() -> Dictionary:
+	var diagram = preload("res://ui/map_page.gd").RouteDiagram
+	var ground = preload("res://world/map03_ground.gd")
+	var locked: Array = diagram.tomb_routes(false)
+	var open: Array = diagram.tomb_routes(true)
+	var size := Vector2(900,310)
+	var entry: Vector2 = diagram.tomb_point(ground.ENTRY,size)
+	var left: Vector2 = diagram.tomb_point(preload("res://world/veyne_arena.gd").HOME,size)
+	var right: Vector2 = diagram.tomb_point(preload("res://combat/map03_warden.gd").HOME,size)
+	return {
+		"locked_routes_do_not_expose_boss_approaches":locked.size()==2,
+		"both_routes_available_after_ln02":open.size()==4,
+		"left_stairs_retained":open[2].has(ground.VEYNE_APPROACH) or open[2].has(ground.VEYNE_ROUTE[2]),
+		"right_stairs_retained":open[3].has(ground.OPEN_ROUTE[2]),
+		"branches_share_real_junction":open[2][0]==open[3][0] and open[2][0]==Vector2(0,-3),
+		"north_projection_preserved":left.y<right.y and right.y<entry.y,
+		"left_right_projection_preserved":left.x<right.x,
+		"all_anchors_inside_page":Rect2(Vector2.ZERO,size).has_point(entry) and Rect2(Vector2.ZERO,size).has_point(left) and Rect2(Vector2.ZERO,size).has_point(right)
+	}
+
 static func run() -> Dictionary:
-	var checks := {}
+	var checks := tomb_map_checks()
 	var locked: Node = CIRCUIT.prepared()
 	checks.premature_tomb_rejected = not locked.commit_arrival(locked.MAP03) and locked.current_map == locked.MAP02 and not locked.cp03_claimed and not locked.tomb_missing_conditions().is_empty()
 	checks.record_before_arrival_rejected = not locked.acquire_ritual_record()

@@ -58,6 +58,34 @@ class DiagnosticRouter extends "res://ui/game_entry_router.gd":
 		observation.diagnostic_save_requests = state.diagnostic_save_requests if is_instance_valid(state) else null
 		return observation
 
+class MotionWorld extends Node3D:
+	var dialogue_state: Node
+	var pause_owners: Dictionary = {}
+	var completion_count := 0
+	func active_map_id() -> String: return dialogue_state.GROUND.MAP_ID
+	func _set_pause_owner(owner: String, enabled: bool) -> void:
+		if enabled: pause_owners[owner] = true
+		else: pause_owners.erase(owner)
+
+static func attach_motion_diagnostic(parent: Node, reduced := false, missing := false) -> CanvasLayer:
+	# A decoder/lifecycle fixture only: no travel facts, inventory grants or saves.
+	var stage := MotionWorld.new()
+	stage.name = "MotionFixture"
+	parent.add_child(stage)
+	stage.dialogue_state = DiagnosticState.new()
+	stage.add_child(stage.dialogue_state)
+	stage.dialogue_state.reduced_motion = reduced
+	var overlay := preload("res://ui/ChapterTransition.tscn").instantiate() as CanvasLayer
+	overlay.name = "ArrivalPlayback"
+	overlay.world = stage
+	overlay.destination_map = stage.dialogue_state.MAP02
+	if missing: overlay.motion_resource_path = "res://tests/fixtures/absent_arrival.ogv"
+	overlay.completed.connect(func(): stage.completion_count += 1; overlay._release_world())
+	stage.add_child(overlay)
+	overlay.armed = true
+	overlay.reveal_arrival()
+	return overlay
+
 static func attach_diagnostic(parent: Node) -> Node:
 	# Prepared state is component support, never evidence of earned progression.
 	# All save calls are intercepted before either world can autosave.
@@ -103,6 +131,7 @@ static func run() -> Dictionary:
 	restored.restore_config(source)
 	checks.interrupted_source = restored.current_map == s.GROUND.MAP_ID and not restored.cp02_claimed and restored.lives == first_lives and restored.departure_confirmed
 	checks.merge(resource_checks())
+	checks.merge(motion_boundary_checks())
 	checks.merge(collision_handoff_checks())
 	destination.set_value("post_bow", "cp02_claimed", false)
 	checks.reject_unsafe_map = s.config_unavailable_reason(destination) != ""
@@ -112,6 +141,30 @@ static func run() -> Dictionary:
 	unearned.logical_node = "G04"
 	checks.no_unearned_consent = not unearned.choose(0) and not unearned.departure_confirmed
 	unearned.free()
+	return checks
+
+static func motion_boundary_checks() -> Dictionary:
+	var transition = preload("res://ui/chapter_transition.gd")
+	var checks := {
+		"missing_motion_retains_fallback": transition.motion_spec({}).is_empty(),
+		"invalid_motion_type_rejected": transition.motion_spec({"arrival_motion": "arrival.ogv"}).is_empty(),
+		"unbounded_motion_rejected": transition.motion_spec({"arrival_motion": {"file": "arrival.ogv", "duration_seconds": 99}}).is_empty(),
+		"other_media_path_rejected": transition.motion_spec({"arrival_motion": {"file": "../other.ogv", "duration_seconds": 5}}).is_empty(),
+	}
+	var overlay = transition.new()
+	overlay.armed = true
+	overlay.phase = "arrival"
+	overlay.paused = true
+	overlay.request_skip()
+	checks.paused_skip_preserves_boundary = not overlay.skipped
+	overlay.paused = false
+	overlay.request_skip()
+	checks.arrival_skip_consumed = overlay.skipped
+	overlay.skipped = false
+	overlay.phase = "loading"
+	overlay.request_skip()
+	checks.loading_skip_no_second_boundary = not overlay.skipped
+	overlay.free()
 	return checks
 
 static func objective_projection_checks(source: ConfigFile) -> Dictionary:

@@ -17,5 +17,11 @@
       "caption": "林缘草甸灯台 · 前方近战者挡住押送道路。",
       "duration_seconds": 1.4
     }
-  ]
+  ],
+  "arrival_motion": {
+    "file": "arrival.ogv",
+    "duration_seconds": 5.0,
+    "caption": "林缘草甸灯台 · 沿泥路追踪押送队。前方木栅仍未突破。",
+    "aspect_ratio": 1.775
+  }
 }
