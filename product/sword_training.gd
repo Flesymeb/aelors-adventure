@@ -223,11 +223,15 @@ func resolve_practice_contact(_source: SnaielDamageSource, point: Vector3) -> Di
 	tell("命中成立 · 回到赫斯身边按 E 练习防御")
 	return {"accepted": true, "outcome": "practice", "hp_loss": 0.0}
 
-func resolve_player_contact(source: SnaielDamageSource, _point: Vector3) -> Dictionary:
+func resolve_player_contact(source: SnaielDamageSource, point: Vector3) -> Dictionary:
 	var before: float = state.health
-	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false),not source.get_meta("unblockable",false),not source.get_meta("unparryable",false))
+	# The hitbox appends identity after this policy returns. Capture it now so
+	# immediate defense/hurt/death cues describe this contact, not a later pose.
+	var contact := {"point": point, "source_id": source.get_instance_id(), "attack_instance": source.instance, "receiver": str(player.get_path()), "hp_before": before, "simulated": false}
+	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false),not source.get_meta("unblockable",false),not source.get_meta("unparryable",false), contact)
 	if outcome == "parry": source.get_parried()
-	return {"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_before": before, "hp_after": state.health, "hp_loss": before - state.health}
+	contact.merge({"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_after": state.health, "hp_loss": before - state.health}, true)
+	return contact
 
 func resolved_enemy_contact(result: Dictionary) -> void:
 	var defeated: bool = result.outcome == "defeat"
@@ -560,7 +564,7 @@ func stop_on_contact(seconds: float) -> void:
 	player.animation_player.speed_scale = 0
 	sword_events.timeline.speed_scale = 0
 
-func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false, blockable = true, parryable = true) -> String:
+func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false, blockable = true, parryable = true, contact: Dictionary = {}) -> String:
 	last_hp_loss = 0
 	if player_locked(): return "unavailable"
 	if protection > 0: return "protected"
@@ -586,11 +590,9 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 		last_outcome = "parry"
 		parry_window = 0
 		stop_on_contact(0.055)
-		feedback.impact(player.global_position + Vector3.UP, "◇ 振刀", 0, "parry")
 	elif blockable and blocking and front:
 		last_outcome = "block"
 		last_hp_loss = 0 if simulated else minf(state.health, amount * 0.3)
-		feedback.impact(player.global_position + Vector3.UP, "◇ 格挡", last_hp_loss, "block")
 	else:
 		last_outcome = "hurt"
 		last_hp_loss = 0 if simulated else minf(state.health, amount)
@@ -601,9 +603,18 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 			interrupt("hurt")
 			hurt_time = 0.45
 			player._play_animation("Hit_Chest")
+	var before: float = state.health
 	state.health -= last_hp_loss
-	if not simulated and last_outcome == "hurt" and state.health > 0:
-		feedback.impact(player.global_position + Vector3.UP, "受击", last_hp_loss, "hurt")
+	var resolved := contact.duplicate(true)
+	resolved.merge({"outcome": last_outcome, "hp_before": before, "hp_after": state.health, "hp_loss": last_hp_loss, "simulated": simulated}, true)
+	# Only simulated training/direct fall callers lack physical contact geometry.
+	var point: Vector3 = resolved.get("point", player.global_position + Vector3.UP)
+	if last_outcome == "parry":
+		feedback.impact(point, "◇ 振刀", 0, "parry", resolved)
+	elif last_outcome == "block":
+		feedback.impact(point, "◇ 格挡", last_hp_loss, "block", resolved)
+	elif not simulated and last_outcome == "hurt" and state.health > 0:
+		feedback.impact(point, "受击", last_hp_loss, "hurt", resolved)
 	if simulated and last_outcome in ["block", "parry", "dodge"]:
 		state.practice_defense = true
 		if last_outcome == "parry": state.practice_parry = true
@@ -612,7 +623,7 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 		# A generic completion notice must not erase early/success feedback.
 		var result_text = "振刀成功" if last_outcome == "parry" else ("格挡有效 · 振刀偏早" if last_outcome == "block" else "闪避有效")
 		tell(result_text + " · 防御练习完成；可挑战训练怪，或松开右键按 E 重试", 4)
-	if state.health <= 0: settle_death()
+	if state.health <= 0: settle_death(resolved)
 	return last_outcome
 
 func lethal_fall() -> void:
@@ -622,7 +633,7 @@ func lethal_fall() -> void:
 		state.health = 0
 		settle_death()
 
-func settle_death() -> void:
+func settle_death(contact: Dictionary = {}) -> void:
 	if phase == "death" or state.lives <= 0: return
 	interrupt("death")
 	phase = "death"
@@ -635,7 +646,7 @@ func settle_death() -> void:
 	player.velocity = Vector3.ZERO
 	player._play_animation("Death01")
 	# One terminal cue carries the same clamped loss as the lethal outcome.
-	feedback.impact(player.global_position + Vector3.UP, "倒下", last_hp_loss, "death")
+	feedback.impact(contact.get("point", player.global_position + Vector3.UP), "倒下", last_hp_loss, "death", contact)
 	commit()
 	tell("命数 -1 · 剩余 %d · 返回%s" % [state.lives,state.checkpoint_name()], 4)
 

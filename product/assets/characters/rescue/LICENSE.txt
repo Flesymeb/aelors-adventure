@@ -1,0 +1,20 @@
+Captive model adaptations
+
+Quaternius Modular Character Outfits - Fantasy (Ranger), Universal Base Characters (complete heads and Hair_SimpleParted), CC0-1.0.
+https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+https://quaternius.itch.io/universal-base-characters
+
+Adaptations: identity-specific modular garment selection and material colors, complete rigid head/hair assembly on the retained 65-bone rig, embedded textures limited to 1024 pixels. Derived GLBs were exported from the retained product assemblies with Godot GLTFDocument. Animations remain separately bound to the retained UAL1 library. Original source assets remain unchanged.
+
+-------------------------------------------------------
+License:
+CC0 1.0 Universal (CC0 1.0) 
+Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+------------------------------------------------------
+Models by @Quaternius
+Consider supporting me on Patreon!
+
+https://www.patreon.com/quaternius
+

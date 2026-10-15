@@ -1,5 +1,78 @@
 extends RefCounted
 ## Explicit diagnostic only; never attached to the normal entry path.
+class CameraReadinessPlayer extends "res://player_controller.gd":
+	# Exercise the real restore helper without actor loading, controls files,
+	# animation, traversal, combat, or any normal-startup callbacks.
+	func _ready() -> void:
+		arm.add_excluded_object(get_rid())
+
+static func restored_camera_readiness_checks(parent: Node) -> Dictionary:
+	# Synchronous, disposable native fixture. In particular, do not await/thaw a
+	# frame to obtain a better pose: that would hide the ordering under test.
+	var viewport := SubViewport.new()
+	viewport.name = "RestoredCameraReadiness"
+	viewport.own_world_3d = true
+	viewport.process_mode = Node.PROCESS_MODE_DISABLED
+	var player := CameraReadinessPlayer.new()
+	player.name = "CameraReadinessPlayer"
+	var visual := Node3D.new()
+	visual.name = "Visual"
+	player.add_child(visual)
+	var arm := SpringArm3D.new()
+	arm.name = "CameraArm"
+	arm.collision_mask = 1
+	player.add_child(arm)
+	var camera := Camera3D.new()
+	camera.name = "Camera"
+	arm.add_child(camera)
+	viewport.add_child(player)
+	parent.add_child(viewport)
+	var observations := {}
+	var checks := {}
+	var physics_frame := Engine.get_physics_frames()
+	var idle_frame := Engine.get_process_frames()
+	var paused := parent.get_tree().paused
+	# Initial placement and an already-ready actor's same-map teleport have
+	# distinct transform histories. Neither may depend on a gameplay tick.
+	for boundary in ["initial_placement", "same_map_teleport"]:
+		player.global_position = Vector3(4, 2, -8) if boundary == "initial_placement" else Vector3(-7, 5, 11)
+		player.velocity = Vector3(1, 2, 3)
+		player.attack_timer = 0.37
+		player.switch_timer = 0.21
+		var position := player.global_position
+		var velocity := player.velocity
+		player.prepare_restored_camera(0.7)
+		var direct := restored_camera_observation(player)
+		# If this differs from direct, a repeated native sweep can expose native
+		# initialization readiness rather than a wrapper or dialogue transform.
+		arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+		var repeated := restored_camera_observation(player)
+		player.force_update_transform()
+		arm.force_update_transform()
+		arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+		var forced := restored_camera_observation(player)
+		observations[boundary] = {"direct": direct, "repeated_native": repeated, "forced_transform": forced}
+		checks[boundary + "_external_immediately"] = direct.camera_arm_distance > player.free_camera_distance - 0.02
+		checks[boundary + "_native_length"] = is_equal_approx(direct.hit_length, player.free_camera_distance)
+		checks[boundary + "_repeat_stable"] = direct == repeated
+		checks[boundary + "_transform_stable"] = direct == forced
+		checks[boundary + "_gameplay_unchanged"] = player.global_position == position and player.velocity == velocity and player.attack_timer == 0.37 and player.switch_timer == 0.21
+	checks.no_gameplay_frame = Engine.get_physics_frames() == physics_frame and Engine.get_process_frames() == idle_frame
+	checks.pause_preserved = parent.get_tree().paused == paused
+	viewport.free()
+	return {"scope": "isolated native camera readiness; no ordinary history or collision-scene acceptance", "checks": checks, "observations": observations}
+
+static func restored_camera_observation(player: Node3D) -> Dictionary:
+	# Read-only; usable on an ordinary restored player before/after nested UI.
+	var arm: SpringArm3D = player.arm
+	var camera: Camera3D = player.camera
+	return {"player_position": player.global_position, "arm_position": arm.global_position,
+		"camera_position": camera.global_position, "camera_local_position": camera.position,
+		"camera_arm_distance": camera.global_position.distance_to(arm.global_position),
+		"requested_length": arm.spring_length, "hit_length": arm.get_hit_length(),
+		"arm_rotation": arm.rotation, "camera_rotation": camera.rotation,
+		"controls_open": player.controls_open, "paused": player.get_tree().paused}
+
 class RecoveryDiskState extends "res://dialogue_state.gd":
 	# Dedicated disposable namespace; never production saves or preferences.
 	var fail_recovery_write := false

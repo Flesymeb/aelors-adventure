@@ -3,6 +3,7 @@ extends Node3D
 ## No InputMap, player input, camera, traversal, projectile or save ownership.
 @export var appearance: Resource
 @export var model_scene: PackedScene
+@export var assembled_head := false
 const MODEL_PATH = "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
 const ANIMATION_PATH = "res://Characters/QuaterniusAnimations/UAL1_Standard.glb"
 const SWORD_ANIMATION_PATH = "res://Characters/QuaterniusAnimations/UAL2_Standard.glb"
@@ -54,8 +55,12 @@ func _ready() -> void:
 	character_model = (model_scene if model_scene else load(MODEL_PATH)).instantiate()
 	visual.add_child(character_model)
 	skeleton = character_model.get_node("Armature/Skeleton3D")
-	head_components.append(character_model.find_child("Male_Ranger_Head_Hood", true, false))
-	head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton))
+	var hood := character_model.find_child("Male_Ranger_Head_Hood", true, false) as MeshInstance3D
+	if hood: head_components.append(hood)
+	if assembled_head:
+		for mesh in character_model.find_children("BaseHead_*", "MeshInstance3D", true, false): head_components.append(mesh)
+	else:
+		head_components.append_array(HEAD_ASSEMBLY.assemble(skeleton))
 	var source = load(ANIMATION_PATH).instantiate()
 	animation_player = source.get_node("AnimationPlayer")
 	animation_player.owner = null

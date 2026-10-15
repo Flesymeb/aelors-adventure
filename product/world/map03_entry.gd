@@ -6,6 +6,7 @@ var return_passage: Node3D
 var entrance_circuit: Node3D
 var warden_encounter: Node3D
 var veyne_encounter: Node3D
+var rescue_encounter: Node3D
 var route_ready := false
 var route_samples := 0
 var collision_meshes := 0
@@ -103,6 +104,9 @@ func _ready() -> void:
 	veyne_encounter = preload("res://combat/map03_veyne.tscn").instantiate()
 	add_child(veyne_encounter)
 	veyne_encounter.configure(self)
+	rescue_encounter = preload("res://world/map03_rescue.tscn").instantiate()
+	add_child(rescue_encounter)
+	rescue_encounter.configure(self)
 	_place_player.call_deferred()
 
 func create_environment() -> Node3D:
@@ -129,7 +133,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not TOMB_GROUND.place(self,player,xz): xz = TOMB_GROUND.ENTRY; continue
-		if not ritual_record.grounded or not return_passage.grounded or not entrance_circuit.grounded or not warden_encounter.grounded or not veyne_encounter.grounded: continue
+		if not ritual_record.grounded or not return_passage.grounded or not entrance_circuit.grounded or not warden_encounter.grounded or not veyne_encounter.grounded or not rescue_encounter.grounded: continue
 		var stance := Node3D.new()
 		add_child(stance)
 		route_samples = 0
@@ -147,7 +151,7 @@ func _place_player() -> void:
 	entry_failed.emit("墓殿落脚点无法准备，已保留上一处边界。")
 
 func destination_ready() -> bool:
-	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded and entrance_circuit.grounded and warden_encounter.grounded and veyne_encounter.grounded
+	return route_ready and is_instance_valid(player) and player.has_meta("spawn_position") and ritual_record.grounded and return_passage.grounded and entrance_circuit.grounded and warden_encounter.grounded and veyne_encounter.grounded and rescue_encounter.grounded
 
 func restore_destination_history() -> void:
 	super()
@@ -155,6 +159,7 @@ func restore_destination_history() -> void:
 	entrance_circuit.restore_history()
 	warden_encounter.restore_history()
 	veyne_encounter.restore_history()
+	rescue_encounter.restore_history()
 
 func restored_xz(position: Vector3, map_id: String) -> Vector2:
 	var xz := TOMB_GROUND.entry_xz(position,map_id)
@@ -163,7 +168,7 @@ func restored_xz(position: Vector3, map_id: String) -> Vector2:
 func checkpoint_xz() -> Vector2: return TOMB_GROUND.ENTRY
 func active_map_id() -> String: return dialogue_state.MAP03
 func contextual_interaction_target() -> Node3D:
-	for target in [veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
+	for target in [rescue_encounter,veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 
@@ -173,6 +178,7 @@ func _load_opening(slot: int) -> void:
 	if is_instance_valid(entrance_circuit): entrance_circuit.restore_history()
 	if is_instance_valid(warden_encounter): warden_encounter.restore_history()
 	if is_instance_valid(veyne_encounter): veyne_encounter.restore_history()
+	if is_instance_valid(rescue_encounter): rescue_encounter.restore_history()
 
 func _mcp_state() -> Dictionary:
 	var result := super()

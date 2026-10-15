@@ -1,0 +1,6 @@
+{
+  "oren": {"name":"奥伦", "role":"村长", "response":"伊莎还好吗？谢谢你。等大家都脱困，我们在蓝灯旁集合。", "hidden":["Male_Ranger_Acc_Pauldron","Male_Ranger_Body_Belt_1","Male_Ranger_Body_Belt_2","Male_Ranger_Arms_Bracer"], "cloth":[0.52,0.38,0.19], "scale":[1.04,1.0,1.04], "hair":false},
+  "villager_a": {"name":"塔文", "role":"铁匠学徒", "response":"我的手终于能动了！回去后，我还要把师父的铁钳修好。", "hidden":["Male_Ranger_Head_Hood","Male_Ranger_Body_Belt_2"], "cloth":[0.48,0.24,0.16], "scale":[1.10,0.96,1.10], "hair":true},
+  "villager_b": {"name":"米洛", "role":"河岸农人", "response":"河边的田还等着我。谢谢你，我会在这里等大家。", "hidden":["Male_Ranger_Acc_Pauldron","Male_Ranger_Body_Belt_1","Male_Ranger_Arms_Bracer"], "cloth":[0.37,0.42,0.25], "scale":[0.94,1.04,0.94], "hair":false},
+  "villager_c": {"name":"贝伦", "role":"看桥人", "response":"桥上的灯还亮着吧？我记得回家的路，等齐了再走。", "hidden":["Male_Ranger_Head_Hood","Male_Ranger_Body_Belt_1","Male_Ranger_Acc_Pauldron"], "cloth":[0.27,0.34,0.43], "scale":[1.0,0.92,1.0], "hair":true}
+}

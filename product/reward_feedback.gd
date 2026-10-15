@@ -105,6 +105,8 @@ func impact(point: Vector3, outcome: String, hp_loss: float, kind = "hit", conta
 			cue["receiver"] = contact.get("receiver", "")
 			cue["hp_before"] = contact.get("hp_before", 0.0)
 			cue["hp_after"] = contact.get("hp_after", 0.0)
+			cue["outcome"] = contact.get("outcome", kind)
+			cue["simulated"] = contact.get("simulated", false)
 			cue["sword_hit"] = hp_loss > 0 and training.sword_source != null and cue.source_id == training.sword_source.get_instance_id()
 			if cue.sword_hit:
 				sword_readout_emissions += 1
@@ -185,7 +187,7 @@ func _process(delta: float) -> void:
 			cues.erase(cue)
 
 func _contact_observation(cue: Dictionary) -> Dictionary:
-	return {"id": cue.id, "source_id": cue.get("source_id", 0), "attack_instance": cue.get("attack_instance", 0), "receiver": cue.get("receiver", ""), "hp_before": cue.get("hp_before", 0.0), "hp_after": cue.get("hp_after", 0.0), "hp_loss": cue.get("hp_loss", 0.0)}
+	return {"id": cue.id, "source_id": cue.get("source_id", 0), "attack_instance": cue.get("attack_instance", 0), "receiver": cue.get("receiver", ""), "world_point": cue.get("world_point", Vector3.ZERO), "outcome": cue.get("outcome", ""), "simulated": cue.get("simulated", false), "hp_before": cue.get("hp_before", 0.0), "hp_after": cue.get("hp_after", 0.0), "hp_loss": cue.get("hp_loss", 0.0)}
 
 func _mcp_state() -> Dictionary:
 	var readouts: Array[Dictionary] = []

@@ -107,7 +107,7 @@ func refresh() -> void:
 		var marks := known_route_marks(state)
 		for index in marks.size(): route_key.text += "%d · %s\n" % [index + 1, marks[index][1]]
 		if state.mf01_acquired: route_key.text += "灰色圆点：岩石掩体"
-	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + ("\n右侧石阶通往看守院；四位村民仍需逐人营救。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
+	information.text = ("裂隙墓殿入口 · " + state.ritual_information() + "\n" + state.rescue_information() + ("\n右侧石阶通往看守院；右院逐人用旧灯营救；入口内侧蓝灯旁主动集合。" if state.ln02_purified else "\n两院营救区域仍被封锁。") if state.current_map == state.MAP03 else state.mf01_information()) + ("\n\n" + state.mf02_information() if state.mf02_acquired else "")
 	diagram.queue_redraw()
 	reflow(self)
 

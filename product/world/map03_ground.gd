@@ -13,6 +13,9 @@ const VEYNE_APPROACH := Vector2(-4,-9)
 const VEYNE_ROUTE := [Vector2(-4,-5),Vector2(-4,-6),Vector2(-4,-8.7),Vector2(-4,-11)]
 const WARDEN_APPROACH := Vector2(4,-9)
 const RECORD_APPROACH := Vector2(2.5, -3)
+const CAPTIVES := [Vector2(3,-13), Vector2(3,-10.5), Vector2(6,-10.5), Vector2(6,-13)]
+const RESCUE_ASSEMBLY := Vector2(-1,-2)
+const ASSEMBLED := [Vector2(0.8,-2.5),Vector2(0.8,-0.7),Vector2(0.8,1),Vector2(-0.8,-0.7)]
 const ROUTE := [ENTRY, Vector2(0,0), Vector2(2.5,-3), Vector2(-2.5,-3), Vector2(-4,3), RETURN]
 
 static func in_bounds(xz: Vector2) -> bool:
