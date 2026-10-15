@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 74 |
+| Open | 75 |
 | Closed | 45 |
-| All | 119 |
+| All | 120 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 57 |
+| Active | 58 |
 | Verified closed | 31 |
 | Policy invalidated | 10 |
 | Waived | 0 |
-| All in this run | 98 |
+| All in this run | 99 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -55,7 +55,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `hud_tracker_retained_height` | [#32](https://github.com/Flesymeb/aelors-adventure/issues/32) | CLOSED | Independently verified resolved at loop 10. |
 | `settings_focus_feedback_hidden` | [#35](https://github.com/Flesymeb/aelors-adventure/issues/35) | CLOSED | Independently verified resolved at loop 5. |
 | `pause_active_world_validation_incomplete` | [#33](https://github.com/Flesymeb/aelors-adventure/issues/33) | CLOSED | Independently verified resolved at loop 17. |
-| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Three-bus capture succeeded; independent listening and the original controlled stop procedure remain unverified. |
+| `settings_effect_validation_incomplete` | [#34](https://github.com/Flesymeb/aelors-adventure/issues/34) | OPEN | Independent listening and the original controlled audio procedure remain unverified. |
 | `default_roll_opens_inventory` | [#37](https://github.com/Flesymeb/aelors-adventure/issues/37) | CLOSED | Independently verified resolved at loop 8. |
 | `fps.runtime.candidate-error-19b1aab47037` | [#38](https://github.com/Flesymeb/aelors-adventure/issues/38) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-9d723d49756b` | [#39](https://github.com/Flesymeb/aelors-adventure/issues/39) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -103,7 +103,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | The original crowded CH01 defect was not independently qualified or reproduced. |
 | `fps.runtime.candidate-error-3917fc09324e` | [#82](https://github.com/Flesymeb/aelors-adventure/issues/82) | CLOSED | Independently verified resolved at loop 42. |
-| `qa.e04-supply-earned-gap` | [#81](https://github.com/Flesymeb/aelors-adventure/issues/81) | OPEN | Earned E04 supply eligibility, once-only settlement and committed restart restoration remain unobserved. |
+| `qa.e04-supply-earned-gap` | [#81](https://github.com/Flesymeb/aelors-adventure/issues/81) | OPEN | Earned E04 supply settlement and committed restoration remain unobserved. |
 | `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | Training-label obstruction and final cue recovery remain unqualified. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | OPEN | untitled issue |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | OPEN | untitled issue |
@@ -137,10 +137,11 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `village-performance-target-missed` | [#113](https://github.com/Flesymeb/aelors-adventure/issues/113) | OPEN | Required whole-window rendered performance remains unqualified. |
 | `runtime-source-attribution-gap` | [#114](https://github.com/Flesymeb/aelors-adventure/issues/114) | OPEN | Current runtime-log attribution and changed sky-source inspection remain incomplete. |
 | `formal-collection-deadline-exhausted` | [#115](https://github.com/Flesymeb/aelors-adventure/issues/115) | CLOSED | Independently verified resolved at loop 71. |
-| `r05-current-combat-observation-gap` | [#116](https://github.com/Flesymeb/aelors-adventure/issues/116) | OPEN | Resolved melee attribution and actual stop records improved, but the complete contact and recovery matrix remains unverified. |
-| `r15-current-restoration-observation-gap` | [#118](https://github.com/Flesymeb/aelors-adventure/issues/118) | OPEN | D02 restoration and nested return were exercised; complete camera, historical-consumer and Veyne acceptance remains unverified. |
+| `r05-current-combat-observation-gap` | [#116](https://github.com/Flesymeb/aelors-adventure/issues/116) | OPEN | Complete contact and recovery acceptance remains unverified despite supported ordinary melee observations. |
+| `r15-current-restoration-observation-gap` | [#118](https://github.com/Flesymeb/aelors-adventure/issues/118) | OPEN | Restoration checks support same-map D02 and nested Settings, but do not establish the complete consumer contract. |
 | `r12-current-rescue-observation-gap` | [#117](https://github.com/Flesymeb/aelors-adventure/issues/117) | OPEN | untitled issue |
-| `restoration-history-qualification-limits` | [#119](https://github.com/Flesymeb/aelors-adventure/issues/119) | OPEN | Collection limitations were retained rather than converted into reusable-history or restoration passes. |
+| `r15-bounded-recapture-request` | [#120](https://github.com/Flesymeb/aelors-adventure/issues/120) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r15-first-sword-acquisition-nested-pause-lifecycle |
+| `restoration-history-qualification-limits` | [#119](https://github.com/Flesymeb/aelors-adventure/issues/119) | OPEN | Qualified opening/coach restoration and moved-Veyne completion remain unavailable or unobserved. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -148,7 +149,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 74 | 45 | 119 |
+| GitHub HoH namespace | 75 | 45 | 120 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -185,7 +186,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-73-e3b02a880ea5` | `development_snapshot:attempt-ed635871fa3071907d5c5b31` | NEEDS VISUAL QA |
+| `loop-73-e3b02a880ea5` | `development_snapshot:attempt-ed635871fa3071907d5c5b31` | BLOCKED |
 
 ### Project Planner
 
@@ -212,7 +213,23 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-73-e3b02a880ea5` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 7 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `r05-current-combat-observation-gap` | MAJOR | INTERNAL | HIGH | Complete contact and recovery acceptance remains unverified despite supported ordinary melee observations. |
+| `settings_effect_validation_incomplete` | MAJOR | INTERNAL | HIGH | Independent listening and the original controlled audio procedure remain unverified. |
+| `r15-current-restoration-observation-gap` | MAJOR | INTERNAL | HIGH | Restoration checks support same-map D02 and nested Settings, but do not establish the complete consumer contract. |
+| `restoration-history-qualification-limits` | MAJOR | INTERNAL | HIGH | Qualified opening/coach restoration and moved-Veyne completion remain unavailable or unobserved. |
+| `qa.e04-supply-earned-gap` | MAJOR | INTERNAL | HIGH | Earned E04 supply settlement and committed restoration remain unobserved. |
+| `r15-bounded-recapture-request` | NOTE | INTERNAL | LOW | RECAPTURE_REQUEST: GAME_JOURNEY:r15-first-sword-acquisition-nested-pause-lifecycle |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3992,5 +4009,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-73-e3b02a880ea5`
 - Latest warm start: `loop-73-e3b02a880ea5`
 - Last published: `loop-73-e3b02a880ea5`
-- Best verified: `loop-72-e3b02a880ea5`
+- Best verified: `loop-73-e3b02a880ea5`
 - Generated by the HoH host from immutable run evidence.
