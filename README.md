@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 76 |
-| Closed | 38 |
-| All | 114 |
+| Open | 73 |
+| Closed | 45 |
+| All | 118 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 59 |
+| Active | 56 |
 | Verified closed | 29 |
-| Policy invalidated | 5 |
+| Policy invalidated | 12 |
 | Waived | 0 |
-| All in this run | 93 |
+| All in this run | 97 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -96,11 +96,11 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e01-ordinary-reward-gap` | [#72](https://github.com/Flesymeb/aelors-adventure/issues/72) | CLOSED | Independently verified resolved at loop 34. |
 | `qa.lightning-ranged-hurt-callback` | [#74](https://github.com/Flesymeb/aelors-adventure/issues/74) | OPEN | Earned E02/E04 combat remains unqualified despite current CH01 lightning observations. |
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | untitled issue |
-| `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
+| `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | The existing later rescue-route issue cannot be closed from entrance-fixture evidence. |
 | `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | BLOCKED | MF01 earning, committed Continue and its information/scale matrix remain unverified. |
-| `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | untitled issue |
-| `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | untitled issue |
+| `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | OPEN | The original crowded CH01 defect was not independently qualified or reproduced. |
 | `fps.runtime.candidate-error-3917fc09324e` | [#82](https://github.com/Flesymeb/aelors-adventure/issues/82) | CLOSED | Independently verified resolved at loop 42. |
 | `qa.e04-supply-earned-gap` | [#81](https://github.com/Flesymeb/aelors-adventure/issues/81) | OPEN | The E04 recovery-supply condition remains unobserved after ordinary earning. |
@@ -126,16 +126,20 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.e02-local-coverage-gap` | [#101](https://github.com/Flesymeb/aelors-adventure/issues/101) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r20-earned-e02-nonlethal-lightning |
 | `e02-lifecycle-qualification-gap` | [#103](https://github.com/Flesymeb/aelors-adventure/issues/103) | OPEN | untitled issue |
 | `e02-cover-contact-gap` | [#104](https://github.com/Flesymeb/aelors-adventure/issues/104) | OPEN | untitled issue |
-| `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | OPEN | untitled issue |
+| `native_source_payload_gap` | [#105](https://github.com/Flesymeb/aelors-adventure/issues/105) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `journey-loader-gap` | [#108](https://github.com/Flesymeb/aelors-adventure/issues/108) | OPEN | Complete supported journey-loader validation remains unavailable. |
-| `journey-validation-gap` | [#106](https://github.com/Flesymeb/aelors-adventure/issues/106) | OPEN | untitled issue |
+| `journey-validation-gap` | [#106](https://github.com/Flesymeb/aelors-adventure/issues/106) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `native-source-review-gap` | [#109](https://github.com/Flesymeb/aelors-adventure/issues/109) | OPEN | Implementation declarations were received; source-gate acknowledgment remains unverified. |
-| `earned-travel-gap` | [#107](https://github.com/Flesymeb/aelors-adventure/issues/107) | OPEN | untitled issue |
+| `earned-travel-gap` | [#107](https://github.com/Flesymeb/aelors-adventure/issues/107) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `ordinary-route-recapture` | [#111](https://github.com/Flesymeb/aelors-adventure/issues/111) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r01-earned-mf01-e03-reveal-recognition |
 | `arena-route-coverage-gap` | [#110](https://github.com/Flesymeb/aelors-adventure/issues/110) | OPEN | untitled issue |
-| `ordinary-travel-recapture` | [#112](https://github.com/Flesymeb/aelors-adventure/issues/112) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r19-earned-farewell-to-pillar-approach |
+| `ordinary-travel-recapture` | [#112](https://github.com/Flesymeb/aelors-adventure/issues/112) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `village-performance-target-missed` | [#113](https://github.com/Flesymeb/aelors-adventure/issues/113) | OPEN | Required whole-window rendered performance remains unqualified. |
 | `runtime-source-attribution-gap` | [#114](https://github.com/Flesymeb/aelors-adventure/issues/114) | OPEN | Current runtime-log attribution and changed sky-source inspection remain incomplete. |
+| `formal-collection-deadline-exhausted` | [#115](https://github.com/Flesymeb/aelors-adventure/issues/115) | OPEN | The controller rejected final runtime-log collection and case finalization. |
+| `r05-current-combat-observation-gap` | [#116](https://github.com/Flesymeb/aelors-adventure/issues/116) | OPEN | Resolved-contact behavior and audio acceptance remain unverified. |
+| `r12-current-rescue-observation-gap` | [#117](https://github.com/Flesymeb/aelors-adventure/issues/117) | OPEN | Four-person rescue and assembly have no independent current runtime verification. |
+| `r15-current-restoration-observation-gap` | [#118](https://github.com/Flesymeb/aelors-adventure/issues/118) | OPEN | Fresh dialogue evidence does not establish restored-camera or qualified-history acceptance. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -143,7 +147,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 76 | 38 | 114 |
+| GitHub HoH namespace | 73 | 45 | 118 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -180,7 +184,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-70-19fb885f4b79` | `development_snapshot:attempt-ae00ea8d01ee963fa288efa5` | NEEDS VISUAL QA |
+| `loop-70-19fb885f4b79` | `development_snapshot:attempt-ae00ea8d01ee963fa288efa5` | BLOCKED |
 
 ### Project Planner
 
@@ -207,7 +211,21 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-70-19fb885f4b79` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 5 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `r05-current-combat-observation-gap` | MAJOR | INTERNAL | HIGH | Resolved-contact behavior and audio acceptance remain unverified. |
+| `r12-current-rescue-observation-gap` | MAJOR | INTERNAL | HIGH | Four-person rescue and assembly have no independent current runtime verification. |
+| `r15-current-restoration-observation-gap` | MAJOR | INTERNAL | HIGH | Fresh dialogue evidence does not establish restored-camera or qualified-history acceptance. |
+| `formal-collection-deadline-exhausted` | MAJOR | INTERNAL | HIGH | The controller rejected final runtime-log collection and case finalization. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -3826,5 +3844,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-70-19fb885f4b79`
 - Latest warm start: `loop-70-59853ceeb30b`
 - Last published: `loop-70-19fb885f4b79`
-- Best verified: `loop-69-59853ceeb30b`
+- Best verified: `loop-70-19fb885f4b79`
 - Generated by the HoH host from immutable run evidence.
