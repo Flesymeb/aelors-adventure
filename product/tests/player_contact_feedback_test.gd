@@ -32,6 +32,7 @@ class ContactEnemy extends CharacterBody3D:
 	func interrupt_action() -> void: pass
 
 class ContactWorld extends Node3D:
+	var developer_ui := false
 	var veyne_encounter = null
 	var warden_encounter = null
 	var element_abilities = null
@@ -161,6 +162,58 @@ static func run(holder: Node) -> Dictionary:
 	training.combo = training.FINISHER_INDEX
 	training.resolved_enemy_contact({"outcome": "hit", "source_id": training.sword_source.get_instance_id(), "point": point, "hp_loss": 28.0})
 	checks.finisher_stop_preserved = is_equal_approx(training.hit_stop, 0.045)
+	checks.stop_observation_off_at_boot = training.stop_observation() == {"stop_observation_enabled": false} and training._stop_trace.is_empty()
+	reset_contact(training, source)
+	stage.developer_ui = true
+	var empty_observation := training.stop_observation()
+	checks.first_contact_watch_fields_are_scalars = empty_observation.stop_id == 0 and empty_observation.stop_entry_wall_us == 0 and empty_observation.stop_exit_wall_us == 0 and empty_observation.stop_exit_animation_speed == -1 and empty_observation.stop_source_id == 0 and empty_observation.stop_outcome == "" and training._stop_trace.is_empty()
+	training.blocking = true
+	training.parry_window = 0.1
+	result = hitbox.contact(source, point)
+	var entered := training.stop_observation()
+	checks.stop_entry_keeps_actual_edge_and_identity = entered.stop_id == 1 and entered.stop_entry_wall_us > 0 and entered.stop_exit_wall_us == 0 and entered.stop_entry_animation_speed == 0 and entered.stop_entry_timeline_speed == 0 and entered.stop_source_id == result.source_id and entered.stop_attack_instance == result.attack_instance and entered.stop_receiver == result.receiver and entered.stop_outcome == "parry" and not entered.stop_simulated
+	hitbox.contact(source, point)
+	checks.duplicate_contact_creates_no_stop_edge = training.stop_observation() == entered
+	var copy := training.stop_observation()
+	copy.stop_id = -1
+	checks.stop_reads_are_isolated_and_side_effect_free = training.stop_observation() == entered and state.health == 100 and training.hit_stop == 0.055
+	# Explicit notification fixture, not a claim of native pause duration.
+	training.notification(Node.NOTIFICATION_PAUSED)
+	var paused := training.stop_observation()
+	training.notification(Node.NOTIFICATION_PAUSED)
+	checks.stop_pause_does_not_age_gameplay = paused.stop_pause_started_wall_us > 0 and paused.stop_gameplay_seconds == 0 and training.hit_stop == 0.055 and training.stop_observation() == paused
+	training.notification(Node.NOTIFICATION_UNPAUSED)
+	training.advance_player(0.02)
+	training.advance_player(0.02)
+	training.advance_player(0.02)
+	var exited := training.stop_observation()
+	checks.stop_restoration_records_actual_edge = exited.stop_id == entered.stop_id and exited.stop_exit_wall_us >= entered.stop_entry_wall_us and exited.stop_end_reason == "elapsed" and exited.stop_exit_animation_speed == 1 and exited.stop_exit_timeline_speed == 1 and is_equal_approx(exited.stop_gameplay_seconds, 0.06) and exited.stop_pause_started_wall_us == 0 and exited.stop_paused_wall_us >= 0
+	reset_contact(training, source)
+	training.combo = training.FINISHER_INDEX
+	var outgoing := {"outcome": "hit", "source_id": training.sword_source.get_instance_id(), "attack_instance": 37, "receiver": "fixture/enemy", "point": point, "hp_loss": 28.0}
+	training.resolved_enemy_contact(outgoing)
+	entered = training.stop_observation()
+	training.resolved_enemy_contact(outgoing)
+	checks.shared_interval_retains_first_edge = training.stop_observation().stop_id == entered.stop_id and training.stop_observation().stop_entry_wall_us == entered.stop_entry_wall_us and training.stop_observation().stop_contacts == 2 and entered.stop_attack_instance == 37 and entered.stop_receiver == "fixture/enemy" and entered.stop_outcome == "hit"
+	for reason in ["load", "hurt", "death", "recovery", "pause", "switch"]:
+		if training.hit_stop == 0: training.resolved_enemy_contact(outgoing)
+		entered = training.stop_observation()
+		training.interrupt(reason)
+		exited = training.stop_observation()
+		checks["stop_cancel_" + reason] = exited.stop_id == entered.stop_id and exited.stop_end_reason == reason and exited.stop_exit_wall_us >= entered.stop_entry_wall_us and exited.stop_exit_animation_speed == 1 and exited.stop_exit_timeline_speed == 1 and training.hit_stop == 0
+	reset_contact(training, source)
+	var trace_before := training._stop_trace.duplicate()
+	enemy.attack_origin = Vector3(0, 0, 8)
+	result = hitbox.contact(source, point)
+	checks.observed_miss_creates_no_edge = result.outcome == "miss" and training._stop_trace == trace_before
+	reset_contact(training, source)
+	enemy.attack_origin = Vector3(0, 0, 1)
+	state.reduced_motion = true
+	training.stop_on_contact(0.055, outgoing)
+	checks.reduced_motion_creates_no_edge = training.hit_stop == 0 and training._stop_trace == trace_before
+	state.reduced_motion = false
+	stage.developer_ui = false
+	checks.stop_observation_hidden_when_disabled = training.stop_observation() == {"stop_observation_enabled": false}
 	reset_contact(training, source)
 	training.blocking = true
 	var simulated := training.receive_attack(enemy.attack_origin, enemy.locked_direction, 6.0, true)

@@ -47,6 +47,11 @@ var hurt_time = 0.0
 var death_time = 0.0
 var protection = 0.0
 var hit_stop = 0.0
+# Latest actual animation-stop interval only. Opted in through the existing F9
+# developer switch; never saved, displayed, or used by combat decisions.
+var _stop_serial := 0
+var _stop_trace: Dictionary = {}
+var _stop_pause_started_us := 0
 var notice = ""
 var notice_time = 0.0
 # Counts guarded first grants in this live session; restoration is not a grant.
@@ -236,7 +241,7 @@ func resolve_player_contact(source: SnaielDamageSource, point: Vector3) -> Dicti
 func resolved_enemy_contact(result: Dictionary) -> void:
 	var defeated: bool = result.outcome == "defeat"
 	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit", result)
-	if result.source_id == sword_source.get_instance_id() and (combo == 2 or combo == FINISHER_INDEX or aerial_active): stop_on_contact(0.045)
+	if result.source_id == sword_source.get_instance_id() and (combo == 2 or combo == FINISHER_INDEX or aerial_active): stop_on_contact(0.045, result)
 
 func ground_module() -> void:
 	if world.meadow_slice:
@@ -479,6 +484,7 @@ func interrupt(_reason: String) -> void:
 	if player.animation_player:
 		player.animation_player.speed_scale = 1
 		player.current_animation = ""
+	_observe_stop_end(_reason)
 
 func set_block(pressed: bool) -> void:
 	if pressed and player.abilities and player.abilities.busy(): return
@@ -522,10 +528,13 @@ func advance_player(delta: float) -> void:
 		hurt_time = maxf(0, hurt_time - delta)
 		return
 	if hit_stop > 0:
+		if not _stop_trace.is_empty() and _stop_trace.stop_exit_wall_us == 0:
+			_stop_trace.stop_gameplay_seconds += delta
 		hit_stop = maxf(0, hit_stop - delta)
 		if hit_stop <= 0:
 			player.animation_player.speed_scale = 1
 			sword_events.timeline.speed_scale = 1
+			_observe_stop_end("elapsed")
 		return
 	if player.traversal.action != "" and phase != "idle": interrupt("dodge")
 	if aerial_active and phase == "landing_recovery":
@@ -558,11 +567,75 @@ func advance_player(delta: float) -> void:
 		# Hold the completed guard pose; do not restart it every frame.
 		if player.animation_player.current_animation_position >= 0.5: player.animation_player.pause()
 
-func stop_on_contact(seconds: float) -> void:
+func stop_on_contact(seconds: float, contact: Dictionary = {}) -> void:
 	if state.reduced_motion: return
+	var already_stopped: bool = player.animation_player.speed_scale == 0 and sword_events.timeline.speed_scale == 0
 	hit_stop = maxf(hit_stop, seconds)
 	player.animation_player.speed_scale = 0
 	sword_events.timeline.speed_scale = 0
+	if not _stop_observation_enabled(): return
+	if not already_stopped:
+		_stop_serial += 1
+		_stop_pause_started_us = 0
+		_stop_trace = {"stop_id": _stop_serial, "stop_entry_wall_us": Time.get_ticks_usec(),
+			"stop_exit_wall_us": 0, "stop_paused_wall_us": 0, "stop_gameplay_seconds": 0.0,
+			"stop_entry_animation_speed": player.animation_player.speed_scale,
+			"stop_entry_timeline_speed": sword_events.timeline.speed_scale,
+			"stop_exit_animation_speed": -1.0, "stop_exit_timeline_speed": -1.0,
+			"stop_end_reason": "", "stop_source_id": contact.get("source_id", 0),
+			"stop_attack_instance": contact.get("attack_instance", 0),
+			"stop_receiver": contact.get("receiver", ""), "stop_outcome": contact.get("outcome", "parry"),
+			"stop_simulated": contact.get("simulated", false), "stop_contacts": 0}
+	# Multiple resolved contacts may share an interval. Retain its first identity
+	# and the latest trigger, rather than inventing another speed transition.
+	if not _stop_trace.is_empty() and _stop_trace.stop_exit_wall_us == 0:
+		_stop_trace.stop_contacts += 1
+		_stop_trace.stop_last_source_id = contact.get("source_id", 0)
+		_stop_trace.stop_last_attack_instance = contact.get("attack_instance", 0)
+
+func _stop_observation_enabled() -> bool:
+	return is_instance_valid(world) and world.get("developer_ui") == true
+
+func _observe_stop_end(reason: String) -> void:
+	if _stop_trace.is_empty() or _stop_trace.stop_exit_wall_us != 0: return
+	var now := Time.get_ticks_usec()
+	if _stop_pause_started_us != 0:
+		_stop_trace.stop_paused_wall_us += now - _stop_pause_started_us
+		_stop_pause_started_us = 0
+	_stop_trace.stop_exit_wall_us = now
+	_stop_trace.stop_end_reason = reason
+	_stop_trace.stop_exit_animation_speed = player.animation_player.speed_scale
+	_stop_trace.stop_exit_timeline_speed = sword_events.timeline.speed_scale
+
+func _notification(what: int) -> void:
+	if _stop_trace.is_empty() or _stop_trace.stop_exit_wall_us != 0: return
+	# Includes inspection freezes: wall time is explicitly not gameplay time.
+	if what == NOTIFICATION_PAUSED and _stop_pause_started_us == 0:
+		_stop_pause_started_us = Time.get_ticks_usec()
+	elif what == NOTIFICATION_UNPAUSED and _stop_pause_started_us != 0:
+		_stop_trace.stop_paused_wall_us += Time.get_ticks_usec() - _stop_pause_started_us
+		_stop_pause_started_us = 0
+
+func stop_observation() -> Dictionary:
+	# Pure scalar projection: reads neither finish intervals nor sample clocks.
+	if not _stop_observation_enabled(): return {"stop_observation_enabled": false}
+	# Native watches resolve fields before driving input. Stable scalar defaults
+	# let the very first contact be sampled; id/time 0 and speed -1 mean that
+	# the corresponding edge has not been observed, never a successful result.
+	var observation := {"stop_id": 0, "stop_entry_wall_us": 0, "stop_exit_wall_us": 0,
+		"stop_paused_wall_us": 0, "stop_gameplay_seconds": 0.0, "stop_end_reason": "",
+		"stop_source_id": 0, "stop_attack_instance": 0, "stop_receiver": "", "stop_outcome": "",
+		"stop_simulated": false, "stop_contacts": 0, "stop_last_source_id": 0,
+		"stop_last_attack_instance": 0, "stop_entry_animation_speed": -1.0,
+		"stop_entry_timeline_speed": -1.0, "stop_exit_animation_speed": -1.0,
+		"stop_exit_timeline_speed": -1.0}
+	observation.merge(_stop_trace, true)
+	observation.stop_observation_enabled = true
+	observation.stop_remaining_seconds = hit_stop
+	observation.stop_pause_started_wall_us = _stop_pause_started_us
+	observation.stop_animation_speed = player.animation_player.speed_scale
+	observation.stop_timeline_speed = sword_events.timeline.speed_scale
+	return observation
 
 func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false, blockable = true, parryable = true, contact: Dictionary = {}) -> String:
 	last_hp_loss = 0
@@ -589,7 +662,7 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 	elif parryable and blocking and front and parry_window > 0:
 		last_outcome = "parry"
 		parry_window = 0
-		stop_on_contact(0.055)
+		stop_on_contact(0.055, contact.merged({"outcome": "parry", "simulated": simulated}, true))
 	elif blockable and blocking and front:
 		last_outcome = "block"
 		last_hp_loss = 0 if simulated else minf(state.health, amount * 0.3)
@@ -794,7 +867,9 @@ func player_snapshot() -> Dictionary:
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.
-	return {"sword_grants": sword_grants, "player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}
+	var observation := {"sword_grants": sword_grants, "player": player_snapshot(), "history": state.training_snapshot(), "grounded": grounded, "simulation": sim_phase, "simulation_time": sim_clock, "hers_position": hers.global_position, "target_position": target.global_position, "monster": monster._mcp_state(), "remnant_visible": remnant != null, "notice": notice, "commit_retry": commit_retry}
+	observation.merge(stop_observation())
+	return observation
 
 func feedback_swing() -> void:
 	if feedback: feedback.swing()
