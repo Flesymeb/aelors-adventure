@@ -3,6 +3,7 @@ extends Node3D
 var entity: CharacterBody3D
 var source: SnaielDamageSource
 var effects: Node3D
+var landing_effect: Node3D
 var warning: MeshInstance3D
 var breath: MeshInstance3D
 var breath_core: MeshInstance3D
@@ -37,6 +38,9 @@ func configure(owner: CharacterBody3D) -> void:
 	effects = preload("res://combat/skill_effects.gd").new()
 	add_child(effects)
 	effects.configure(entity.encounter.world)
+	landing_effect = preload("res://assets/bosses/veyne_landing_effect.tscn").instantiate()
+	add_child(landing_effect)
+	landing_effect.configure(entity.encounter.world, entity.encounter.state)
 	warning = preload("res://assets/bosses/veyne_effects.tscn").instantiate()
 	warning.material_override = warning.material_override.duplicate()
 	warning_quad = warning.mesh
@@ -83,6 +87,7 @@ func begin(move: String) -> bool:
 	source.instance = serial
 	source.set_meta("attack_origin",start)
 	source.set_meta("attack_direction",direction)
+	source.set_meta("heavy_impact",kind == "dive")
 	entity.model.rotation.y = atan2(direction.x,direction.z)
 	entity.phase = "telegraph"
 	warning.material_override.set_shader_parameter("warning_color",Color(1,0.3,0.04,0.85))
@@ -241,11 +246,11 @@ func sample_charge(previous: Vector3, current: Vector3) -> Dictionary:
 
 func tick_dive(delta: float) -> void:
 	if stage == "warning":
-		travel(Vector3.UP*4.0*delta,true)
+		if not travel(Vector3.UP*4.0*delta,true): stopped_by_wall = true; recover(); return
 		if elapsed >= 0.9: stage = "flight"; elapsed = 0; entity.character.play("Flight",1,true)
 	elif stage == "flight":
 		var destination := landing+Vector3.UP*5.0
-		travel((destination-entity.global_position)*minf(1.0,delta*2.5),true)
+		if not travel((destination-entity.global_position)*minf(1.0,delta*2.5),true): stopped_by_wall = true; recover(); return
 		if elapsed >= 1.2:
 			stage = "active"; elapsed = 0; entity.phase = "attack"
 			entity.character.play("Dive",1,true)
@@ -253,11 +258,25 @@ func tick_dive(delta: float) -> void:
 		var remaining := landing-entity.global_position
 		if not travel(remaining*minf(1.0,delta/maxf(0.05,0.7-elapsed)),true): stopped_by_wall = true; recover(); return
 		if elapsed >= 0.7 or entity.global_position.distance_to(landing)<0.15:
+			var support: Dictionary = entity.ground_query.call(entity.global_position)
+			if not verified_arrival(entity.global_position, landing, support):
+				stopped_by_wall = true; recover(); return
+			entity.global_position = support.position + Vector3.UP * 0.08
+			landing = entity.global_position
+			source.set_meta("attack_origin",support.position)
+			landing_effect.emit_once(support.position,support.get("normal",Vector3.UP),serial,null)
 			source.can_damage = true
 			var point: Vector3 = entity.target.global_position+Vector3.UP
 			if Vector2(point.x,point.z).distance_to(Vector2(landing.x,landing.z))<=3.0 and absf(entity.target.global_position.y-landing.y)<1.5 and wall_between(landing+Vector3.UP,point).is_empty(): contact(point,"dive")
+			# Heavy hurt clears the previous camera owner. Apply the grounded
+			# impulse after settlement, only if death did not end the encounter.
+			if landing_effect.active and entity.encounter.combat_allowed() and entity.target.has_method("start_camera_shake"):
+				entity.target.start_camera_shake(landing_effect.distance_strength(entity.target.global_position.distance_to(support.position)),0.24)
 			recover()
 	elif stage == "recovery" and elapsed >= RECOVERY[kind]: finish()
+
+static func verified_arrival(position: Vector3, committed: Vector3, support: Dictionary) -> bool:
+	return not support.is_empty() and Vector2(position.x-committed.x,position.z-committed.z).length() <= 0.18 and absf(position.y - support.position.y - 0.08) <= 0.2
 
 func travel(motion: Vector3, airborne := false) -> bool:
 	var point := entity.global_position+motion
@@ -293,8 +312,9 @@ func contact(point: Vector3, element: String) -> Dictionary:
 	var result: Dictionary = entity.contact_policy.call(source,point)
 	if result.get("accepted",false):
 		contacts += 1
-		effects.contact(point,"fire" if element == "fire" else "lightning",str(result.get("outcome","")),float(result.get("hp_loss",0)))
-		entity.encounter.play_effect("rift")
+		if element != "dive":
+			effects.contact(point,"fire" if element == "fire" else "lightning",str(result.get("outcome","")),float(result.get("hp_loss",0)))
+			entity.encounter.play_effect("rift")
 	return result
 
 func recover() -> void:
@@ -319,8 +339,9 @@ func interrupt() -> void:
 	if breath: breath.hide()
 	if breath_core: breath_core.hide()
 	if effects: effects.clear_transients()
+	if landing_effect: landing_effect.clear()
 	if entity: ground_after_flight()
 	kind = ""; stage = "idle"; elapsed = 0
 
 func _mcp_state() -> Dictionary:
-	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"breath_length":breath_length,"warning_triangles":warning_triangles,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {}}
+	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"breath_length":breath_length,"warning_triangles":warning_triangles,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {},"ground_impact":landing_effect.snapshot() if landing_effect else {}}

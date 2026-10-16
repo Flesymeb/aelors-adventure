@@ -1,6 +1,8 @@
 extends Node3D
 ## Product policy: acquisition, defense, checkpoint/reward history and presentation.
 ## Snaiel melee/hitboxes own attack windows, instances and contact settlement.
+const HEAVY_RESPONSE := preload("res://combat/player_impact_response.gd")
+var heavy_impact = HEAVY_RESPONSE.new()
 const DAMAGES = [12.0, 15.0, 20.0]
 const CLIPS = ["sword/Sword_Regular_A", "sword/Sword_Regular_B", "sword/Sword_Regular_C"]
 const AERIAL_INDEX = 3
@@ -239,7 +241,7 @@ func resolve_player_contact(source: SnaielDamageSource, point: Vector3) -> Dicti
 	var before: float = state.health
 	# The hitbox appends identity after this policy returns. Capture it now so
 	# immediate defense/hurt/death cues describe this contact, not a later pose.
-	var contact := {"point": point, "source_id": source.get_instance_id(), "attack_instance": source.instance, "receiver": str(player.get_path()), "hp_before": before, "simulated": false}
+	var contact := {"point": point, "source_id": source.get_instance_id(), "attack_instance": source.instance, "receiver": str(player.get_path()), "hp_before": before, "simulated": false, "heavy_impact_requested": source.get_meta("heavy_impact", false), "impact_origin": source.get_meta("attack_origin", source.entity.attack_origin), "attack_direction": source.get_meta("attack_direction", source.entity.locked_direction)}
 	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false),not source.get_meta("unblockable",false),not source.get_meta("unparryable",false), contact)
 	if outcome == "parry": source.get_parried()
 	contact.merge({"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_after": state.health, "hp_loss": before - state.health}, true)
@@ -379,7 +381,7 @@ func grant_sword() -> void:
 	tell("取得巡路剑 · 1 拔剑 · 左键轻击后收招末段按 %s 重击终结" % player.key_prompt("heavy"), 5, "sword_acquired")
 
 func player_locked() -> bool:
-	return state.lives <= 0 or phase == "death" or hurt_time > 0
+	return state.lives <= 0 or phase == "death" or hurt_time > 0 or heavy_impact.active()
 
 func motion_restricted() -> bool:
 	return phase in ["anticipation", "contact", "recovery", "air_recovery", "landing_recovery"] or blocking
@@ -454,6 +456,7 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	cancel_heavy_response()
 	if sword_presentation: sword_presentation.clear_presentation()
 	if world.get("veyne_encounter") and _reason in ["death","load","recovery"]: world.veyne_encounter.interrupt()
 	if world.get("warden_encounter") and _reason in ["death","load","recovery"]: world.warden_encounter.interrupt()
@@ -515,7 +518,17 @@ func set_block(pressed: bool) -> void:
 	player.current_animation = ""
 	player._play_animation("sword/Sword_Block")
 
+func cancel_heavy_response() -> void:
+	if heavy_impact.active() and player.has_method("suppress_held_combat_actions"):
+		player.suppress_held_combat_actions()
+	heavy_impact.cancel()
+	if player.has_method("clear_camera_impulse"): player.clear_camera_impulse()
+
 func advance_player(delta: float) -> void:
+	if heavy_impact.advance(delta):
+		clear_attack_buffers()
+		if player.has_method("suppress_held_combat_actions"): player.suppress_held_combat_actions()
+		player.current_animation = ""
 	notice_time = maxf(0, notice_time - delta)
 	parry_window = maxf(0, parry_window - delta)
 	parry_cooldown = maxf(0, parry_cooldown - delta)
@@ -647,7 +660,9 @@ func stop_observation() -> Dictionary:
 
 func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulated = false, projectile_contact = false, blockable = true, parryable = true, contact: Dictionary = {}) -> String:
 	last_hp_loss = 0
-	if player_locked(): return "unavailable"
+	# Heavy stagger restricts controls, never incoming HP settlement. The hitbox
+	# retains duplicate source/attack rejection while the guard rejects retrigger.
+	if player_locked() and not heavy_impact.active(): return "unavailable"
 	if protection > 0: return "protected"
 	var traversal: Node = player.traversal
 	# Short dodge and longer roll have distinct damage windows. Their motion
@@ -680,14 +695,31 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 		if simulated:
 			late_window = 0.3
 			tell("未防住 · 练习不会扣血；抬手后挡或躲，可按 E 重试")
-		else:
-			interrupt("hurt")
-			hurt_time = 0.45
-			player._play_animation("Hit_Chest")
 	var before: float = state.health
 	state.health -= last_hp_loss
 	var resolved := contact.duplicate(true)
-	resolved.merge({"outcome": last_outcome, "hp_before": before, "hp_after": state.health, "hp_loss": last_hp_loss, "simulated": simulated}, true)
+	resolved.merge({"accepted": last_outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": last_outcome, "hp_before": before, "hp_after": state.health, "hp_loss": last_hp_loss, "simulated": simulated}, true)
+	if not simulated and last_outcome == "hurt" and state.health > 0:
+		var requested: bool = resolved.get("heavy_impact_requested", false)
+		var guarded: bool = heavy_impact.active() or heavy_impact.guard_remaining > 0.0
+		var can_stagger: bool = requested and not guarded and player.is_on_floor() and player.traversal.get("posture") == "standing"
+		if can_stagger:
+			interrupt("heavy_hurt")
+			resolved["heavy_stagger_started"] = heavy_impact.begin(resolved, resolved.get("impact_origin", origin), player.global_position)
+			if resolved.heavy_stagger_started:
+				clear_attack_buffers()
+				if player.has_method("suppress_held_combat_actions"): player.suppress_held_combat_actions()
+				player._play_animation("Upright_Heavy_Hurt")
+			else:
+				# A source without a usable planar origin/direction still owns
+				# the ordinary surviving hurt response rather than losing it.
+				hurt_time = 0.45
+				player._play_animation("Hit_Chest")
+		elif not guarded:
+			interrupt("hurt")
+			hurt_time = 0.45
+			player._play_animation("Hit_Chest")
+	contact.merge({"heavy_stagger_started": resolved.get("heavy_stagger_started", false)}, true)
 	# Only simulated training/direct fall callers lack physical contact geometry.
 	var point: Vector3 = resolved.get("point", player.global_position + Vector3.UP)
 	if last_outcome == "parry":
@@ -871,7 +903,7 @@ func collect_remnant() -> void:
 	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}}
+	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}, "heavy_impact": heavy_impact.observation()}
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.

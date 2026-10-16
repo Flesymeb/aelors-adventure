@@ -57,6 +57,7 @@ const CONTROLS_FILE := "user://locomotion_controls.cfg"
 var control_persistence_error := ""
 var effective_bindings: Dictionary = CONTROL_DEFAULTS.duplicate()
 var shake_remaining := 0.0
+var shake_scale := 1.0
 var controls_open := false
 var blocked_keys: Dictionary = {}
 var blocked_mouse: Dictionary = {}
@@ -179,6 +180,7 @@ func _ready() -> void:
 			extra.free()
 			_bind_aerial_sword_segment(library)
 			_bind_sword_segment(library, "Grounded_Finisher", FINISHER_SOURCE_START, FINISHER_SOURCE_END)
+		_bind_heavy_hurt_pose()
 		_attach_weapons()
 		_apply_skin()
 		_setup_archery()
@@ -352,7 +354,15 @@ func track_modal_input(event: InputEvent) -> void:
 		else: blocked_mouse.erase(event.button_index)
 
 
+func suppress_held_combat_actions() -> void:
+	_block_held_controls()
+	sword_press_held = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	heavy_press_held = Input.is_key_pressed(effective_bindings["heavy"])
+	if combat: combat.clear_attack_buffers()
+
+
 func set_controls_open(open: bool) -> void:
+	if combat: combat.cancel_heavy_response()
 	_block_held_controls()
 	sword_press_held = false
 	heavy_press_held = false
@@ -856,6 +866,9 @@ func _physics_process(delta: float) -> void:
 		return
 	if combat:
 		combat.advance_player(delta)
+		if combat.heavy_impact.active():
+			_advance_heavy_impact(delta)
+			return
 		if combat.player_locked(): return
 	var movement_basis := movement_camera_basis(camera.global_basis,encounter_camera_active,encounter_camera_look)
 	var forward := -movement_basis.z
@@ -932,6 +945,20 @@ func _physics_process(delta: float) -> void:
 	if global_position.y < minimum_world_height or not ground_policy.in_bounds(Vector2(global_position.x, global_position.z)):
 		if combat: combat.lethal_fall()
 		else: respawn()
+
+
+func _advance_heavy_impact(delta: float) -> void:
+	# Keep the retained traversal adapter as the only physics movement owner.
+	# Neutral/opposing input cannot erase or add to the bounded secondary drive.
+	var impulse: Vector3 = combat.heavy_impact.requested_velocity(self, delta)
+	velocity.x = impulse.x
+	velocity.z = impulse.z
+	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+	var before := global_position
+	traversal.move_with_steps(delta)
+	combat.heavy_impact.record_motion(before, global_position)
+	velocity.x = 0.0
+	velocity.z = 0.0
 
 
 func request_weapon(mode: String) -> void:
@@ -1035,6 +1062,26 @@ func _bind_sword_segment(library: AnimationLibrary, clip_name: String, source_st
 			clip.track_insert_key(track, time - source_start, value)
 		clip.track_set_interpolation_loop_wrap(track, false)
 	library.add_animation(clip_name, clip)
+
+func _bind_heavy_hurt_pose() -> void:
+	if animation_player == null or skeleton == null or not animation_player.has_animation("Hit_Chest"): return
+	# Retain the Ranger-compatible upright hurt clip, pin planar pelvis motion
+	# so the secondary movement and visual pose cannot double the translation.
+	var clip: Animation = animation_player.get_animation("Hit_Chest").duplicate(true)
+	clip.loop_mode = Animation.LOOP_NONE
+	var pelvis := skeleton.find_bone("pelvis")
+	if pelvis < 0: return
+	var parent := skeleton.get_bone_parent(pelvis)
+	var parent_basis := skeleton.get_bone_global_rest(parent).basis if parent >= 0 else Basis.IDENTITY
+	var anchor := parent_basis * skeleton.get_bone_rest(pelvis).origin
+	for track in clip.get_track_count():
+		if clip.track_get_type(track) != Animation.TYPE_POSITION_3D or not str(clip.track_get_path(track)).ends_with(":pelvis"): continue
+		for key in clip.track_get_key_count(track):
+			var value: Vector3 = clip.track_get_key_value(track, key)
+			var world_value := parent_basis * value
+			clip.track_set_key_value(track, key, parent_basis.inverse() * Vector3(anchor.x, world_value.y, anchor.z))
+	animation_player.get_animation_library("").add_animation("Upright_Heavy_Hurt", clip)
+
 
 func _play_animation(name: String, speed: float = 1.0) -> void:
 	if animation_player == null or current_animation == name:
@@ -1175,13 +1222,21 @@ func _mouse_sensitivity() -> float:
 				if is_instance_valid(state): return state.mouse_sensitivity
 	return 1.0
 
-func start_camera_shake() -> void:
-	shake_remaining = 0.18
+func clear_camera_impulse() -> void:
+	shake_remaining = 0.0
+	shake_scale = 1.0
+	if is_instance_valid(camera):
+		camera.h_offset = 0.0
+		camera.v_offset = 0.0
+
+func start_camera_shake(scale: float = 1.0, duration: float = 0.18) -> void:
+	shake_remaining = clampf(duration, 0.0, 0.3)
+	shake_scale = clampf(scale, 0.0, 1.0)
 
 func _update_camera_shake(delta: float) -> void:
 	shake_remaining = maxf(0, shake_remaining - delta)
 	var state: Node = archery.state if archery else (combat.state if combat and "state" in combat else null)
-	var strength: float = state.camera_shake if state and not state.reduced_motion else 0.0
+	var strength: float = state.camera_shake * shake_scale if state and not state.reduced_motion else 0.0
 	var wave := sin(shake_remaining * 180.0) * shake_remaining * strength
 	camera.h_offset = wave * 0.12
 	camera.v_offset = cos(shake_remaining * 150.0) * shake_remaining * strength * 0.07

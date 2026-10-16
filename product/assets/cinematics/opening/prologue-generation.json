@@ -1,0 +1,24 @@
+{
+  "create": {
+    "request_id": "33963062-58d4-9722-bf35-c3c1bc64feff",
+    "output": {
+      "task_id": "7b8071d0-8c97-4cbf-a877-91a7e1e41aea",
+      "task_status": "PENDING"
+    }
+  },
+  "completion": {
+    "request_id": "8ab26b45-8104-9d48-84a4-189a3dfde954",
+    "output": {
+      "task_id": "7b8071d0-8c97-4cbf-a877-91a7e1e41aea",
+      "task_status": "SUCCEEDED",
+      "submit_time": "2026-10-16 17:31:39.298",
+      "scheduled_time": "2026-10-16 17:31:39.355",
+      "end_time": "2026-10-16 17:33:41.236"
+    }
+  },
+  "source_video": "prologue-source.mp4",
+  "source_sha256": "3e541acf1f09ce2fc192acfd9f15c197d9779da94c875e82e4e642797089677d",
+  "runtime_video": "prologue.ogv",
+  "runtime_sha256": "4b372c2b442baf535ae17d012acc5e1b95c5655f2d4a8735fc38c0e856744d7e",
+  "license": "AI-generated under applicable provider service terms; no open license asserted."
+}

@@ -1,0 +1,23 @@
+{
+  "semantic_role": "One grounded dragon landing burst, independent of accepted player contact",
+  "texture": {
+    "source": "Kenney Particle Pack 1.1",
+    "url": "https://kenney.nl/assets/particle-pack",
+    "member": "PNG (Transparent)/smoke_03.png",
+    "license": "CC0-1.0",
+    "credit": "Kenney Vleugels; additional filter template credits Indigo Ray, Craig Nisbet, Zoltan Erdokovy, Heliagon, ThreeDee, Killst4r, Tim2501",
+    "sha256": "a71f8abcac64f8d73a94625cc9a10033dbeafa7eaea750560cba0daa73fe8752"
+  },
+  "audio": {
+    "source": "Kenney Impact Sounds 1.0",
+    "url": "https://kenney.nl/assets/impact-sounds",
+    "member": "Audio/impactMining_000.ogg",
+    "license": "CC0-1.0",
+    "credit": "Kenney",
+    "sha256": "36b4ea107222d073c67ca64dde26944975609202d5090b2f2021213c1a7e35cd",
+    "adaptation": "Unmodified file; runtime pitch 0.72, one spatial Effects voice at the support point. Independent listening remains required."
+  },
+  "implementation": "Product-authored spatial ring shader and one-shot native CPUParticles3D with 12/24 particles, 0.9-second lifetime and attempt-owned cleanup; no screen texture or second damage owner.",
+  "comparison": "Inspected cached CC0 Godot4 Distortion Shockwave and current GodotShaders shockwave results. Canvas screen distortion was rejected because it displaces warnings and lacks grounded texture/audio dependencies. Native dust plus a restrained world ring retains a physical support point, visible evade space and bounded lifetime.",
+  "qualification": "Source terms and transparent texture inspected; native import, rendered timing and independent sound quality require separate runtime checks."
+}

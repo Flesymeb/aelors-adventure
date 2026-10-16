@@ -104,6 +104,7 @@ func _show_opening() -> void:
 
 func _opening_finished() -> void:
 	if route != "opening": return
+	opening.shutdown()
 	opening.hide()
 	opening.queue_free()
 	opening = null
@@ -255,6 +256,7 @@ func return_to_title() -> void:
 	loader.cancel()
 	if route in ["opening", "loading", "initializing", "error"]: state.restore_adventure(previous_history)
 	if opening:
+		opening.shutdown()
 		opening.hide()
 		opening.queue_free()
 		opening = null

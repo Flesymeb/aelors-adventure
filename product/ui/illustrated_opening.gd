@@ -22,6 +22,15 @@ var music: AudioStreamPlayer
 var ambience: AudioStreamPlayer
 var cue: AudioStreamPlayer
 var caption_text := ""
+var video: VideoStreamPlayer
+var video_active := false
+var video_finished := false
+var video_failed := false
+var video_position := 0.0
+var video_stall := 0.0
+var video_status := "illustration"
+const VIDEO_ROOT := "res://assets/cinematics/opening/"
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -39,6 +48,16 @@ func _ready() -> void:
 		add_child(picture)
 		if index == 0: image_current = picture
 		else: image_previous = picture
+	video = VideoStreamPlayer.new()
+	video.name = "PrologueMotion"
+	video.expand = true
+	video.bus = "Effects"
+	# The existing score/ambience own audio; generated audio is never doubled.
+	video.volume = 0.0
+	video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	video.finished.connect(_video_finished)
+	video.hide()
+	add_child(video)
 	caption_panel = PanelContainer.new()
 	caption_panel.name = "SubtitleBackplate"
 	var back := StyleBoxFlat.new()
@@ -95,11 +114,13 @@ func _ready() -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_show_beat()
+	_set_presentation_paused(true)
 	_layout()
 
 func _show_beat() -> void:
 	image_current.texture = pictures[beat]
 	image_previous.texture = pictures[beat - 1] if beat > 0 else null
+	_start_video()
 	caption_text = str(slides[beat].caption)
 	subtitle.text = caption_text
 	music.volume_db = [-23.0, -30.0, -28.0, -22.0][beat]
@@ -115,18 +136,16 @@ func _show_beat() -> void:
 func _process(delta: float) -> void:
 	if finished: return
 	_layout()
-	if pause_menu:
-		music.stream_paused = true
-		cue.stream_paused = true
-		ambience.stream_paused = true
+	if pause_menu or get_tree().paused:
+		_set_presentation_paused(true)
 		return
-	if get_tree().paused: return
 	if not inputs_armed:
-		if router._confirmation_held(): return
+		if router._confirmation_held():
+			_set_presentation_paused(true)
+			return
 		inputs_armed = true
-	music.stream_paused = false
-	cue.stream_paused = false
-	ambience.stream_paused = false
+	_set_presentation_paused(false)
+	_update_video(delta)
 	elapsed += delta
 	total_elapsed += delta
 	if Input.is_key_pressed(KEY_SPACE):
@@ -151,6 +170,10 @@ func _process(delta: float) -> void:
 func _layout() -> void:
 	var view := get_viewport_rect().size
 	var text_size: float = state.text_scale
+	# Cover the canvas without distorting the authored 16:9 shot.
+	if is_instance_valid(video):
+		video.size = Vector2(maxf(view.x, view.y * 16.0 / 9.0), maxf(view.y, view.x * 9.0 / 16.0))
+		video.position = (view - video.size) * 0.5
 	subtitle.add_theme_font_size_override("font_size", int(26 * text_size))
 	subtitle.custom_minimum_size.x = view.x * 0.88 - 36
 	caption_panel.custom_minimum_size.x = view.x * 0.88
@@ -200,9 +223,7 @@ func open_pause() -> void:
 	pause_menu.name = "OpeningPause"
 	add_child(pause_menu)
 	get_tree().paused = true
-	music.stream_paused = true
-	cue.stream_paused = true
-	ambience.stream_paused = true
+	_set_presentation_paused(true)
 	_layout()
 
 func close_pause() -> void:
@@ -216,15 +237,93 @@ func close_pause() -> void:
 
 func finish() -> void:
 	if finished or not inputs_armed: return
-	finished = true
-	music.stop()
-	cue.stop()
-	ambience.stop()
+	shutdown()
 	completed.emit()
 
 func _exit_tree() -> void:
+	shutdown()
 	if is_instance_valid(router) and is_instance_valid(router.audio):
 		router.audio.music.stream_paused = false
+
+func _start_video() -> void:
+	_stop_video()
+	video_finished = false
+	video_failed = false
+	video_position = 0.0
+	video_stall = 0.0
+	video_status = "illustration"
+	var relative_path := str(slides[beat].get("video", ""))
+	if relative_path.is_empty(): return
+	if state.reduced_motion:
+		video_status = "reduced_motion"
+		return
+	if not ResourceLoader.exists(VIDEO_ROOT + relative_path):
+		video_status = "missing_media"
+		return
+	var stream := load(VIDEO_ROOT + relative_path) as VideoStream
+	if stream == null:
+		video_failed = true
+		video_status = "invalid_media"
+		return
+	video.stream = stream
+	video_active = true
+	video_status = "decoding"
+	video.play()
+	# Native decoder, caption clock and owned audio share the release gate.
+	_set_presentation_paused(not inputs_armed)
+
+func _update_video(delta: float) -> void:
+	if not video_active: return
+	if state.reduced_motion:
+		_stop_video()
+		video_status = "reduced_motion"
+		image_current.texture = pictures[beat]
+		return
+	var position := video.stream_position
+	video_stall = video_stall + delta if position <= video_position + 0.0001 else 0.0
+	video_position = position
+	var texture := video.get_video_texture()
+	var decoded := texture != null and texture.get_size().x > 0
+	if position > 0.03 and decoded:
+		video.show()
+		video_status = "playing"
+	# Keep the illustrated image visible until decoding has actually started.
+	if video_stall >= 1.5 or (position > 1.0 and not decoded):
+		video_failed = true
+		_stop_video()
+		video_status = "decode_fallback"
+
+func _video_finished() -> void:
+	if finished or not video_active: return
+	video_finished = true
+	# Hold a copied final frame for the remainder of the readable caption beat,
+	# then release decoder ownership immediately rather than looping the action.
+	var texture := video.get_video_texture()
+	if texture != null:
+		var frame := texture.get_image()
+		if frame != null and not frame.is_empty():
+			image_current.texture = ImageTexture.create_from_image(frame)
+	_stop_video()
+	video_status = "completed_hold"
+
+func _stop_video() -> void:
+	video_active = false
+	if not is_instance_valid(video): return
+	video.stop()
+	video.stream = null
+	video.hide()
+
+func _set_presentation_paused(value: bool) -> void:
+	for player in [music, ambience, cue]:
+		if is_instance_valid(player): player.stream_paused = value
+	if is_instance_valid(video): video.paused = value
+
+func shutdown() -> void:
+	# Called synchronously by the router before deferred deletion on every exit.
+	finished = true
+	_stop_video()
+	for player in [music, ambience, cue]:
+		if is_instance_valid(player): player.stop()
 
 func _mcp_state() -> Dictionary:
 	var live := is_inside_tree() and not is_queued_for_deletion()
@@ -236,6 +335,10 @@ func _mcp_state() -> Dictionary:
 		if is_instance_valid(pause_menu.sub_menu): owners.append(str(pause_menu.sub_menu.name))
 		if is_instance_valid(pause_menu.confirmation): owners.append("confirmation")
 	var observation := {"ready": ready, "beat": beat + 1 if ready else null, "image": str(slides[beat].image) if ready else null, "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()) if live and is_instance_valid(caption_panel) and not caption_panel.is_queued_for_deletion() else null, "text_scale": state.text_scale if ready else null, "pause_owners": owners, "pause_menu_present": menu_ready, "timeline_paused": menu_ready or not inputs_armed, "skip_hold": skip_hold, "transition_alpha": image_previous.modulate.a if is_instance_valid(image_previous) and not image_previous.is_queued_for_deletion() else null, "zoom": image_current.scale.x if is_instance_valid(image_current) and not image_current.is_queued_for_deletion() else null, "nonessential_effects": state.graphics_quality != "low" if ready else null, "motion": not state.reduced_motion and state.graphics_quality != "low" if ready else null, "inputs_armed": inputs_armed, "finished": finished}
+	observation.merge({"video_active": video_active, "video_status": video_status,
+		"video_position": video_position, "video_finished": video_finished,
+		"video_failed": video_failed, "video_visible": video.visible if is_instance_valid(video) else false,
+		"video_paused": video.paused if is_instance_valid(video) else null})
 	# Scalar playback facts support bounded pause/skip watches. Reading them
 	# must never seek, resume a stream, or apply the current preferences.
 	for channel in ["music", "ambience", "cue"]:
