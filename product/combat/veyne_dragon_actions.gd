@@ -47,23 +47,11 @@ func configure(owner: CharacterBody3D) -> void:
 	# Attempt-owned lifetime, world-owned landing footprint.
 	warning.top_level = true
 	add_child(warning)
-	breath = MeshInstance3D.new()
-	var mat := ShaderMaterial.new()
-	mat.shader = preload("res://assets/shaders/fire_breath.gdshader")
-	mat.set_shader_parameter("flame_height",1.0)
-	mat.set_shader_parameter("flame_height_offset",-0.5)
-	mat.set_shader_parameter("outline_enabled",false)
-	mat.set_shader_parameter("breath_envelope",true)
-	breath.material_override = mat
-	breath.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	breath = preload("res://assets/bosses/veyne_breath.tscn").instantiate()
 	add_child(breath)
-	breath_core = MeshInstance3D.new()
-	breath_core.name = "BreathCore"
-	var core_material := mat.duplicate() as ShaderMaterial
-	core_material.set_shader_parameter("core_layer",true)
-	core_material.set_shader_parameter("max_alpha",0.28)
-	breath_core.material_override = core_material
-	breath_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	breath_core = breath.get_node("BreathCore")
+	# Sibling transforms retain the existing mouth-origin ownership contract.
+	breath.remove_child(breath_core)
 	add_child(breath_core)
 	interrupt()
 
@@ -199,33 +187,52 @@ func update_breath_mesh(profile: Dictionary) -> void:
 	if tangent.length_squared() < 0.1: tangent = axis.cross(Vector3.FORWARD).normalized()
 	var across := tangent.cross(axis).normalized()
 	var segments := 8 if entity.encounter.state.graphics_quality == "low" else 12
-	var tool := SurfaceTool.new()
-	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for segment in segments:
-		var points: Array[Vector3] = []
-		var texcoords: Array[Vector2] = []
-		for corner in 4:
-			var far_end := corner >= 2
-			var ring_index := segment+(corner%2)
-			var angle := TAU*float(ring_index)/segments
-			var ring := tangent*cos(angle)+across*sin(angle)
-			var along := float(profile.length) if far_end else 0.0
-			var point: Vector3 = profile.mouth+axis*along+ring*breath_radius(along)
+	var rings: Array = []
+	# A closed, subdivided container follows actual side-cover rays, not a
+	# camera-facing quad. The shader never modifies this contact-owned extent.
+	for row in 5:
+		var along := float(profile.length)*float(row)/4.0
+		var ring: Array[Vector3] = []
+		for segment in segments:
+			var angle := TAU*float(segment)/segments
+			var point: Vector3 = profile.mouth+axis*along+(tangent*cos(angle)+across*sin(angle))*breath_radius(along)
 			var wall := wall_between(profile.mouth,point)
 			if not wall.is_empty(): point = wall.position
-			# Local +Y is the actual mouth-to-endpoint axis, centered at the mouth.
-			points.append(Vector3((point-profile.mouth).dot(tangent),(point-profile.mouth).dot(axis),(point-profile.mouth).dot(across)))
-			texcoords.append(Vector2(float(ring_index)/segments,1.0 if far_end else 0.0))
-		for index in [0,2,1,1,2,3]:
-			tool.set_uv(texcoords[index]); tool.set_normal(Vector3(points[index].x,0,points[index].z).normalized()); tool.add_vertex(points[index])
-	breath.mesh = tool.commit()
+			ring.append(Vector3((point-profile.mouth).dot(tangent),(point-profile.mouth).dot(axis),(point-profile.mouth).dot(across)))
+		rings.append(ring)
+	breath.mesh = volume_mesh(rings,float(profile.length))
 	breath_core.mesh = breath.mesh
 	for node in [breath,breath_core]:
 		node.global_transform = Transform3D(Basis(tangent,axis,across),profile.mouth)
 		node.material_override.set_shader_parameter("flame_height",maxf(0.001,float(profile.length)))
-		node.material_override.set_shader_parameter("flame_height_offset",0.0)
 		node.material_override.set_shader_parameter("effect_time",0.0 if entity.encounter.state.reduced_motion else elapsed)
-		node.material_override.set_shader_parameter("reduced_motion",entity.encounter.state.reduced_motion or entity.encounter.state.graphics_quality == "low")
+		node.material_override.set_shader_parameter("reduced_motion",entity.encounter.state.reduced_motion)
+		node.material_override.set_shader_parameter("layered_mode",entity.encounter.state.graphics_quality == "low" or RenderingServer.get_current_rendering_method() == "gl_compatibility")
+
+static func volume_mesh(rings: Array, length: float) -> ArrayMesh:
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var segments: int = rings[0].size()
+	for row in rings.size()-1:
+		for segment in segments:
+			var next := (segment+1)%segments
+			var points: Array = [rings[row][segment],rings[row+1][segment],rings[row][next],rings[row+1][next]]
+			for index in [0,1,2,2,1,3]:
+				var point: Vector3 = points[index]
+				tool.set_normal(Vector3(point.x,0,point.z).normalized())
+				tool.set_uv(Vector2(float(segment)/segments,point.y/maxf(0.001,length)))
+				tool.add_vertex(point)
+	# End caps ensure front/high views see the same sampled volume.
+	for end in 2:
+		var ring: Array = rings[0 if end == 0 else rings.size()-1]
+		var center := Vector3(0,length*end,0)
+		for segment in segments:
+			var next := (segment+1)%segments
+			for point in [center,ring[next] if end == 0 else ring[segment],ring[segment] if end == 0 else ring[next]]:
+				tool.set_normal(Vector3.DOWN if end == 0 else Vector3.UP)
+				tool.set_uv(Vector2(point.x,point.z))
+				tool.add_vertex(point)
+	return tool.commit()
 
 func sample_breath() -> Dictionary:
 	var profile := breath_profile()

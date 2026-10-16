@@ -1,0 +1,18 @@
+[gd_resource type="Environment" load_steps=5 format=3]
+[ext_resource type="Shader" path="res://assets/shaders/veyne_night.gdshader" id="shader"]
+[ext_resource type="Texture3D" path="res://assets/bosses/breath_noise.tres" id="noise"]
+[sub_resource type="ShaderMaterial" id="material"]
+shader = ExtResource("shader")
+shader_parameter/sample_noise = ExtResource("noise")
+[sub_resource type="Sky" id="sky"]
+radiance_size = 0
+process_mode = 2
+sky_material = SubResource("material")
+[resource]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.34, 0.47, 0.7, 1)
+ambient_light_energy = 0.65
+reflected_light_source = 2
+tonemap_mode = 2

@@ -38,6 +38,7 @@ var navigation_region_iteration = 0
 var navigation_probe_path = PackedVector3Array()
 var navigation_status = "unbuilt"
 var hurt_remaining = 0.0
+var hit_response: Node
 @onready var character: Node = $CharacterAnimations
 @onready var health_component: SnaielHealth = $HealthComponent
 @onready var hitbox: SnaielHitbox = $HitboxComponent
@@ -67,6 +68,10 @@ func _ready() -> void:
 	preload("res://actors/mesh_qualification.gd").qualify_tree(model)
 	character.configure(model)
 	animator = character.anim_player
+	hit_response = preload("res://combat/enemy_hit_response.gd").new()
+	hit_response.name = "EnemyHitResponse"
+	add_child(hit_response)
+	hit_response.configure(model)
 	var strategy = SnaielMeleeAttack.new()
 	strategy.attack_name = &"Punch"
 	strategy.damage_attributes.health = 6.0
@@ -87,7 +92,7 @@ func _ready() -> void:
 	melee_events.attacking_finished.connect(_attack_finished)
 	hitbox.entity = self
 	hitbox.policy = handler.handle_interaction
-	hitbox.resolved.connect(func(result): if result_listener.is_valid(): result_listener.call(result))
+	hitbox.resolved.connect(_resolved_contact)
 	handler.blackboard = blackboard
 	handler.health_component = health_component
 	handler.eligibility = func(): return enabled_policy.is_valid() and enabled_policy.call()
@@ -102,7 +107,20 @@ func _ready() -> void:
 	previous_fist = source.global_position
 
 func _exit_tree() -> void:
+	if is_instance_valid(hit_response): hit_response.clear()
 	if owns_navigation_region and is_instance_valid(navigation_region): navigation_region.queue_free()
+
+func _resolved_contact(result: Dictionary) -> void:
+	# Only the complete post-HP hitbox result starts the local visual. Hurt/death
+	# drivers remain untouched; the external listener owns contact audio/readout.
+	var attack_name := ""
+	var contact_source = instance_from_id(int(result.get("source_id", 0)))
+	if is_instance_valid(contact_source) and contact_source.get_parent() is SnaielMelee:
+		var attack: SnaielMelee = contact_source.get_parent()
+		if attack.melee_animations and attack.attack_level >= 0 and attack.attack_level < attack.melee_animations.attacks.size():
+			attack_name = str(attack.melee_animations.attacks[attack.attack_level].attack_name)
+	hit_response.resolved(result, attack_name)
+	if result_listener.is_valid(): result_listener.call(result)
 
 func build_navigation() -> void:
 	if owns_navigation_region and is_instance_valid(navigation_region): navigation_region.queue_free()
@@ -227,6 +245,7 @@ func reset_unit(defeated: bool, collected: bool) -> void:
 	_choose_patrol_point()
 
 func interrupt_action() -> void:
+	if is_instance_valid(hit_response): hit_response.clear()
 	melee.interrupt_attack()
 	behavior.interrupt()
 	blackboard.set_value("got_hit", false)
@@ -426,7 +445,7 @@ func receive_contact(damage_source: SnaielDamageSource, point: Vector3) -> Dicti
 	return hitbox.contact(damage_source, point)
 
 func _mcp_state() -> Dictionary:
-	return {"health": health, "max_health": health_component.max_health, "phase": phase, "phase_time": clock, "engaged": engaged, "home": home, "animation": character.current_clip(), "animation_position": character.current_position(), "pose": character._mcp_state(), "practice_replay": practice_replay, "attack_instance": source.instance, "damage_window": source.can_damage, "hand_position": source.global_position, "last_contact": hitbox.last_result, "behavior": behavior._mcp_state(), "navigation_ready": navigation_ready, "navigation": navigation_state(), "target_reachable": navigation_agent.is_target_reachable(), "path_points": navigation_agent.get_current_navigation_path().size()}
+	return {"health": health, "max_health": health_component.max_health, "phase": phase, "phase_time": clock, "engaged": engaged, "home": home, "animation": character.current_clip(), "animation_position": character.current_position(), "pose": character._mcp_state(), "practice_replay": practice_replay, "attack_instance": source.instance, "damage_window": source.can_damage, "hand_position": source.global_position, "last_contact": hitbox.last_result, "hit_response": hit_response.observation() if is_instance_valid(hit_response) else {}, "behavior": behavior._mcp_state(), "navigation_ready": navigation_ready, "navigation": navigation_state(), "target_reachable": navigation_agent.is_target_reachable(), "path_points": navigation_agent.get_current_navigation_path().size()}
 
 func navigation_state() -> Dictionary:
 	var map = navigation_agent.get_navigation_map()

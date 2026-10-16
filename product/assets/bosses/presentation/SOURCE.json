@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "godot-simple-sky-project",
+      "url": "https://github.com/krzmig/godot-simple-sky-project",
+      "revision": "5e4c710bf0c87a1239f42e4de74d824224d14af5",
+      "license": "MIT",
+      "source_files": [
+        "sky.gdshader",
+        "main.tscn",
+        "ADOPTION.md"
+      ],
+      "adapted_paths": [
+        "assets/shaders/veyne_night.gdshader",
+        "assets/bosses/veyne_night.tres"
+      ],
+      "adaptation": "Fixed night gradient and moon sphere intersection; native noise replaces expensive procedural clouds, authored moon replaces calendar/light-index dependency, procedural stars replace unqualified image."
+    },
+    {
+      "name": "Godot-Spatial-Fire-Raymarched",
+      "url": "https://github.com/Dari0us/Godot-Spatial-Fire-Raymarched",
+      "revision": "c5705d493b22afa1fa2dae26d60c9689f0af7279",
+      "license": "MIT",
+      "source_files": [
+        "Assets/Campfire/FireEffect/FireEffect.gdshader",
+        "Assets/Campfire/campfire3DNoiseResource.tres",
+        "Assets/Campfire/campfire.tscn",
+        "ADOPTION.md"
+      ],
+      "adapted_paths": [
+        "assets/shaders/veyne_spatial_fire.gdshader",
+        "assets/bosses/veyne_breath.tscn",
+        "assets/bosses/breath_noise.tres"
+      ],
+      "adaptation": "Ray/box slab intersection, advected 3D noise and density integration adapted to closed mouth-axis expanding mesh; six samples, no billboard/depth reconstruction/jitter/dynamic 24-step loop. Low quality/Compatibility selects nested spatial shells. Native 32-cubed seamless FastNoiseLite replaces source texture recipe. Inward-only noise-advection tongues and tail taper remain within the original clipped hazard envelope."
+    }
+  ],
+  "retained_architecture": {
+    "resource": "res://assets/maps/map03/crypt.glb",
+    "new_copies": false,
+    "bindings": [
+      "Wall_004_Wall_Tiles_0",
+      "Pillar_001_Pillar_Texture_0",
+      "Floor_005_Floor_Tiles_0"
+    ],
+    "adaptation": "Nine decorative textured modules: four planar foundation facades, four distant ruin columns, lower courtyard. Facades rotate into their horizontal span; degenerate or near-zero source thickness is retained, never divided. Existing floor/stairs/perimeter collision unchanged."
+  },
+  "compatibility": {
+    "renderer_migration": false,
+    "reference_targets": [
+      "Godot 4.1 Forward Plus",
+      "Godot 4.5 Forward Plus"
+    ],
+    "selection": "Native sampler3D, six fixed samples; low quality/GL Compatibility nested-shell branch. No screen/depth or quarter-resolution sky dependency. 32px incremental sky radiance, four updates/second."
+  },
+  "runtime_qualification": "Pending parent import/boot and independent earned-route, audio, visual and representative performance validation."
+}

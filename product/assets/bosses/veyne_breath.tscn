@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Shader" path="res://assets/shaders/veyne_spatial_fire.gdshader" id="shader"]
+[ext_resource type="Texture3D" path="res://assets/bosses/breath_noise.tres" id="noise"]
+[sub_resource type="ShaderMaterial" id="envelope"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/sample_noise = ExtResource("noise")
+shader_parameter/max_alpha = 0.42
+[sub_resource type="ShaderMaterial" id="core"]
+resource_local_to_scene = true
+shader = ExtResource("shader")
+shader_parameter/sample_noise = ExtResource("noise")
+shader_parameter/core_layer = true
+shader_parameter/max_alpha = 0.28
+[node name="BreathVolume" type="MeshInstance3D"]
+visible = false
+cast_shadow = 0
+material_override = SubResource("envelope")
+[node name="BreathCore" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0
+material_override = SubResource("core")

@@ -4,6 +4,90 @@ const CIRCUIT = preload("res://tests/map03_barrier_test.gd")
 const HISTORY = preload("res://tests/chapter_travel_test.gd")
 const STATE = preload("res://dialogue_state.gd")
 
+class SurroundWorld extends Node3D:
+	var dialogue_state: Node
+
+static func component_checks(parent: Node) -> Dictionary:
+	# Disposable resource/geometry prototype only; no save/progression facts.
+	var actions = preload("res://combat/veyne_dragon_actions.gd")
+	var rings: Array = []
+	for row in 5:
+		var ring: Array[Vector3] = []
+		for segment in 12:
+			var angle := TAU*float(segment)/12.0
+			var along := float(row)*2.0
+			ring.append(Vector3(cos(angle)*actions.breath_radius(along),along,sin(angle)*actions.breath_radius(along)))
+		rings.append(ring)
+	var mesh: ArrayMesh = actions.volume_mesh(rings,8.0)
+	var arrays: Array = mesh.surface_get_arrays(0)
+	var checks := breath_presentation_checks()
+	checks.closed_volume_triangle_count = arrays[Mesh.ARRAY_VERTEX].size() == (4*12*2+24)*3
+	checks.volume_has_normals_uv = arrays[Mesh.ARRAY_NORMAL].size() == arrays[Mesh.ARRAY_VERTEX].size() and arrays[Mesh.ARRAY_TEX_UV].size() == arrays[Mesh.ARRAY_VERTEX].size()
+	checks.volume_stays_in_hazard_extent = mesh.get_aabb().position.y >= -0.001 and mesh.get_aabb().end.y <= 8.001
+	checks.shell_stays_in_hazard_radius = true
+	for vertex in arrays[Mesh.ARRAY_VERTEX]:
+		checks.shell_stays_in_hazard_radius = checks.shell_stays_in_hazard_radius and Vector2(vertex.x,vertex.z).length() <= actions.breath_radius(vertex.y)+0.001
+	var volume: MeshInstance3D = preload("res://assets/bosses/veyne_breath.tscn").instantiate()
+	checks.volume_default_hidden = not volume.visible and not volume.get_node("BreathCore").visible
+	checks.native_noise_bound = volume.material_override.get_shader_parameter("sample_noise") is NoiseTexture3D
+	checks.core_distinct = volume.get_node("BreathCore").material_override.get_shader_parameter("core_layer") == true
+	checks.material_isolation = volume.material_override != volume.get_node("BreathCore").material_override
+	volume.free()
+	var world := SurroundWorld.new()
+	world.dialogue_state = STATE.new()
+	world.add_child(world.dialogue_state)
+	var environment_root := Node3D.new()
+	world.add_child(environment_root)
+	var environment_node := WorldEnvironment.new()
+	environment_node.name = "WorldEnvironment"
+	environment_root.add_child(environment_node)
+	var arena: Node3D = preload("res://world/veyne_arena.gd").new()
+	environment_root.add_child(arena)
+	var surround: Node3D = preload("res://world/veyne_surround.tscn").instantiate()
+	arena.add_child(surround)
+	# A private World3D prevents the disposable environment from taking over
+	# the shipped scene's sky/light state during this component check.
+	var viewport := SubViewport.new()
+	viewport.own_world_3d = true
+	viewport.size = Vector2i(64,64)
+	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	parent.add_child(viewport)
+	viewport.add_child(world)
+	surround.bind(arena)
+	checks.surround_module_count = surround.modules.size() == 9
+	checks.surround_no_new_collision = surround.find_children("*","CollisionObject3D",true,false).is_empty()
+	var variants := {}
+	checks.surround_authored_textures = true
+	checks.surround_all_transforms_finite = true
+	checks.surround_all_bounds_finite = true
+	checks.surround_all_placements_bounded = true
+	checks.surround_authored_spans_match = true
+	for module in surround.modules:
+		var variant: String = module.get_meta("surround_variant")
+		variants[variant] = int(variants.get(variant,0))+1
+		var pose: Transform3D = module.global_transform
+		var box: AABB = pose*module.mesh.get_aabb()
+		var corner: Vector3 = module.get_meta("surround_corner")
+		var extent: Vector3 = module.get_meta("surround_extent")
+		checks.surround_all_transforms_finite = checks.surround_all_transforms_finite and pose.origin.is_finite() and pose.basis.x.is_finite() and pose.basis.y.is_finite() and pose.basis.z.is_finite()
+		checks.surround_all_bounds_finite = checks.surround_all_bounds_finite and box.position.is_finite() and box.size.is_finite()
+		checks.surround_all_placements_bounded = checks.surround_all_placements_bounded and pose.origin.length() < 1000.0
+		for axis in 3:
+			checks.surround_all_placements_bounded = checks.surround_all_placements_bounded and box.position[axis] >= corner[axis]-0.01 and box.end[axis] <= corner[axis]+extent[axis]+0.01
+		if variant == "foundation":
+			checks.surround_authored_spans_match = checks.surround_authored_spans_match and absf(maxf(box.size.x,box.size.z)-24.0) < 0.01 and absf(box.size.y-13.0) < 0.01
+		elif variant == "lower_court":
+			checks.surround_authored_spans_match = checks.surround_authored_spans_match and absf(box.size.x-80.0) < 0.01 and absf(box.size.z-80.0) < 0.01 and box.size.y < 0.01
+		for surface in module.mesh.get_surface_count():
+			var material = module.get_active_material(surface)
+			checks.surround_authored_textures = checks.surround_authored_textures and material is BaseMaterial3D and material.albedo_texture != null
+	checks.surround_multiple_variants = variants.size() == 3 and variants.values().max() <= 9*0.75
+	checks.sky_bound = environment_node.environment.sky.sky_material.shader == preload("res://assets/shaders/veyne_night.gdshader")
+	checks.sky_bounded_radiance = environment_node.environment.sky.radiance_size == Sky.RADIANCE_SIZE_32 and environment_node.environment.sky.process_mode == Sky.PROCESS_MODE_INCREMENTAL
+	checks.pause_inherited = surround.process_mode == Node.PROCESS_MODE_INHERIT
+	viewport.free()
+	return checks
+
 static func breath_presentation_checks() -> Dictionary:
 	var actions = preload("res://combat/veyne_dragon_actions.gd")
 	var mouth := Vector3(0,2,0)

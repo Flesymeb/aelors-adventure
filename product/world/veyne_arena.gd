@@ -19,6 +19,9 @@ func bind_geometry() -> void:
 	for mesh in crypt.find_children("*","MeshInstance3D",true,false):
 		trim_crypt(mesh)
 	bind_stone_route()
+	var surround := preload("res://world/veyne_surround.tscn").instantiate()
+	add_child(surround)
+	surround.bind(self)
 	for spot in [Vector3(-9,6,-22),Vector3(1,6,-30),Vector3(-4,9,-25)]:
 		var lamp := OmniLight3D.new()
 		lamp.light_color = Color(1.0,0.69,0.36)

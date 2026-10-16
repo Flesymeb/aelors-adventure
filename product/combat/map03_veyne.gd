@@ -36,6 +36,7 @@ var rift_contacts := 0
 var paused_by_menu := false
 var presentation_box := AABB()
 var flight_skin_boxes := {}
+var reveal_video: CanvasLayer
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -89,6 +90,11 @@ func configure(owner_world: Node3D) -> void:
 	reveal_caption.add_theme_color_override("font_color",Color(0.9,0.95,1))
 	reveal_panel.add_child(reveal_caption)
 	reveal_panel.hide()
+	reveal_video = preload("res://ui/boss_reveal_video.gd").new()
+	reveal_video.name = "BossRevealVideo"
+	add_child(reveal_video)
+	reveal_video.completed.connect(finish_presentation)
+	reveal_video.fallback_requested.connect(_video_fallback)
 	ground.call_deferred()
 
 func ground() -> void:
@@ -126,10 +132,10 @@ func can_save() -> bool: return phase not in ["reveal","phase_transition","battl
 func _process(delta: float) -> void:
 	if not grounded: return
 	var size := get_viewport().get_visible_rect().size
-	reveal_caption.add_theme_font_size_override("font_size",int(18*minf(state.text_scale,1.5)))
+	reveal_caption.add_theme_font_size_override("font_size",int(18*state.text_scale))
 	reveal_panel.size = Vector2(size.x*0.76,0)
 	reveal_panel.position = Vector2(size.x*0.12,size.y-maxf(110,reveal_panel.get_combined_minimum_size().y)-24)
-	reveal_panel.visible = phase in ["reveal","phase_transition"]
+	reveal_panel.visible = phase in ["reveal","phase_transition"] and not reveal_video.active
 	var presentation := phase in ["reveal","phase_transition"]
 	var paused: bool = world.pause_owners.keys().any(func(owner): return owner != "veyne_presentation")
 	music.stream_paused = paused
@@ -141,7 +147,7 @@ func _process(delta: float) -> void:
 		if not actor.animator.is_playing(): actor.animator.play()
 		reveal_elapsed += delta
 		if not Input.is_key_pressed(KEY_SPACE): skip_armed = true
-		if reveal_elapsed >= (2.4 if phase == "phase_transition" else 3.0): finish_presentation()
+		if not reveal_video.active and reveal_elapsed >= (2.4 if phase == "phase_transition" else 3.0): finish_presentation()
 	elif phase == "waiting" and state.ln02_purified and not state.veyne_defeated and not paused and state.health > 0 and not state.recovery_pending:
 		if ARENA.contains(Vector2(world.player.global_position.x,world.player.global_position.z)) and world.player.global_position.distance_to(actor.home) < 12.0 and world.warden_encounter.phase not in ["battle","reveal"]: begin_reveal()
 	elif phase == "battle" and not paused:
@@ -160,6 +166,10 @@ func _input(event: InputEvent) -> void:
 		finish_presentation()
 		get_viewport().set_input_as_handled()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and is_node_ready() and phase in ["reveal","phase_transition"] and is_instance_valid(world) and not world.pause_owners.has("controls"):
+		world._open_controls()
+
 func begin_reveal() -> void:
 	if phase != "waiting" or state.veyne_defeated: return
 	reveal_starts += 1
@@ -167,6 +177,14 @@ func begin_reveal() -> void:
 青色灯束不可振刀 · 金色爪击可振刀\n空格跳过 · Esc 暂停","Reveal")
 	claim_score()
 	play_cue("reveal")
+	if reveal_video.begin(state): reveal_panel.hide()
+
+func _video_fallback() -> void:
+	# Decoder failure resumes the original live shot rather than starting combat.
+	if phase != "reveal": return
+	reveal_elapsed = 0.0
+	actor.character.play("Reveal",1,true)
+	reveal_panel.show()
 
 func _start_presentation(kind: String, caption: String, clip: String) -> void:
 	phase = kind
@@ -296,8 +314,10 @@ func frame_presentation() -> void:
 func finish_presentation() -> void:
 	if phase not in ["reveal","phase_transition"]: return
 	var second := phase == "phase_transition"
+	reveal_video.shutdown()
 	world.player.camera.current = true
 	world._set_pause_owner("veyne_presentation",false)
+	world.player.suppress_held_combat_actions()
 	actor.character.play("Idle",1,true)
 	phase = "battle"
 	actor.engaged = true
@@ -375,6 +395,7 @@ func set_menu_paused(paused: bool) -> void:
 	music.stream_paused = paused
 	cue.stream_paused = paused
 	effects.stream_paused = paused
+	if is_instance_valid(reveal_video): reveal_video.set_paused(paused)
 	# SceneTree pause suspends the pausable actor/timeline; combat_allowed()
 	# rejects menu-time contacts. Retain clocks, footprint and instance dedup so
 	# resume continues the same attack instead of silently starting a new one.
@@ -424,6 +445,7 @@ func settle_defeat() -> void:
 
 func interrupt() -> void:
 	if not grounded: return
+	if is_instance_valid(reveal_video): reveal_video.shutdown()
 	actor.interrupt_action()
 	world.player.release_encounter_camera()
 	clear_rifts()
@@ -443,6 +465,7 @@ func restore_history() -> void:
 	if grounded: interrupt()
 
 func _exit_tree() -> void:
+	if is_instance_valid(reveal_video): reveal_video.shutdown()
 	if is_instance_valid(music): release_score()
 
 func _mcp_state() -> Dictionary:

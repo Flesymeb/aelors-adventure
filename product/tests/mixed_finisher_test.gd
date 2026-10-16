@@ -98,6 +98,7 @@ static func run(holder: Node) -> Dictionary:
 	# Detached actor: no _ready, inventory setup or user preference/save writes.
 	var modal_player = preload("res://player_controller.gd").new()
 	modal_player.combat = training
+	training.player = modal_player
 	training.finisher_buffered = true
 	var stage_before: String = training.phase
 	var clock_before: float = training.clock

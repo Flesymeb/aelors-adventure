@@ -1,0 +1,88 @@
+{
+  "kind": "generated_boss_entrance_cinematic",
+  "provider": "Alibaba Cloud Model Studio",
+  "model": "wan3.0-video",
+  "duration_seconds": 15.022993,
+  "width": 1278,
+  "height": 720,
+  "fps": 30,
+  "first_frame": "first_frame.png",
+  "first_frame_generation": "imagegen using original game dragon and stone courtyard as visual reference",
+  "source_video": "source.mp4",
+  "prompt": "Retained in the registered source reference; no regeneration performed.",
+  "terms": "Generated media remains subject to applicable provider terms; no CC0 or MIT asset licence is asserted.",
+  "status": "qualified conditional use basis; scoped transfer and Theora conversion; component decoding/lifecycle observed",
+  "integration": "combat/map03_veyne.gd owns reveal/start/finish/interrupt; ui/boss_reveal_video.gd owns only decoder and native captions. Live animated reveal remains Reduced Motion/missing/failed-video fallback.",
+  "terms_reference": "TERMS.md",
+  "provider_terms_url": "https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html",
+  "provider_terms_sections": [
+    "7.4",
+    "7.5",
+    "7.6"
+  ],
+  "generation_route": "Wan3.0 image-to-video API; not interactive model-experience portal",
+  "task_id": "94950aa4-a64a-4e39-be16-1f2c0e0f9aab",
+  "rights_basis": "Provider-generated output under applicable service terms; preserve lawful input rights and existing attribution obligations; no MIT/CC0 or exclusivity assertion",
+  "input_dragon_attribution": {
+    "title": "European Dragon",
+    "author": "Regina Cachoa (ReginaCachoa)",
+    "source_url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "game-scene visual reference and generated cinematic adaptation"
+  },
+  "terms_checked_at": "2026-10-17",
+  "semantic_role": "opaque full-bleed moonlit Veyne entrance, through the encounter reveal owner",
+  "qualification": {
+    "distribution_terms_reviewed": true,
+    "terms_reference": "https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html",
+    "reviewed_sections": [
+      "7.4",
+      "7.5",
+      "7.6"
+    ],
+    "service_notes_url": "https://help.aliyun.com/zh/model-studio/bailian-service-notes",
+    "review_basis": "API-generated output under the conditional provider agreement; lawful input rights, third-party attribution and customer-use obligations retained. Interactive model-experience restrictions are distinct from the recorded API route. No exclusivity, noninfringement, MIT or CC0 claim.",
+    "input_attribution": {
+      "title": "European Dragon",
+      "author": "Regina Cachoa (ReginaCachoa)",
+      "source_url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "changes": "game-scene visual reference and generated cinematic adaptation"
+    }
+  },
+  "conversion": {
+    "tool": "GStreamer 1.24.2 theoraenc/oggmux",
+    "input": "source.mp4",
+    "output": "entrance.ogv",
+    "video_codec": "Theora",
+    "quality": 48,
+    "frame_rate": 30,
+    "runtime_dimensions": [
+      1280,
+      720
+    ],
+    "transform": "One black pixel padded at left and right; no trim or temporal interpolation.",
+    "audio": "Omitted; retained encounter cue and score remain sole audio owners.",
+    "reason": "Installed FFmpeg has no Theora encoder.",
+    "duration_seconds": 15.0
+  },
+  "reference_entry": "hoh-boss-entrance-cg-20261016",
+  "runtime_qualification": {
+    "engine": "Godot 4.7 Forward+",
+    "media_type": "VideoStreamTheora",
+    "decoded_positions_seconds": [
+      0.98,
+      7.0,
+      13.05
+    ],
+    "motion": "Beginning, middle and late renders show changing dragon head, wing and body poses in the moonlit stone courtyard.",
+    "captions": "Native Chinese captions rendered at 100%, 150% and 200%; dark-text contrast defect corrected.",
+    "handoff": "Actual encounter begin/finish/input/interrupt interfaces exercised in a disposable dependency fixture. Natural decoder completion and early skip each reach battle once, release the stream and request held-input suppression; fixture facts remain unchanged. This does not establish earned entry or a live fight.",
+    "pause_focus": "Decoded position froze across pause and focus-notification callbacks, then resumed the same shot. Physical operating-system focus loss remains unobserved.",
+    "fallback": "Reduced Motion and unavailable media retain live reveal; forced stall releases decoder and resets live reveal clock without battle admission.",
+    "audio": "Generated movie audio omitted; existing encounter cue, Music/Effects buses and score remain sole owners. Live score pause/resume and interruption cleanup checked structurally; heard quality remains unverified.",
+    "independent_acceptance": "Legitimate LN02-triggered playback, ordinary natural/skip battle equivalence, physical focus, heard audio and representative performance remain pending."
+  }
+}
