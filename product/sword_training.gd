@@ -70,6 +70,7 @@ var last_outcome = ""
 var last_hp_loss = 0.0
 var commit_retry = false
 var commit_retry_timer = 0.0
+var repractice_guidance_time := 0.0
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -345,8 +346,18 @@ func interaction_prompt() -> String:
 	if finisher_buffered: return "终结技已衔接 · 等待轻击收招"
 	if finisher_eligible() and can_link_finisher(): return "[%s] 重击终结 · 更强一击，收招更长" % player.key_prompt("heavy")
 	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0: return "◇ 靠近拾取经验残响 · +10 XP"
-	if hers.can_interact(player): return "[E] 与赫斯交谈" if not state.sword_owned else ("[E] 复练训练怪 · 无额外奖励" if state.bow_owned and state.remnant_collected else "[E] 练习 / 重试振刀")
+	if hers.can_interact(player):
+		if not state.sword_owned: return "[E] 与赫斯交谈"
+		if monster.practice_replay: return "[E] 再次剑术复练 · 无额外奖励" if monster.health <= 0 else "复练进行中 · 退回赫斯处脱离"
+		return "[E] 可选剑术复练 · 无额外奖励" if can_repractice() else "[E] 练习 / 重试振刀"
+	if repractice_guidance_time > 0 and monster.practice_replay and monster.health > 0 and not monster.engaged and player.weapon_mode == "sword" and phase == "idle" and not player_locked(): return repractice_guidance()
 	return ""
+
+func can_repractice() -> bool:
+	return state.sword_owned and state.encounter_defeated and state.remnant_collected and grounded and not player_locked() and sim_phase == "idle" and world.pause_owners.is_empty()
+
+func repractice_guidance() -> String:
+	return "复练 · 左键依次轻击；收招末段按 [%s] 终结，[%s] 闪避 · 无额外奖励" % [player.key_prompt("heavy"), player.key_prompt("dodge")]
 
 func interact() -> bool:
 	if hers.can_interact(player):
@@ -354,9 +365,14 @@ func interact() -> bool:
 			tell("赫斯：先去听伊莎的请求。")
 		elif not state.sword_owned:
 			world.open_hers_dialogue()
-		elif state.bow_owned and state.remnant_collected:
-			monster.begin_practice_replay()
-			tell("赫斯：训练怪已就位，可用剑或弓复练；初战奖励不会重复。", 5)
+		elif monster.practice_replay:
+			if monster.health <= 0:
+				monster.end_practice_replay()
+				start_repractice()
+			else:
+				tell("复练进行中 · 先退回赫斯处，等待训练怪返回", 2.6)
+		elif can_repractice():
+			start_repractice()
 		elif not state.practice_hit:
 			hers.demonstrate()
 			tell("赫斯：左键挥剑，击中右侧草靶；1 拔剑。")
@@ -366,6 +382,11 @@ func interact() -> bool:
 			tell("赫斯：看我抬手。右键挡，或 %s 闪避；临近接触再按右键可振刀。" % player.key_prompt("dodge"), 4)
 		return true
 	return false
+
+func start_repractice() -> void:
+	if monster.begin_practice_replay():
+		repractice_guidance_time = 5.0
+		tell("可选剑术复练已开始 · 无额外奖励", 2.6, "sword_repractice")
 
 func grant_sword() -> void:
 	if not state.q01_accepted or state.sword_owned: return
@@ -456,6 +477,7 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	repractice_guidance_time = 0.0
 	cancel_heavy_response()
 	if sword_presentation: sword_presentation.clear_presentation()
 	if world.get("veyne_encounter") and _reason in ["death","load","recovery"]: world.veyne_encounter.interrupt()
@@ -492,6 +514,8 @@ func interrupt(_reason: String) -> void:
 		monster.interrupt_action()
 		player_hitbox.reset_contacts()
 		if feedback: feedback.clear_feedback()
+	if _reason in ["death", "load", "recovery", "travel", "exit"] and monster and monster.has_method("end_practice_replay"):
+		monster.end_practice_replay()
 	if player.animation_player:
 		player.animation_player.speed_scale = 1
 		player.current_animation = ""
@@ -525,6 +549,7 @@ func cancel_heavy_response() -> void:
 	if player.has_method("clear_camera_impulse"): player.clear_camera_impulse()
 
 func advance_player(delta: float) -> void:
+	repractice_guidance_time = maxf(0.0, repractice_guidance_time - delta)
 	if heavy_impact.advance(delta):
 		clear_attack_buffers()
 		if player.has_method("suppress_held_combat_actions"): player.suppress_held_combat_actions()

@@ -244,7 +244,8 @@ func refresh() -> void:
 		status_label.text = "河谷遇袭 · %d / 4\n演出已暂停 · 尚未替换冒险进度" % (cinematic.beat + 1)
 		return
 	if pause_world:
-		status_label.text = "第一章 · 河谷聚落\n检查点：河谷村庄灯台 · 命数 %d / 5" % state.lives
+		var chapter := "第三章 · 裂隙墓殿" if state.current_map == state.MAP03 else "第二章 · 林缘草甸" if state.current_map == state.MAP02 else "第一章 · 河谷聚落"
+		status_label.text = "%s\n检查点：%s · 命数 %d / 5" % [chapter,state.checkpoint_name(),state.lives]
 		return
 	status_label.add_theme_font_size_override("font_size", int(16 * state.text_scale))
 	var boundary: Dictionary = state.opening_recovery()

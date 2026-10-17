@@ -21,6 +21,14 @@ var floor_y := 0.0
 var contacts := 0
 var stopped_by_wall := false
 var serial := 0
+var charge_endpoint := Vector3.ZERO
+var charge_length := 0.0
+var charge_distance := 0.0
+var charge_blocked := false
+var charge_contact_settled := false
+const CHARGE_SPEED := 8.0
+const CHARGE_SAMPLE := 0.2
+const CHARGE_SKIN := 0.005
 const BREATH_REACH := 8.0
 const BREATH_BASE_RADIUS := 0.4
 const BREATH_SPREAD := 0.18
@@ -71,6 +79,13 @@ func begin(move: String) -> bool:
 	if kind == "dive" and support.is_empty(): kind = ""; stage = "idle"; return false
 	if not support.is_empty(): landing = support.position+Vector3.UP*0.08
 	stopped_by_wall = false
+	charge_distance = 0.0
+	charge_contact_settled = false
+	if kind == "charge":
+		var profile := charge_profile(start,CHARGE_SPEED * float(ACTIVE.charge))
+		charge_endpoint = profile.position
+		charge_length = profile.distance
+		charge_blocked = profile.blocked
 	serial += 1
 	source.instance = serial
 	source.set_meta("attack_origin",start)
@@ -88,6 +103,7 @@ func begin(move: String) -> bool:
 	if kind == "fire_breath":
 		update_breath_warning(breath_profile())
 		footprint_clock = 0
+	elif kind == "charge": update_charge_warning()
 	warning.show()
 	entity.character.play("Cast" if kind == "fire_breath" else ("Takeoff" if kind == "dive" else "Reveal"),1,true)
 	entity.encounter.play_effect("beam" if kind == "fire_breath" else "melee")
@@ -97,6 +113,7 @@ func tick(delta: float) -> void:
 	effects.tick(delta)
 	if kind == "": return
 	if not entity.encounter.combat_allowed(): return
+	var previous_elapsed := elapsed
 	elapsed += delta
 	warning.material_override.set_shader_parameter("progress",minf(1.0,elapsed/float(WINDUP[kind])))
 	if kind == "dive": tick_dive(delta); return
@@ -106,18 +123,40 @@ func tick(delta: float) -> void:
 			update_breath_warning(breath_profile())
 			footprint_clock = 0.1
 	if stage == "warning" and elapsed >= WINDUP[kind]:
+		if kind == "charge" and charge_length <= 0.001:
+			stopped_by_wall = true; recover(); return
 		stage = "active"; elapsed = 0
 		entity.phase = "attack"
 		source.can_damage = true
 		entity.character.play("Cast" if kind == "fire_breath" else "Charge",1,true)
 		if kind == "fire_breath": breath.show(); breath_core.show()
+		# Charge wind-up owns this tick. Do not also spend a full motion tick;
+		# retain the breath action's existing transition/contact timing.
+		if kind == "charge": return
 	if stage == "active":
 		if kind == "fire_breath": sample_breath()
 		else:
 			var old := entity.global_position
-			if not travel(direction*8.0*delta): stopped_by_wall = true; recover()
-			if stage == "active": sample_charge(old,entity.global_position)
-		if elapsed >= ACTIVE[kind]: recover()
+			var active_delta := minf(delta,maxf(0.0,float(ACTIVE.charge)-previous_elapsed))
+			var remaining := maxf(0.0,charge_length-charge_distance)
+			var profile := charge_profile(old,minf(CHARGE_SPEED*active_delta,remaining))
+			var motion: Vector3 = profile.position-old
+			# The target never shortens the lane. Its contact belongs exclusively
+			# to Snaiel, while native movement still stops at solid geometry.
+			entity.add_collision_exception_with(entity.target)
+			var collision := entity.move_and_collide(motion)
+			entity.remove_collision_exception_with(entity.target)
+			charge_distance += Vector2(entity.global_position.x-old.x,entity.global_position.z-old.z).length()
+			# Include the final swept segment even when it ends at cover.
+			sample_charge(old,entity.global_position)
+			if kind != "charge": return
+			if bool(profile.blocked) or collision != null or charge_distance >= charge_length-0.001:
+				stopped_by_wall = bool(profile.blocked) or collision != null or charge_blocked
+				if bool(profile.blocked) or collision != null:
+					charge_length = charge_distance; charge_endpoint = entity.global_position
+					update_charge_warning()
+				recover()
+		if stage == "active" and elapsed >= ACTIVE[kind]: recover()
 	elif stage == "recovery" and elapsed >= RECOVERY[kind]: finish()
 
 static func breath_radius(along: float) -> float:
@@ -246,10 +285,109 @@ func sample_breath() -> Dictionary:
 	return contact(target_point,"fire")
 
 func sample_charge(previous: Vector3, current: Vector3) -> Dictionary:
+	if charge_contact_settled: return {}
 	var target_point: Vector3 = entity.target.global_position+Vector3.UP
 	var closest := Geometry3D.get_closest_point_to_segment(target_point,previous+Vector3.UP,current+Vector3.UP)
 	if target_point.distance_to(closest)>entity.BODY_RADIUS+0.4 or not wall_between(closest,target_point).is_empty(): return {}
-	return contact(target_point,"charge")
+	var result := contact(target_point,"charge")
+	if result.get("accepted",false): charge_contact_settled = true
+	return result
+
+func charge_support(point: Vector3, clearance := false) -> Dictionary:
+	var exclusions := [entity.get_rid(),entity.target.get_rid()]
+	var sample: Dictionary = entity.ground_query.call(point) if clearance else entity.encounter.world.ground_policy.support(entity.encounter.world,Vector2(point.x,point.z),exclusions)
+	if not sample.is_empty(): return sample
+	# Imported triangle seams can miss an exact ray despite continuous body
+	# support. Require all four neighboring samples, never bridge an edge.
+	var nearby := {}
+	for offset in [Vector3(-0.02,0,-0.02),Vector3(-0.02,0,0.02),Vector3(0.02,0,-0.02),Vector3(0.02,0,0.02)]:
+		var probe: Vector3 = point+offset
+		var hit: Dictionary = entity.ground_query.call(probe) if clearance else entity.encounter.world.ground_policy.support(entity.encounter.world,Vector2(probe.x,probe.z),exclusions)
+		if hit.is_empty() or (not nearby.is_empty() and absf(hit.position.y-nearby.position.y)>0.05): return {}
+		nearby = hit
+	nearby.position = Vector3(point.x,nearby.position.y,point.z)
+	return nearby
+
+func charge_profile(origin: Vector3, distance: float) -> Dictionary:
+	# Prediction and execution use the same supported capsule sweep. Godot's
+	# cast_motion ignores initial overlaps, so query those before every sweep.
+	var point := origin
+	var travelled := 0.0
+	var stop_reason := ""
+	var space := get_world_3d().direct_space_state
+	var shape: CollisionShape3D = entity.get_node("Collision")
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape.shape
+	query.exclude = [entity.get_rid(),entity.target.get_rid()]
+	query.collision_mask = 1
+	query.margin = entity.safe_margin
+	while travelled < distance-0.0001:
+		query.transform = shape.global_transform
+		query.transform.origin += point-entity.global_position
+		query.motion = Vector3.ZERO
+		if not space.intersect_shape(query,1).is_empty(): stop_reason = "overlap"; break
+		var step := minf(CHARGE_SAMPLE,distance-travelled)
+		var next := point+direction*step
+		var support := charge_support(next,true)
+		if support.is_empty() or absf(support.position.y+0.08-point.y)>0.65: stop_reason = "support"; break
+		next.y = support.position.y+0.08
+		var supported := true
+		# Center support alone permits a wide creature to run over an edge.
+		for offset in [Vector3.RIGHT,Vector3.LEFT,Vector3.FORWARD,Vector3.BACK]:
+			var edge: Vector3 = next+offset*entity.BODY_RADIUS
+			var floor_hit := charge_support(edge)
+			if floor_hit.is_empty() or absf(floor_hit.position.y-support.position.y)>0.65:
+				supported = false; break
+		if not supported: stop_reason = "edge"; break
+		query.motion = next-point
+		var sweep := space.cast_motion(query)
+		var fraction: float = sweep[0] if sweep.size()>0 else 0.0
+		if fraction < 1.0:
+			stop_reason = "solid"
+			var safe := maxf(0.0,fraction-CHARGE_SKIN/maxf(query.motion.length(),CHARGE_SKIN))
+			point += query.motion*safe
+			travelled += step*safe
+			break
+		point = next
+		travelled += step
+	return {"position":point,"distance":travelled,"blocked":travelled<distance-0.001,"stop_reason":stop_reason}
+
+func update_charge_warning() -> void:
+	# A single supported world-space capsule describes the complete swept
+	# contact lane, including body/target clearance and both end caps.
+	var radius: float = entity.BODY_RADIUS+0.4
+	var side := Vector3(-direction.z,0,direction.x)
+	var rows := maxi(2,ceili((charge_length+radius*2)/0.3))
+	var columns := 6 if entity.encounter.state.graphics_quality == "low" else 10
+	var points := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var supported: Array[bool] = []
+	for row in rows+1:
+		var along := lerpf(-radius,charge_length+radius,float(row)/rows)
+		var cap := maxf(0.0,maxf(-along,along-charge_length))
+		var width := sqrt(maxf(0.0,radius*radius-cap*cap))
+		for column in columns+1:
+			var point := start+direction*along+side*width*(float(column)/columns*2-1)
+			var support := charge_support(point)
+			supported.append(not support.is_empty())
+			point.y = support.position.y+0.055 if not support.is_empty() else floor_y+0.055
+			points.append(point)
+			uvs.append(Vector2(float(column)/columns,float(row)/rows))
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	warning_triangles = 0
+	for row in rows:
+		for column in columns:
+			var a := row*(columns+1)+column
+			var b := a+columns+1
+			for triangle in [[a,b,a+1],[a+1,b,b+1]]:
+				if not supported[triangle[0]] or not supported[triangle[1]] or not supported[triangle[2]]: continue
+				for index in triangle:
+					tool.set_normal(Vector3.UP); tool.set_color(Color.WHITE); tool.set_uv(uvs[index]); tool.add_vertex(points[index])
+				warning_triangles += 1
+	warning.global_transform = Transform3D.IDENTITY
+	warning.mesh = tool.commit() if warning_triangles else null
+	warning.material_override.set_shader_parameter("footprint",true)
 
 func tick_dive(delta: float) -> void:
 	if stage == "warning":
@@ -349,6 +487,7 @@ func interrupt() -> void:
 	if landing_effect: landing_effect.clear()
 	if entity: ground_after_flight()
 	kind = ""; stage = "idle"; elapsed = 0
+	charge_length = 0.0; charge_distance = 0.0; charge_contact_settled = false
 
 func _mcp_state() -> Dictionary:
-	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"breath_length":breath_length,"warning_triangles":warning_triangles,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {},"ground_impact":landing_effect.snapshot() if landing_effect else {}}
+	return {"kind":kind,"stage":stage,"time":elapsed,"landing":landing,"direction":direction,"contacts":contacts,"charge_endpoint":charge_endpoint,"charge_length":charge_length,"charge_distance":charge_distance,"breath_length":breath_length,"warning_triangles":warning_triangles,"stopped_by_wall":stopped_by_wall,"source_active":source.can_damage if source else false,"effects":effects.snapshot() if effects else {},"ground_impact":landing_effect.snapshot() if landing_effect else {}}
