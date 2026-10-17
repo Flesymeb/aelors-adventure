@@ -46,7 +46,7 @@ const CONTROL_LABELS := {
 	"jump": "Jump", "sprint": "Sprint (hold)", "forward": "Move forward",
 	"back": "Move back", "left": "Move left", "right": "Move right",
 	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
-	"heavy": "Sword finisher (late light recovery)",
+	"heavy": "Sword finisher (late light / parry)",
 }
 # E/F retain interaction/lamp ownership, including while their systems are locked.
 const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_I, KEY_K,
@@ -372,6 +372,12 @@ func set_controls_open(open: bool) -> void:
 	# Only discard buffered future input; opening a menu is not a combat reset.
 	if combat:
 		combat.clear_attack_buffers()
+		# The pause menu preserves the earned gameplay-time window; dialogue,
+		# travel and other modal owners discard it rather than queueing an attack.
+		if open:
+			var owners: Variant = combat.world.get("pause_owners") if is_instance_valid(combat.world) else null
+			if not owners is Dictionary or owners.is_empty() or owners.keys().any(func(owner): return owner != "controls"):
+				combat.clear_parry_followup()
 		if not open and combat.blocking and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 			combat.set_block(false)
 	# AnimationPlayer inherits the player's pausable process mode. Let the

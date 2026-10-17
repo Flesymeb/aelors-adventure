@@ -9,6 +9,7 @@ var bridge_bars: Dictionary = {}
 var boss_rows: VBoxContainer
 var boss_name: Label
 var boss_hp: ProgressBar
+var boss_cue: Label
 
 func _ready() -> void:
 	layer = 5
@@ -41,6 +42,10 @@ func _ready() -> void:
 	boss_hp = meter(Color(0.65,0.12,0.2),240)
 	boss_hp.custom_minimum_size.x = 360
 	boss_rows.add_child(boss_hp)
+	boss_cue = Label.new()
+	boss_cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_cue.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	boss_rows.add_child(boss_cue)
 
 func frame() -> StyleBoxTexture:
 	var style = StyleBoxTexture.new()
@@ -73,20 +78,17 @@ func _process(_delta: float) -> void:
 	var boss: Node = training.world.get("warden_encounter")
 	var caster: Node = training.world.get("veyne_encounter")
 	if caster != null and caster.phase in ["battle","reveal","phase_transition"]: boss = caster
-	boss_rows.visible = boss != null and boss.phase in ["battle","reveal","phase_transition"]
+	boss_rows.visible = state.health > 0 and not state.recovery_pending and boss != null and boss.phase in ["battle","reveal","phase_transition"]
 	if boss_rows.visible:
 		boss_hp.max_value = boss.actor.health_component.max_health
 		boss_hp.value = boss.actor.health
 		boss_name.text = ("维恩 · %d / %d" if boss == caster else "锁印看守 · %d / %d") % [int(boss.actor.health),int(boss_hp.max_value)]
-		if boss == caster:
-			if boss.phase == "phase_transition": boss_name.text += " · 裂隙苏醒"
-			elif boss.actor.phase == "telegraph":
-				var cues := {"beam":"灯束：横移躲避","fire_breath":"火息：离开扇区","charge":"冲锋：向侧面闪避","dive":"俯冲：离开落点","melee":"爪击：可振刀"}
-				boss_name.text += " · "+str(cues.get(boss.actor.attack_kind,"保持距离"))
-		elif boss.actor.phase == "telegraph": boss_name.text += " · 震荡：离开或闪避" if boss.actor.attack_kind == "wave" else " · 正面重击：可振刀"
-		boss_name.add_theme_font_size_override("font_size",int(20*minf(state.text_scale,1.5)))
-		boss_rows.size = boss_rows.get_combined_minimum_size()
-		boss_rows.position = Vector2((viewport.x-boss_rows.size.x)*0.5,viewport.y*0.15)
+		boss_cue.text = boss_advice(boss, boss == caster)
+		boss_cue.visible = not boss_cue.text.is_empty()
+		layout_boss(viewport, state.text_scale)
+	else:
+		boss_cue.text = ""
+		boss_cue.hide()
 	# Teaching/reward/restoration notices share the themed gameplay notification lane.
 	status.text = ""
 	var opponent: CharacterBody3D = training.monster
@@ -159,6 +161,49 @@ func _process(_delta: float) -> void:
 				var edge := Vector2(clampf(px.x, cue.position.x, cue.end.x), clampf(px.y, cue.position.y, cue.end.y))
 				b.leader.points = PackedVector2Array([edge, px])
 	if training.notice_time > 0: status.add_theme_color_override("font_color", Color(1, 0.91, 0.64))
+
+func layout_boss(viewport: Vector2, text_scale: float) -> void:
+	boss_name.add_theme_font_size_override("font_size", int(20 * minf(text_scale, 1.5)))
+	boss_cue.add_theme_font_size_override("font_size", int(17 * text_scale))
+	boss_cue.custom_minimum_size.x = minf(760, viewport.x * 0.7)
+	boss_rows.size = boss_rows.get_combined_minimum_size()
+	boss_rows.position = Vector2((viewport.x - boss_rows.size.x) * 0.5, viewport.y * 0.15)
+
+static func boss_advice(encounter: Node, is_veyne: bool) -> String:
+	# Read the retained action owners each frame. No HUD clock or animation-name
+	# inference can extend an opening after an interrupted or completed action.
+	if encounter.phase == "phase_transition":
+		return "裂隙苏醒 · 紫色区域先预告后生效" if is_veyne else ""
+	if encounter.phase != "battle" or encounter.actor.health <= 0: return ""
+	var actor: Node = encounter.actor
+	var cue := ""
+	if actor.phase == "stagger" and actor.hurt_remaining > 0:
+		cue = "振刀奏效 · 可趁硬直反击"
+	else:
+		var kind: String = actor.attack_kind
+		var stage := ""
+		if is_veyne and kind in ["fire_breath", "charge", "dive"]:
+			if actor.dragon_actions.kind == kind:
+				stage = actor.dragon_actions.stage
+		elif is_veyne and kind == "beam":
+			if actor.cast_action.executing_action:
+				stage = actor.cast_action.stage
+		elif kind in ["heavy", "melee"]:
+			if actor.melee_events.attacking:
+				stage = actor.melee_events.stage
+		elif not is_veyne and kind == "wave":
+			stage = {"telegraph":"warning", "attack":"active", "recovery":"recovery"}.get(actor.phase, "")
+		# Phase is set by these owners' stage callbacks. Requiring agreement also
+		# suppresses advice during hurt, reset, death and interruption boundaries.
+		if actor.phase == "telegraph" and stage in ["warning", "flight", "anticipation"]:
+			cue = {"heavy":"正面重击蓄势 · 可振刀", "wave":"震荡蓄势 · 离开范围或闪避", "melee":"爪击蓄势 · 可振刀", "beam":"灯束蓄势 · 横移躲避", "fire_breath":"火息蓄势 · 离开扇区", "charge":"冲锋蓄势 · 向侧面闪避", "dive":"俯冲将至 · 离开落点"}.get(kind, "")
+		elif actor.phase == "attack" and stage in ["strike", "contact", "active"]:
+			cue = {"heavy":"重击挥出 · 躲开正面", "wave":"震荡爆发 · 离开范围或闪避", "melee":"爪击挥出 · 躲开正面", "beam":"灯束持续 · 保持横移", "fire_breath":"火息喷吐 · 留在扇区外", "charge":"冲锋突进 · 避开路径", "dive":"俯冲落下 · 远离落点"}.get(kind, "")
+		elif actor.phase == "recovery" and stage == "recovery":
+			cue = {"heavy":"重击收势 · 可趁机反击", "wave":"震荡已过 · 可趁收势反击", "melee":"爪击收势 · 可趁机反击", "beam":"灯束结束 · 可趁收势反击", "fire_breath":"火息停歇 · 可趁机反击", "charge":"冲锋停下 · 可趁收势反击", "dive":"俯冲收势 · 可趁机反击"}.get(kind, "")
+	if is_veyne and actor.pressure_phase:
+		cue += ("\n" if not cue.is_empty() else "") + "留意紫色裂隙 · 避开预告区域"
+	return cue
 
 func place_enemy_bar(rows: Control, anchor: Vector2, viewport: Vector2, occupied: Array[Rect2]) -> bool:
 	var size := rows.get_combined_minimum_size()

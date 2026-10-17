@@ -9,6 +9,8 @@ const AERIAL_INDEX = 3
 const AERIAL_DAMAGE = 24.0
 const FINISHER_INDEX = 4
 const FINISHER_DAMAGE = 28.0
+const PARRY_FOLLOWUP_SECONDS = 0.6
+var parry_followup_remaining := 0.0
 var finisher_buffered = false
 var finisher_animation_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 var aerial_active = false
@@ -71,6 +73,10 @@ var last_hp_loss = 0.0
 var commit_retry = false
 var commit_retry_timer = 0.0
 var repractice_guidance_time := 0.0
+
+func _exit_tree() -> void:
+	clear_parry_followup()
+	clear_attack_buffers()
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -185,6 +191,21 @@ func clear_attack_buffers() -> void:
 	buffered = false
 	finisher_buffered = false
 
+func clear_parry_followup() -> void:
+	parry_followup_remaining = 0.0
+
+func can_parry_finisher() -> bool:
+	return parry_followup_remaining > 0.0 and phase == "idle" and not blocking and finisher_eligible()
+
+func advance_parry_followup(delta: float) -> void:
+	# The actor's gameplay clock is paused by the world owner. No wall timer or
+	# pending heavy press can dispatch a follow-up when control returns.
+	if parry_followup_remaining <= 0.0: return
+	if not finisher_eligible() or phase != "idle":
+		clear_parry_followup()
+		return
+	parry_followup_remaining = maxf(0.0, parry_followup_remaining - delta)
+
 func can_link_finisher() -> bool:
 	return phase == "recovery" and combo in [0, 1] and clock >= recovery_duration() - 0.2 and clock <= recovery_duration() and not buffered and not finisher_buffered
 
@@ -192,8 +213,14 @@ func finisher_eligible() -> bool:
 	return not player_locked() and not player.controls_open and player.switch_timer <= 0 and player.traversal.action == "" and player.traversal.posture == "standing" and state.sword_owned and player.weapon_mode == "sword" and player.is_on_floor() and not aerial_active and not (player.abilities and player.abilities.busy())
 
 func request_finisher() -> void:
-	if not can_link_finisher() or not finisher_eligible(): return
+	if not finisher_eligible(): return
 	if not player.animation_player.has_animation(player.FINISHER_CLIP): return
+	if can_parry_finisher():
+		combo = FINISHER_INDEX
+		start_swing()
+		return
+	if not can_link_finisher(): return
+	clear_parry_followup()
 	finisher_buffered = true
 
 func sword_stage(stage: String) -> void:
@@ -344,6 +371,9 @@ func tell(message: String, seconds = 2.6, event_id := "") -> void:
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
 	if finisher_buffered: return "终结技已衔接 · 等待轻击收招"
+	if parry_followup_remaining > 0.0 and phase == "idle" and finisher_eligible():
+		if blocking: return "振刀反击 · 松开格挡后按 [%s] 终结" % player.key_prompt("heavy")
+		return "[%s] 振刀反击终结 · 收招更长" % player.key_prompt("heavy")
 	if finisher_eligible() and can_link_finisher(): return "[%s] 重击终结 · 更强一击，收招更长" % player.key_prompt("heavy")
 	if remnant and player.global_position.distance_to(remnant.global_position) < 2.0: return "◇ 靠近拾取经验残响 · +10 XP"
 	if hers.can_interact(player):
@@ -357,7 +387,7 @@ func can_repractice() -> bool:
 	return state.sword_owned and state.encounter_defeated and state.remnant_collected and grounded and not player_locked() and sim_phase == "idle" and world.pause_owners.is_empty()
 
 func repractice_guidance() -> String:
-	return "复练 · 左键依次轻击；收招末段按 [%s] 终结，[%s] 闪避 · 无额外奖励" % [player.key_prompt("heavy"), player.key_prompt("dodge")]
+	return "复练 · 轻击收招末段 / 振刀松挡后 [%s] 终结；[%s] 闪避 · 无额外奖励" % [player.key_prompt("heavy"), player.key_prompt("dodge")]
 
 func interact() -> bool:
 	if hers.can_interact(player):
@@ -425,6 +455,7 @@ func request_attack() -> void:
 		return
 	if aerial_active: return
 	if phase == "recovery" and clock >= recovery_duration() - 0.2 and combo < 2 and not finisher_buffered:
+		clear_parry_followup()
 		buffered = true
 		return
 	if phase != "idle": return
@@ -432,6 +463,7 @@ func request_attack() -> void:
 	start_swing()
 
 func start_swing() -> void:
+	clear_parry_followup()
 	protection = 0
 	blocking = false
 	parry_window = 0
@@ -459,6 +491,11 @@ func start_swing() -> void:
 		player._play_animation(CLIPS[combo], length / 0.35)
 	sword_source.global_position = player.global_position
 	sword_melee.attack(combo, true, false)
+	# A fresh counterattack may arrive during the existing brief parry stop.
+	# Starting its clip must not resume only the rig ahead of contact events.
+	if hit_stop > 0:
+		player.animation_player.speed_scale = 0
+		sword_events.timeline.speed_scale = 0
 
 func recovery_duration() -> float:
 	return sword_events.attacks[combo].recovery
@@ -477,6 +514,7 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	clear_parry_followup()
 	repractice_guidance_time = 0.0
 	cancel_heavy_response()
 	if sword_presentation: sword_presentation.clear_presentation()
@@ -549,6 +587,7 @@ func cancel_heavy_response() -> void:
 	if player.has_method("clear_camera_impulse"): player.clear_camera_impulse()
 
 func advance_player(delta: float) -> void:
+	advance_parry_followup(delta)
 	repractice_guidance_time = maxf(0.0, repractice_guidance_time - delta)
 	if heavy_impact.advance(delta):
 		clear_attack_buffers()
@@ -710,6 +749,10 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 	elif parryable and blocking and front and parry_window > 0:
 		last_outcome = "parry"
 		parry_window = 0
+		# Only the accepted real defense result earns this choice. Coach timing
+		# exercises and held defense never create or extend an opportunity.
+		if not simulated and blockable and phase == "idle" and state.get("sword_owned") == true and player.get("weapon_mode") == "sword" and finisher_eligible() and parry_followup_remaining <= 0.0:
+			parry_followup_remaining = PARRY_FOLLOWUP_SECONDS
 		stop_on_contact(0.055, contact.merged({"outcome": "parry", "simulated": simulated}, true))
 	elif blockable and blocking and front:
 		last_outcome = "block"
@@ -928,7 +971,7 @@ func collect_remnant() -> void:
 	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}, "heavy_impact": heavy_impact.observation()}
+	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "parry_followup_remaining": parry_followup_remaining, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}, "heavy_impact": heavy_impact.observation()}
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.

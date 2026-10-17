@@ -10,6 +10,7 @@ var player: CharacterBody3D
 var state: Node
 var ronen: StaticBody3D
 var target: StaticBody3D
+var target_label: Label3D
 var obstruction: Node3D
 var grounded := false
 var pending_demo := false
@@ -43,6 +44,7 @@ func configure(owner_world: Node3D) -> void:
 	collision.position.y = 0.6
 	target.add_child(collision)
 	var label := Label3D.new()
+	target_label = label
 	label.text = "蓄力草靶"
 	label.font = preload("res://dialogue_theme.tres").default_font
 	label.position.y = 1.6
@@ -55,6 +57,60 @@ func configure(owner_world: Node3D) -> void:
 	add_child(obstruction)
 	obstruction.scale *= 2.4
 	ground_module.call_deferred()
+
+func _process(_delta: float) -> void:
+	update_target_label()
+
+func update_target_label() -> void:
+	if not is_instance_valid(target_label) or not is_instance_valid(player): return
+	target_label.visible = false
+	if not grounded or not world.pause_owners.is_empty() or player.controls_open: return
+	var camera: Camera3D = player.camera
+	var point := target_label.global_position
+	if camera.is_position_behind(point) or camera.global_position.distance_to(point) < 1.0 or player.global_position.distance_to(target.global_position) > 28.0: return
+	var viewport := get_viewport().get_visible_rect().size
+	var anchor := camera.unproject_position(point)
+	# Preserve native depth testing. Unlike a projected HUD fallback, this label
+	# cannot float through scene geometry. Scale is bounded in screen pixels,
+	# rather than making a near-camera billboard fill the aiming presentation.
+	var pixels_per_unit := anchor.distance_to(camera.unproject_position(point + camera.global_basis.y))
+	if pixels_per_unit < 0.01: return
+	var text_scale: float = state.text_scale
+	# Size the visible glyph em, not the font's taller line spacing; sizing the
+	# latter made the Chinese teaching text too small even at the minimum.
+	var glyph_height := float(target_label.font_size)
+	var native_height := glyph_height * target_label.pixel_size * pixels_per_unit
+	var height := clampf(native_height, 18.0 * text_scale, 24.0 * text_scale)
+	target_label.scale = Vector3.ONE * height / native_height
+	var width := target_label.font.get_string_size(target_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, target_label.font_size).x / glyph_height * height
+	var line_height := height * target_label.font.get_height(target_label.font_size) / glyph_height
+	var label_rect := Rect2(anchor - Vector2(width, line_height) * 0.5, Vector2(width, line_height)).grow(6.0)
+	# A conservative projected body envelope includes the extended bow/arms on
+	# either shoulder. Reject the label instead of relocating it onto a false
+	# target or letting it collide with the reticle and charge arc.
+	var body_rect := Rect2()
+	var first := true
+	var radius := lerpf(0.65, 1.05, player.aim_blend)
+	for y in [0.0, 2.0]:
+		for side in [-1.0, 1.0]:
+			var body_point: Vector3 = player.global_position + Vector3.UP * y + camera.global_basis.x * radius * side
+			if camera.is_position_behind(body_point): return
+			var pixel := camera.unproject_position(body_point)
+			if first:
+				body_rect = Rect2(pixel, Vector2.ZERO)
+				first = false
+			else: body_rect = body_rect.expand(pixel)
+	var aim_rect := Rect2(viewport * 0.5 - Vector2(28, 40), Vector2(95, 80)) if player.aim_blend > 0.01 else Rect2()
+	if not marker_fits(label_rect, body_rect.grow(10), aim_rect, viewport): return
+	# Test the actual target, not just the elevated text anchor. A wall hiding
+	# the bale must not leave a misleading label visible above that wall.
+	var ray := PhysicsRayQueryParameters3D.create(camera.global_position, target.global_position + Vector3.UP * 0.65, 3, [player.get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	if hit.is_empty() or hit.collider != target: return
+	target_label.visible = true
+
+static func marker_fits(label_rect: Rect2, body_rect: Rect2, aim_rect: Rect2, viewport: Vector2) -> bool:
+	return Rect2(Vector2(12, 12), viewport - Vector2(24, 24)).encloses(label_rect) and not label_rect.intersects(body_rect) and (aim_rect.size == Vector2.ZERO or not label_rect.intersects(aim_rect))
 
 func ground_module() -> void:
 	if world.meadow_slice:
