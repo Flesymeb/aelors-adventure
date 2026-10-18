@@ -73,8 +73,14 @@ var last_hp_loss = 0.0
 var commit_retry = false
 var commit_retry_timer = 0.0
 var repractice_guidance_time := 0.0
+var practice_menu: CanvasLayer
+var coached_practice := false
+var lesson_stage := ""
+var lesson_parry: Dictionary = {}
+var lesson_counter_instance := -1
 
 func _exit_tree() -> void:
+	clear_lesson()
 	clear_parry_followup()
 	clear_attack_buffers()
 
@@ -193,6 +199,7 @@ func clear_attack_buffers() -> void:
 
 func clear_parry_followup() -> void:
 	parry_followup_remaining = 0.0
+	lesson_parry.clear()
 
 func can_parry_finisher() -> bool:
 	return parry_followup_remaining > 0.0 and phase == "idle" and not blocking and finisher_eligible()
@@ -216,8 +223,14 @@ func request_finisher() -> void:
 	if not finisher_eligible(): return
 	if not player.animation_player.has_animation(player.FINISHER_CLIP): return
 	if can_parry_finisher():
+		var coached_counter := coached_practice and not lesson_parry.is_empty()
+		var defense_identity := lesson_parry.duplicate()
 		combo = FINISHER_INDEX
 		start_swing()
+		if coached_counter:
+			lesson_parry = defense_identity
+			lesson_counter_instance = sword_source.instance
+			lesson_stage = "contact"
 		return
 	if not can_link_finisher(): return
 	clear_parry_followup()
@@ -273,9 +286,11 @@ func resolve_player_contact(source: SnaielDamageSource, point: Vector3) -> Dicti
 	var outcome = receive_attack(source.get_meta("attack_origin",source.entity.attack_origin), source.get_meta("attack_direction",source.entity.locked_direction), source.damage_attributes.health, false, source.get_meta("ranged_contact",false),not source.get_meta("unblockable",false),not source.get_meta("unparryable",false), contact)
 	if outcome == "parry": source.get_parried()
 	contact.merge({"accepted": outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": outcome, "hp_after": state.health, "hp_loss": before - state.health}, true)
+	observe_lesson_defense(source,contact)
 	return contact
 
 func resolved_enemy_contact(result: Dictionary) -> void:
+	observe_lesson_contact(result)
 	var defeated: bool = result.outcome == "defeat"
 	feedback.impact(result.point, "击败" if defeated else "", result.hp_loss, "defeat" if defeated else "hit", result)
 	if result.source_id == sword_source.get_instance_id() and (combo == 2 or combo == FINISHER_INDEX or aerial_active): stop_on_contact(0.045, result)
@@ -370,6 +385,7 @@ func tell(message: String, seconds = 2.6, event_id := "") -> void:
 
 func interaction_prompt() -> String:
 	if state.lives <= 0: return ""
+	if coached_practice: return lesson_prompt()
 	if finisher_buffered: return "终结技已衔接 · 等待轻击收招"
 	if parry_followup_remaining > 0.0 and phase == "idle" and finisher_eligible():
 		if blocking: return "振刀反击 · 松开格挡后按 [%s] 终结" % player.key_prompt("heavy")
@@ -398,11 +414,11 @@ func interact() -> bool:
 		elif monster.practice_replay:
 			if monster.health <= 0:
 				monster.end_practice_replay()
-				start_repractice()
+				open_practice_menu()
 			else:
 				tell("复练进行中 · 先退回赫斯处，等待训练怪返回", 2.6)
 		elif can_repractice():
-			start_repractice()
+			open_practice_menu()
 		elif not state.practice_hit:
 			hers.demonstrate()
 			tell("赫斯：左键挥剑，击中右侧草靶；1 拔剑。")
@@ -413,10 +429,53 @@ func interact() -> bool:
 		return true
 	return false
 
-func start_repractice() -> void:
+func open_practice_menu() -> void:
+	if not can_repractice() or is_instance_valid(practice_menu): return
+	practice_menu = preload("res://ui/sword_practice_menu.gd").new()
+	practice_menu.training = self
+	add_child(practice_menu)
+
+func start_repractice(coached := false) -> void:
 	if monster.begin_practice_replay():
+		clear_lesson()
+		coached_practice = coached
+		lesson_stage = "parry" if coached else ""
 		repractice_guidance_time = 5.0
 		tell("可选剑术复练已开始 · 无额外奖励", 2.6, "sword_repractice")
+
+func clear_lesson() -> void:
+	coached_practice = false
+	lesson_stage = ""
+	lesson_parry.clear()
+	lesson_counter_instance = -1
+
+func observe_lesson_defense(source: SnaielDamageSource, result: Dictionary) -> void:
+	if not coached_practice or lesson_stage == "complete" or not monster.practice_replay: return
+	if source != monster.source or source.entity != monster: return
+	lesson_parry.clear()
+	lesson_counter_instance = -1
+	if result.get("accepted",false) and result.get("outcome","") == "parry" and not result.get("simulated",true) and parry_followup_remaining > 0:
+		lesson_parry = {"source_id":source.get_instance_id(),"attack_instance":source.instance}
+		lesson_stage = "counter"
+	else:
+		lesson_stage = "parry"
+
+func observe_lesson_contact(result: Dictionary) -> void:
+	if not coached_practice or lesson_stage != "contact" or lesson_parry.is_empty(): return
+	if not monster.practice_replay or combo != FINISHER_INDEX or phase != "contact": return
+	if result.get("source_id",0) != sword_source.get_instance_id() or result.get("attack_instance",-1) != lesson_counter_instance or result.get("receiver","") != str(monster.get_path()): return
+	if not result.get("accepted",false) or result.get("hp_loss",0.0) <= 0 or result.get("hp_before",0.0) <= result.get("hp_after",0.0): return
+	lesson_stage = "complete"
+	lesson_counter_instance = -1
+	lesson_parry.clear()
+	tell("赫斯：振刀、松挡、反击命中。做得好！复练没有额外奖励。",5)
+
+func lesson_prompt() -> String:
+	if lesson_stage == "complete": return "振刀反击已完成 · 可继续切磋，或退回赫斯处脱离"
+	if lesson_stage == "counter" and parry_followup_remaining > 0:
+		return "振刀成功 · 松开右键，再按 [%s] 反击" % player.key_prompt("heavy")
+	if lesson_stage == "contact" and phase != "idle": return "让反击命中对手 · 保持距离，留意遮挡"
+	return "靠近训练怪 · 抬手后，临近接触新按右键振刀；[%s] 可闪避" % player.key_prompt("dodge")
 
 func grant_sword() -> void:
 	if not state.q01_accepted or state.sword_owned: return
@@ -463,6 +522,7 @@ func request_attack() -> void:
 	start_swing()
 
 func start_swing() -> void:
+	lesson_counter_instance = -1
 	clear_parry_followup()
 	protection = 0
 	blocking = false
@@ -514,6 +574,8 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	clear_lesson()
+	if is_instance_valid(practice_menu): practice_menu.close()
 	clear_parry_followup()
 	repractice_guidance_time = 0.0
 	cancel_heavy_response()
@@ -587,6 +649,11 @@ func cancel_heavy_response() -> void:
 	if player.has_method("clear_camera_impulse"): player.clear_camera_impulse()
 
 func advance_player(delta: float) -> void:
+	if coached_practice and (not monster.practice_replay or player.weapon_mode != "sword"):
+		clear_lesson()
+	if coached_practice and lesson_stage == "counter" and parry_followup_remaining <= 0:
+		lesson_stage = "parry"
+		lesson_parry.clear()
 	advance_parry_followup(delta)
 	repractice_guidance_time = maxf(0.0, repractice_guidance_time - delta)
 	if heavy_impact.advance(delta):

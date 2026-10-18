@@ -101,6 +101,8 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		wave_clock += delta
 		warning_material.set_shader_parameter("progress",minf(1,wave_clock/1.3))
+		if wave_settled:
+			warning_material.set_shader_parameter("release",clampf((wave_clock-1.3)/0.18,0.001,1.0))
 		if wave_clock >= 1.3 and not wave_settled:
 			wave_settled = true
 			phase = "attack"
@@ -113,8 +115,10 @@ func _physics_process(delta: float) -> void:
 			wave_source.set_meta("attack_direction",(target.global_position-global_position).normalized())
 			if wave_contains(target.global_position) and line_clear(target.global_position): contact_policy.call(wave_source,target.global_position+Vector3.UP)
 			wave_source.can_damage = false
+			warning_material.set_shader_parameter("release",0.001)
+		if wave_clock >= 1.48:
+			phase = "recovery"
 			telegraph.hide()
-		if wave_clock >= 1.48: phase = "recovery"
 		if wave_clock >= 2.65:
 			attack_kind = ""
 			phase = "idle"
@@ -134,6 +138,8 @@ func tick_attack(board: SnaielBlackboard) -> int:
 	model.rotation.y = atan2(locked_direction.x,locked_direction.z)
 	telegraph.rotation.y = model.rotation.y
 	telegraph.mesh.size = Vector2.ONE * 2 * (WAVE_RADIUS if next_wave else HEAVY_REACH)
+	warning_material.set_shader_parameter("progress",0.0)
+	warning_material.set_shader_parameter("release",0.0)
 	telegraph.show()
 	if next_wave:
 		waves_started += 1

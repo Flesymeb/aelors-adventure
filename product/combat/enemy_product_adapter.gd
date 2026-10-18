@@ -31,6 +31,7 @@ func begin_practice_replay() -> bool:
 	return true
 
 func end_practice_replay() -> void:
+	training.clear_lesson()
 	if not practice_replay: return
 	reset_encounter()
 

@@ -9,6 +9,7 @@ var label: Label3D
 var released := false
 var assembled := false
 var release_remaining := 0.0
+var performing_assembly := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -20,10 +21,11 @@ func _ready() -> void:
 	add_child(presentation)
 	# Keep loop edits actor-local: the imported libraries are shared with Aelor.
 	var library: AnimationLibrary = presentation.animation_player.get_animation_library("").duplicate()
-	var captive_clip: Animation = library.get_animation("Fixing_Kneeling").duplicate(true)
-	captive_clip.loop_mode = Animation.LOOP_LINEAR
-	library.remove_animation("Fixing_Kneeling")
-	library.add_animation("Fixing_Kneeling",captive_clip)
+	for key in ["Fixing_Kneeling","Idle_Talking"]:
+		var captive_clip: Animation = library.get_animation(key).duplicate(true)
+		captive_clip.loop_mode = Animation.LOOP_LINEAR
+		library.remove_animation(key)
+		library.add_animation(key,captive_clip)
 	presentation.animation_player.remove_animation_library("")
 	presentation.animation_player.add_animation_library("",library)
 	presentation.current_animation = ""
@@ -51,6 +53,21 @@ func restore(is_released: bool, is_assembled: bool) -> void:
 		release_remaining = 0
 		presentation._play_animation("Idle_Talking" if assembled else "Idle" if released else "Fixing_Kneeling")
 	label.text = CAST.data[captive_id].name + " · " + ("已集合" if assembled else "已释放" if released else CAST.data[captive_id].role + " · 受困")
+
+func begin_assembly_performance() -> void:
+	performing_assembly = true
+	release_remaining = 0
+	presentation.current_animation = ""
+	presentation._play_animation("Interact")
+
+func assembly_performance(beat: int, index: int) -> void:
+	if not performing_assembly: return
+	presentation.current_animation = ""
+	presentation._play_animation("Interact" if beat == 0 or (beat == 1 and index == 0) else "Idle_Talking" if beat == 1 or index == 0 else "Idle")
+
+func end_assembly_performance() -> void:
+	performing_assembly = false
+	restore(released,assembled)
 
 func _physics_process(delta: float) -> void:
 	if release_remaining <= 0: return

@@ -16,6 +16,8 @@ var grounded := false
 var selected := ""
 var last_result := ""
 var activation_count := 0
+var assembly_scene: CanvasLayer
+var assembly_scene_starts := 0
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -84,6 +86,7 @@ func ground() -> void:
 	world.entry_failed.emit("营救院或集合点缺少石地支撑与可用站位，已保留上一处边界。")
 
 func restore_history() -> void:
+	if is_instance_valid(assembly_scene): assembly_scene.finish()
 	if not grounded: return
 	for id in captives:
 		var released: bool = state.rescue_released.has(id)
@@ -167,8 +170,18 @@ func operate(id: String) -> bool:
 	world.player._play_animation("Interact",1.8)
 	world.menu_audio.play_cue("confirm")
 	world.gameplay_hud.restore_view()
-	world.training.tell(last_result,8)
+	if id == "assembly": start_assembly_scene()
+	else: world.training.tell(last_result,8)
 	return true
+
+func start_assembly_scene() -> void:
+	if is_instance_valid(assembly_scene) or not grounded or not state.rescue_assembled or captives.size() != 4: return
+	assembly_scene = preload("res://ui/rescue_assembly_scene.gd").new()
+	assembly_scene.name = "RescueAssemblyScene"
+	assembly_scene.world = world
+	assembly_scene.rescue = self
+	assembly_scene_starts += 1
+	add_child(assembly_scene)
 
 func _process(_delta: float) -> void:
 	if not grounded: return

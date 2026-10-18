@@ -167,3 +167,24 @@ static func recovery_checks(world: Node3D) -> Dictionary:
 	checks.recovery_commit_valid = state.config_unavailable_reason(state.histories[0])==""
 	source.free()
 	return checks
+
+static func approach_checks(parent: Node) -> Dictionary:
+	var state: Node = CIRCUIT.prepared()
+	parent.add_child(state)
+	state.inventory.restore()
+	var page := preload("res://ui/map_page.gd")
+	var before: Dictionary = state.adventure_snapshot()
+	var checks := {}
+	for destination in ["warden","veyne"]:
+		var route: Array = page.selected_tomb_route(state,destination)
+		checks[destination+"_locked_prerequisite"] = route.back() == preload("res://world/map03_ground.gd").RECORD and page.approach_next(state,destination).contains("仪式记录") and state.adventure_snapshot()==before
+	state.acquire_ritual_record()
+	state.reveal_ln02(); state.cut_ln02_supply("north"); state.cut_ln02_supply("south"); state.purify_ln02()
+	before = state.adventure_snapshot()
+	checks.unlocked_distinct_routes = page.selected_tomb_route(state,"warden").back()==preload("res://combat/map03_warden.gd").HOME and page.selected_tomb_route(state,"veyne").back()==preload("res://world/veyne_arena.gd").HOME and state.adventure_snapshot()==before
+	state.defeat_warden()
+	checks.warden_next_device = page.approach_next(state,"warden").contains("检查")
+	state.defeat_veyne()
+	checks.veyne_next_key = page.approach_next(state,"veyne").contains("检查钥印")
+	state.free()
+	return checks

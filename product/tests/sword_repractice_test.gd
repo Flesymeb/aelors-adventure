@@ -16,8 +16,8 @@ class PracticeTraining extends "res://sword_training.gd":
 		return true
 	func show_remnant() -> void:
 		remnants += 1
-	func resolved_enemy_contact(_result: Dictionary) -> void:
-		pass
+	func resolved_enemy_contact(result: Dictionary) -> void:
+		observe_lesson_contact(result)
 	func tell(message: String, seconds = 2.6, _event_id := "") -> void:
 		notice = message
 		notice_time = seconds
@@ -97,6 +97,33 @@ static func run(holder: Node) -> Dictionary:
 	checks.modal_start_rejected = not unit.begin_practice_replay()
 	world.pause_owners.clear()
 	checks.remapped_guidance = training.repractice_guidance().contains("[Y]") and training.repractice_guidance().contains("[Ctrl]")
+	training.sword_source = source
+	training.start_repractice(true)
+	checks.coached_earned_admission = training.coached_practice and training.lesson_stage == "parry" and unit.practice_replay
+	training.parry_followup_remaining = 0.6
+	training.observe_lesson_defense(unit.source,{"accepted":true,"outcome":"parry","simulated":true})
+	checks.simulated_not_eligible = training.lesson_parry.is_empty() and training.lesson_stage != "complete"
+	training.observe_lesson_defense(unit.source,{"accepted":true,"outcome":"block","simulated":false})
+	checks.block_not_eligible = training.lesson_parry.is_empty()
+	training.observe_lesson_defense(unit.source,{"accepted":true,"outcome":"parry","simulated":false})
+	training.clear_parry_followup()
+	checks.expiry_discards_identity = training.lesson_parry.is_empty()
+	training.parry_followup_remaining = 0.6
+	training.observe_lesson_defense(unit.source,{"accepted":true,"outcome":"parry","simulated":false})
+	training.phase = "contact"; training.combo = training.FINISHER_INDEX
+	source.instance += 1
+	training.lesson_counter_instance = source.instance
+	training.lesson_stage = "contact"
+	var contact_hp: float = unit.health
+	training.observe_lesson_contact({"accepted":false,"hp_loss":0.0})
+	checks.obstruction_no_completion = training.lesson_stage == "contact" and unit.health == contact_hp
+	source.damage_attributes.health = 28
+	unit.receive_contact(source,unit.home)
+	checks.resolved_counter_completes = training.lesson_stage == "complete" and unit.health == contact_hp-28 and unit.hitbox.last_result.source_id == source.get_instance_id() and unit.hitbox.last_result.attack_instance == source.instance
+	unit.receive_contact(source,unit.home)
+	checks.duplicate_contact_no_settlement = training.lesson_stage == "complete" and unit.health == contact_hp-28
+	unit.end_practice_replay()
+	checks.retirement_clears_lesson = not training.coached_practice and training.lesson_parry.is_empty() and training.lesson_counter_instance == -1
 	checks.progression_unchanged = history.experience == before.experience and history.lives == before.lives and history.bow_owned == before.bow and history.checkpoint_name() == before.checkpoint and history.encounter_defeated and history.remnant_collected
 	var passed := true
 	for value in checks.values(): passed = passed and value
