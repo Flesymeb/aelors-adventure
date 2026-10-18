@@ -306,6 +306,11 @@ func _mcp_state() -> Dictionary:
 	for key in ["opening_completed", "logical_node", "q01_accepted", "experience", "sword_owned", "bow_owned", "lamp_owned", "lives", "arrows", "selected_equipment"]:
 		observation["previous_" + key] = previous_history.get(key)
 	observation.merge(_departure_observation())
+	# Stable scalar selections survive disposal of the opening canvas. Never
+	# remember a successful reveal after its owner has been torn down.
+	var reveal: Dictionary = opening._reveal_observation() if is_instance_valid(opening) and not opening.is_queued_for_deletion() else {}
+	for key in ["revealing", "reveal_elapsed", "veil_opacity"]:
+		observation[key] = reveal.get(key)
 	return observation
 
 func _departure_observation() -> Dictionary:

@@ -1,10 +1,12 @@
 extends Node3D
 
 const SOURCE_SCENE := preload("res://world.tscn")
+const FOREST_TERRAIN_BINDING := preload("res://world/forest_terrain_binding.gd")
 const PLAYER_SCENE := preload("res://Player.tscn")
 const ARCHERY_HUD := preload("res://archery_hud.gd")
 const ENVIRONMENT_QUALITY := preload("res://environment_quality.gd")
 const GROUND := preload("res://forest_ground.gd")
+const VILLAGE_MESH_QUALIFICATION := preload("res://world/village_mesh_qualification.gd")
 const SPAWN_XZ := GROUND.SPAWN
 
 signal entry_ready
@@ -214,7 +216,7 @@ func _ready() -> void:
 
 
 func create_environment() -> Node3D:
-	return SOURCE_SCENE.instantiate()
+	return FOREST_TERRAIN_BINDING.instantiate(SOURCE_SCENE)
 
 func initial_spawn_height(spawn: Vector2) -> float:
 	return village.get_node("Terrain3D").data.get_height(Vector3(spawn.x, 0, spawn.y))
@@ -232,6 +234,7 @@ func _add_village_buildings() -> void:
 	village.add_child(structures)
 	for placement in placements:
 		var house: Node3D = load(placement[0]).instantiate()
+		VILLAGE_MESH_QUALIFICATION.qualify_tree(house)
 		structures.add_child(house)
 		house.rotation.y = placement[2]
 		var xz: Vector2 = placement[1]

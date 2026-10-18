@@ -23,10 +23,10 @@ class DecisionActor extends Node:
 	func tick_patrol_wait(_board: SnaielBlackboard) -> int: return dispatch(&"tick_patrol_wait")
 	func tick_patrol_move(_board: SnaielBlackboard) -> int: return dispatch(&"tick_patrol_move")
 
-static func binding_checks() -> Dictionary:
+static func binding_checks(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	var checks := {}
 	for path in [ACTIONS, PATROL]:
-		var scene: PackedScene = load(path)
+		var scene: PackedScene = ResourceLoader.load(path, "PackedScene", cache_mode)
 		var node := scene.instantiate()
 		var expected: Dictionary = CALLBACKS if path == ACTIONS else {"Stationary/Wait": &"tick_patrol_wait", "Move": &"tick_patrol_move"}
 		var prefix := "actions" if path == ACTIONS else "patrol"
@@ -50,14 +50,14 @@ static func binding_checks() -> Dictionary:
 		node.free()
 	return checks
 
-static func decision_checks(parent: Node) -> Dictionary:
+static func decision_checks(parent: Node, cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	# The actual serialized selector/sequence decides which callback to call.
 	# The spy is only a unit contract, never reported as enemy gameplay.
 	var actor := DecisionActor.new()
 	parent.add_child(actor)
 	var board := SnaielBlackboard.new()
 	actor.add_child(board)
-	var source: PackedScene = load(ACTIONS)
+	var source: PackedScene = ResourceLoader.load(ACTIONS, "PackedScene", cache_mode)
 	var original := source.instantiate()
 	var packed := PackedScene.new()
 	packed.pack(original)
@@ -88,10 +88,10 @@ static func decision_checks(parent: Node) -> Dictionary:
 	actor.free()
 	return checks
 
-static func actor_binding_checks() -> Dictionary:
+static func actor_binding_checks(cache_mode: int = ResourceLoader.CACHE_MODE_REUSE) -> Dictionary:
 	var checks := {}
 	for path in ["res://TrainingMonster.tscn", "res://combat/Map02MeleeGuard.tscn", "res://assets/bosses/warden_actor.tscn", "res://assets/bosses/veyne_actor.tscn", "res://combat/snaiel/scenes/entities/BaseEnemy.tscn"]:
-		var scene: PackedScene = load(path)
+		var scene: PackedScene = ResourceLoader.load(path, "PackedScene", cache_mode)
 		var actor := scene.instantiate()
 		var packed := PackedScene.new()
 		checks[path + ":pack"] = packed.pack(actor) == OK

@@ -386,6 +386,7 @@ func _mcp_state() -> Dictionary:
 		if is_instance_valid(pause_menu.sub_menu): owners.append(str(pause_menu.sub_menu.name))
 		if is_instance_valid(pause_menu.confirmation): owners.append("confirmation")
 	var observation := {"ready": ready, "beat": beat + 1 if ready else null, "image": str(slides[beat].image) if ready else null, "beat_elapsed": elapsed, "elapsed": total_elapsed, "duration": 38, "caption": caption_text, "subtitle_rect": str(caption_panel.get_global_rect()) if live and is_instance_valid(caption_panel) and not caption_panel.is_queued_for_deletion() else null, "text_scale": state.text_scale if ready else null, "pause_owners": owners, "pause_menu_present": menu_ready, "timeline_paused": menu_ready or not inputs_armed, "skip_hold": skip_hold, "transition_alpha": image_previous.modulate.a if is_instance_valid(image_previous) and not image_previous.is_queued_for_deletion() else null, "zoom": image_current.scale.x if is_instance_valid(image_current) and not image_current.is_queued_for_deletion() else null, "nonessential_effects": state.graphics_quality != "low" if ready else null, "motion": not state.reduced_motion and state.graphics_quality != "low" if ready else null, "inputs_armed": inputs_armed, "finished": finished}
+	observation.merge(_reveal_observation())
 	observation.merge({"video_active": video_active, "video_status": video_status,
 		"video_position": video_position, "video_finished": video_finished,
 		"video_failed": video_failed, "video_visible": video.visible if is_instance_valid(video) else false,
@@ -398,3 +399,12 @@ func _mcp_state() -> Dictionary:
 		observation[channel + "_playing"] = player.playing if available else null
 		observation[channel + "_paused"] = player.stream_paused if available else null
 	return observation
+
+func _reveal_observation() -> Dictionary:
+	# Read actual canvas/clock values only. Shutdown leaves no live reveal;
+	# its last elapsed value must not masquerade as a current observation.
+	var available := is_inside_tree() and not is_queued_for_deletion() and (not finished or revealing)
+	var veil_live := available and is_instance_valid(reveal_veil) and not reveal_veil.is_queued_for_deletion()
+	return {"revealing": revealing if available else null,
+		"reveal_elapsed": reveal_elapsed if available else null,
+		"veil_opacity": reveal_veil.color.a if veil_live else null}

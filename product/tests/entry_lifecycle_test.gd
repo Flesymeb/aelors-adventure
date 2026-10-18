@@ -5,6 +5,10 @@ class RevealRouter extends Node:
 	var audio: Node
 	func _confirmation_held() -> bool: return held
 
+class RevealPauseMenu extends Control:
+	var sub_menu: Control
+	var confirmation: Control
+
 static func ready_world_reveal_checks(holder: Node) -> Dictionary:
 	# Isolated native canvas clock; never constructs a world or writes a save.
 	# Router readiness/commit ordering is also exercised by ordinary entry smoke.
@@ -19,18 +23,22 @@ static func ready_world_reveal_checks(holder: Node) -> Dictionary:
 	var emissions := [0]
 	opening.world_revealed.connect(func(): emissions[0] += 1)
 	var checks := {}
+	checks.merge(reveal_read_checks(opening, emissions, "before"))
 	owner.held = true
 	opening.begin_world_reveal()
 	opening._process_world_reveal(1.0)
 	checks.held_skip_cannot_start_reveal = opening.revealing and opening.reveal_elapsed == 0 and emissions[0] == 0
+	checks.merge(reveal_read_checks(opening, emissions, "held"))
 	owner.held = false
 	opening._process_world_reveal(0.12)
 	checks.actual_canvas_fades = opening.reveal_veil.color.a > 0 and opening.reveal_veil.color.a < 1 and emissions[0] == 0
+	checks.merge(reveal_read_checks(opening, emissions, "during"))
 	var before: float = opening.reveal_elapsed
-	opening.pause_menu = Control.new()
+	opening.pause_menu = RevealPauseMenu.new()
 	opening.add_child(opening.pause_menu)
 	opening._process_world_reveal(2.0)
 	checks.pause_suspends_reveal = opening.reveal_elapsed == before and emissions[0] == 0
+	checks.merge(reveal_read_checks(opening, emissions, "paused"))
 	opening.pause_menu.free()
 	opening.pause_menu = null
 	owner.held = true
@@ -40,17 +48,38 @@ static func ready_world_reveal_checks(holder: Node) -> Dictionary:
 	opening._process_world_reveal(0.0)
 	opening._process_world_reveal(1.0)
 	checks.once_only_release = not opening.revealing and not opening.visible and emissions[0] == 1
+	checks.merge(reveal_read_checks(opening, emissions, "after"))
 	preferences.reduced_motion = true
-	opening.pause_menu = Control.new()
+	opening.pause_menu = RevealPauseMenu.new()
 	opening.add_child(opening.pause_menu)
 	opening.begin_world_reveal()
 	checks.skip_from_pause_releases_old_menu = opening.pause_menu == null
 	checks.reduced_motion_immediate = emissions[0] == 2 and not opening.revealing and not opening.visible
+	checks.merge(reveal_read_checks(opening, emissions, "reduced_motion"))
 	opening.shutdown()
 	checks.shutdown_idempotent = not opening.revealing and opening.finished and emissions[0] == 2
+	checks.merge(reveal_read_checks(opening, emissions, "shutdown"))
+	opening.queue_free()
+	checks.merge(reveal_read_checks(opening, emissions, "queued"))
 	opening.free()
 	owner.free()
 	return {"checks": checks, "scope": "isolated actual canvas/pause/fresh-input clock; no earned history or ordinary entry acceptance"}
+
+static func reveal_read_checks(opening: Node, emissions: Array, boundary: String) -> Dictionary:
+	var snapshot := [opening.revealing, opening.reveal_elapsed, opening.inputs_armed,
+		opening.finished, opening.visible, opening.state.reduced_motion,
+		opening.get_tree().paused, emissions[0], opening.video_active]
+	var opacity: Variant = opening.reveal_veil.color.a if is_instance_valid(opening.reveal_veil) else null
+	var first: Dictionary = opening._mcp_state()
+	for repeat in 4:
+		if opening._mcp_state() != first: return {boundary + "_read_only": false}
+	var available: bool = not opening.is_queued_for_deletion() and (not opening.finished or opening.revealing)
+	return {boundary + "_read_only": snapshot == [opening.revealing, opening.reveal_elapsed,
+		opening.inputs_armed, opening.finished, opening.visible, opening.state.reduced_motion,
+		opening.get_tree().paused, emissions[0], opening.video_active],
+		boundary + "_actual_scalars": first.revealing == (opening.revealing if available else null)
+			and first.reveal_elapsed == (opening.reveal_elapsed if available else null)
+			and first.veil_opacity == (opacity if available else null)}
 ## Explicit diagnostic only; never attached to the normal entry path.
 class CameraReadinessPlayer extends "res://player_controller.gd":
 	# Exercise the real restore helper without actor loading, controls files,
@@ -489,6 +518,7 @@ static func opening_router_lifecycle_checks() -> Dictionary:
 	checks.opening_timeline_preserved = before.opening.direct_before.elapsed == pending.opening.direct_after.elapsed and before.opening.direct_before.beat_elapsed == pending.opening.direct_after.beat_elapsed and before.opening.direct_before.beat_index == pending.opening.direct_after.beat_index
 	checks.opening_unavailable = before.opening.before.beat == null and before.opening.before.image == null and pending.opening.before.beat == null
 	checks.opening_streams_unavailable = before.opening.before.music_playing == null and pending.opening.before.music_playing == null
+	checks.reveal_unavailable_at_teardown = pending.opening.before.revealing == null and pending.opening.before.reveal_elapsed == null and pending.opening.before.veil_opacity == null and pending.router.before.revealing == null and pending.router.before.reveal_elapsed == null and pending.router.before.veil_opacity == null
 	checks.router_history_preserved = before.router.direct_before.history == pending.router.direct_after.history and before.router.direct_before.previous_history == pending.router.direct_after.previous_history and before.router.direct_before.confirmed_choices == pending.router.direct_after.confirmed_choices
 	checks.router_preferences_preserved = before.router.direct_before.preferences == pending.router.direct_after.preferences
 	checks.opening_history_preserved = before.opening.direct_before.history == pending.opening.direct_after.history and before.opening.direct_before.opening_completed == pending.opening.direct_after.opening_completed
