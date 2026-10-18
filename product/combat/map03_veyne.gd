@@ -339,7 +339,7 @@ func finish_presentation() -> void:
 	if second:
 		reinforcements.summon()
 		rift_timer = 2.0
-		world.training.tell("维恩 · 裂隙苏醒：紫色危险区先预告后生效；两名近战增援已出现。",5)
+		world.training.tell("维恩 · 裂隙苏醒：紫色危险区先预告后生效；" + ("已封住的节点阻止了近战增援。" if state.veyne_node_closed else "两名近战增援已出现。"),5)
 	else: battle_starts += 1
 	music.volume_db = -19 if second else -22
 	music.pitch_scale = 1.04 if second else 1.0

@@ -268,7 +268,7 @@ func _physics_process(delta: float) -> void:
 	if home == Vector3.ZERO: return
 	navigation_clock -= delta
 	var distance = global_position.distance_to(target.global_position)
-	var perceives = distance <= 5.0 and target.global_position.distance_to(home) <= 6.0 and line_clear(target.global_position)
+	var perceives := perceives_target(distance)
 	update_perception(distance, perceives, delta)
 	# Loss of sight during an attack closes contact immediately, before recovery.
 	if melee.attacking and not perceives:
@@ -292,6 +292,9 @@ func _physics_process(delta: float) -> void:
 	# AnimationTree is configured for physics processing; posed socket is sampled
 	# once after physics and its contact window is owned by the melee event unit.
 	_sample_contact()
+
+func perceives_target(distance: float) -> bool:
+	return distance <= 5.0 and target.global_position.distance_to(home) <= 6.0 and line_clear(target.global_position)
 
 func update_perception(_distance: float, perceives: bool, delta: float) -> void:
 	# Default policy remains unchanged for every non-opted-in melee user.

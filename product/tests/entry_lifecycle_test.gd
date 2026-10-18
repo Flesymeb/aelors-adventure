@@ -5,6 +5,20 @@ class CameraReadinessPlayer extends "res://player_controller.gd":
 	# animation, traversal, combat, or any normal-startup callbacks.
 	func _ready() -> void:
 		arm.add_excluded_object(get_rid())
+	var dialogue_preparations := 0
+	var preparation_pause_states: Array[bool] = []
+	func prepare_dialogue_camera(subject: CollisionObject3D = null) -> void:
+		dialogue_preparations += 1
+		preparation_pause_states.append(get_tree().paused)
+		super.prepare_dialogue_camera(subject)
+
+class CameraReadinessWorld extends "res://preview_controller.gd":
+	# Retain the real pause owner without constructing a second product world.
+	var camera_subject: CollisionObject3D
+	func _ready() -> void:
+		pass
+	func _dialogue_camera_subject() -> CollisionObject3D:
+		return camera_subject
 
 static func restored_camera_readiness_checks(parent: Node) -> Dictionary:
 	# Synchronous, disposable native fixture. In particular, do not await/thaw a
@@ -60,7 +74,161 @@ static func restored_camera_readiness_checks(parent: Node) -> Dictionary:
 	checks.no_gameplay_frame = Engine.get_physics_frames() == physics_frame and Engine.get_process_frames() == idle_frame
 	checks.pause_preserved = parent.get_tree().paused == paused
 	viewport.free()
-	return {"scope": "isolated native camera readiness; no ordinary history or collision-scene acceptance", "checks": checks, "observations": observations}
+	var dialogue: Dictionary = dialogue_camera_readiness_checks(parent)
+	checks.merge(dialogue.checks)
+	return {"scope": "isolated native camera readiness; no ordinary history or collision-scene acceptance", "checks": checks, "observations": observations, "dialogue": dialogue.observations}
+
+static func dialogue_camera_readiness_checks(parent: Node) -> Dictionary:
+	var viewport := SubViewport.new()
+	viewport.name = "DialogueCameraReadiness"
+	viewport.own_world_3d = true
+	viewport.process_mode = Node.PROCESS_MODE_DISABLED
+	var world := CameraReadinessWorld.new()
+	world.process_mode = Node.PROCESS_MODE_DISABLED
+	var player := CameraReadinessPlayer.new()
+	player.name = "CameraReadinessPlayer"
+	var visual := Node3D.new()
+	visual.name = "Visual"
+	player.add_child(visual)
+	var arm := SpringArm3D.new()
+	arm.name = "CameraArm"
+	arm.collision_mask = 1
+	arm.margin = 0.12
+	player.add_child(arm)
+	var camera := Camera3D.new()
+	camera.name = "Camera"
+	arm.add_child(camera)
+	world.player = player
+	world.add_child(player)
+	var subject := StaticBody3D.new()
+	subject.name = "DialogueSubject"
+	world.camera_subject = subject
+	world.add_child(subject)
+	viewport.add_child(world)
+	parent.add_child(viewport)
+	var paused := parent.get_tree().paused
+	var mouse_mode := Input.mouse_mode
+	var physics_frame := Engine.get_physics_frames()
+	var idle_frame := Engine.get_process_frames()
+	var checks := {}
+	var observations := {}
+	# Both a settled first-person view and the ordinary V return's unfinished
+	# perspective blend must leave the close camera before acquiring pause.
+	for side in [-1.0, 1.0]:
+		for boundary in ["first_person", "perspective_return"]:
+			parent.get_tree().paused = false
+			player.first_person = boundary == "first_person"
+			player.perspective_blend = 1.0 if player.first_person else 0.6065
+			player.aim_requested = true
+			player.aim_blend = 0.8
+			player.shoulder_side = side
+			player.shoulder_blend = -side
+			player.free_camera_distance = 5.15
+			player.smooth_camera_distance = 2.4
+			player.arm.rotation = Vector3(0.21, 0.7, 0)
+			player.arm.spring_length = 0.0
+			player.camera.position = Vector3.ZERO
+			player.global_position = Vector3(4, 2, -8)
+			player.velocity = Vector3(1, 2, 3)
+			player.attack_timer = 0.37
+			player.switch_timer = 0.21
+			var preparations := player.dialogue_preparations
+			world._set_pause_owner("dialogue", true)
+			var direct := restored_camera_observation(player)
+			var key := "%s_%s" % [str(side), boundary]
+			observations[key] = direct
+			checks[key + "_external_before_pause"] = not player.preparation_pause_states[-1] and direct.paused and direct.controls_open and direct.camera_arm_distance > 5.13
+			checks[key + "_intent_retained"] = player.free_camera_distance == 5.15 and arm.rotation.is_equal_approx(Vector3(0.21, 0.7, 0)) and player.shoulder_side == side and player.shoulder_blend == side
+			checks[key + "_transients_cleared"] = not player.first_person and player.perspective_blend == 0.0 and not player.aim_requested and player.aim_blend == 0.0
+			checks[key + "_native_collision_retained"] = arm.collision_mask == 1 and is_equal_approx(arm.margin, 0.12) and is_equal_approx(direct.hit_length, 5.15)
+			checks[key + "_only_subject_filter_owned"] = player.dialogue_camera_exclusion == subject.get_rid() and not player.encounter_camera_exclusion.is_valid()
+			checks[key + "_gameplay_unchanged"] = player.global_position == Vector3(4, 2, -8) and player.velocity == Vector3(1, 2, 3) and player.attack_timer == 0.37 and player.switch_timer == 0.21
+			world._set_pause_owner("controls", true)
+			world._set_pause_owner("dialogue", true)
+			world._set_pause_owner("controls", false)
+			checks[key + "_nested_dialogue_retained"] = parent.get_tree().paused and player.controls_open and world.pause_owners.has("dialogue") and player.dialogue_preparations == preparations + 1 and restored_camera_observation(player) == direct
+			checks[key + "_nested_subject_filter_retained"] = player.dialogue_camera_exclusion == subject.get_rid()
+			world._set_pause_owner("dialogue", false)
+			checks[key + "_control_return"] = not parent.get_tree().paused and not player.controls_open and world.pause_owners.is_empty() and arm.rotation.is_equal_approx(Vector3(0.21, 0.7, 0))
+			checks[key + "_subject_filter_released"] = not player.dialogue_camera_exclusion.is_valid()
+	checks.dialogue_no_gameplay_frame = Engine.get_physics_frames() == physics_frame and Engine.get_process_frames() == idle_frame
+	parent.get_tree().paused = paused
+	Input.mouse_mode = mouse_mode
+	viewport.free()
+	return {"checks": checks, "observations": observations}
+
+static func dialogue_camera_obstruction_checks(parent: Node) -> Dictionary:
+	# Opt-in native collision negative. One setup frame publishes the two
+	# bodies; neither dialogue preparation nor release advances another frame.
+	var viewport := SubViewport.new()
+	viewport.name = "DialogueCameraObstruction"
+	viewport.own_world_3d = true
+	viewport.process_mode = Node.PROCESS_MODE_DISABLED
+	var world := CameraReadinessWorld.new()
+	world.process_mode = Node.PROCESS_MODE_DISABLED
+	var player := CameraReadinessPlayer.new()
+	player.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	var visual := Node3D.new()
+	visual.name = "Visual"
+	player.add_child(visual)
+	var arm := SpringArm3D.new()
+	arm.name = "CameraArm"
+	arm.collision_mask = 1
+	arm.margin = 0.12
+	player.add_child(arm)
+	var camera := Camera3D.new()
+	camera.name = "Camera"
+	arm.add_child(camera)
+	player.position = Vector3(0, 2, 0)
+	player.free_camera_distance = 3.8
+	var subject := StaticBody3D.new()
+	subject.name = "Interlocutor"
+	subject.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	subject.collision_layer = 1
+	subject.position = Vector3(0.3, 3.45, 1.1)
+	var subject_collision := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.32
+	capsule.height = 1.8
+	subject_collision.shape = capsule
+	subject.add_child(subject_collision)
+	var wall := StaticBody3D.new()
+	wall.name = "AuthoredWall"
+	wall.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	wall.collision_layer = 1
+	wall.position = Vector3(0, 3.45, 2.6)
+	var wall_collision := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4, 4, 0.2)
+	wall_collision.shape = box
+	wall.add_child(wall_collision)
+	world.player = player
+	world.camera_subject = subject
+	world.add_child(player)
+	world.add_child(subject)
+	world.add_child(wall)
+	viewport.add_child(world)
+	parent.add_child(viewport)
+	await parent.get_tree().physics_frame
+	var paused := parent.get_tree().paused
+	var mouse_mode := Input.mouse_mode
+	var physics_frame := Engine.get_physics_frames()
+	var idle_frame := Engine.get_process_frames()
+	world._set_pause_owner("dialogue", true)
+	var modal := restored_camera_observation(player)
+	var query := PhysicsRayQueryParameters3D.create(arm.global_position, arm.global_position + Vector3(0, 0, 3.8), 1, [player.get_rid(), subject.get_rid()])
+	var wall_hit := player.get_world_3d().direct_space_state.intersect_ray(query)
+	world._set_pause_owner("dialogue", false)
+	var released := restored_camera_observation(player)
+	var checks := {
+		"modal_keeps_physical_wall": modal.hit_length > 2.0 and modal.hit_length < 2.8 and not wall_hit.is_empty() and wall_hit.collider == wall,
+		"release_restores_interlocutor_collision": released.hit_length > 0.1 and released.hit_length < 1.2 and released.hit_length < modal.hit_length and not player.dialogue_camera_exclusion.is_valid(),
+		"native_mask_margin_preserved": arm.collision_mask == 1 and is_equal_approx(arm.margin, 0.12),
+		"modal_and_release_advance_no_frame": Engine.get_physics_frames() == physics_frame and Engine.get_process_frames() == idle_frame}
+	parent.get_tree().paused = paused
+	Input.mouse_mode = mouse_mode
+	viewport.free()
+	return {"scope": "isolated native wall/interlocutor collision; not ordinary scene acceptance", "checks": checks, "modal": modal, "released": released}
 
 static func restored_camera_observation(player: Node3D) -> Dictionary:
 	# Read-only; usable on an ordinary restored player before/after nested UI.

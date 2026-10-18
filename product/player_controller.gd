@@ -126,6 +126,7 @@ var encounter_camera_active := false
 var encounter_camera_pivot := Vector3.ZERO
 var encounter_camera_exclusion := RID()
 var encounter_camera_look := Vector3.ZERO
+var dialogue_camera_exclusion := RID()
 
 
 func owns_weapon(mode: String) -> bool:
@@ -801,11 +802,43 @@ func release_encounter_camera() -> void:
 
 func prepare_restored_camera(yaw: float) -> void:
 	# Saved histories retain yaw, not transient aim/perspective/camera shake.
+	_prepare_external_camera(Vector3(-0.2, yaw, 0))
+
+
+func prepare_dialogue_camera(subject: CollisionObject3D = null) -> void:
+	# Dialogue freezes the world before aim/perspective blends can finish.
+	# Keep live orbit, shoulder and zoom intent while leaving that transient
+	# close camera synchronously, before the dialogue acquires world pause.
+	var look: Vector3 = encounter_camera_look if encounter_camera_active else arm.rotation
+	look.x = clampf(look.x, -0.85, 0.45)
+	_prepare_external_camera(look, subject)
+
+
+func release_dialogue_camera() -> void:
+	if not dialogue_camera_exclusion.is_valid(): return
+	_clear_dialogue_camera_filter()
+	arm.force_update_transform()
+	arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
+	reset_physics_interpolation()
+
+
+func _clear_dialogue_camera_filter() -> void:
+	if dialogue_camera_exclusion.is_valid(): arm.remove_excluded_object(dialogue_camera_exclusion)
+	dialogue_camera_exclusion = RID()
+
+
+func _prepare_external_camera(look: Vector3, subject: CollisionObject3D = null) -> void:
 	# Grounding can immediately be followed by dialogue pause, before this
 	# native SpringArm has ever processed. Initialize only its collision sweep;
 	# never thaw the tree or tick player/combat/ability/animation controllers.
 	cancel_aim()
 	_clear_encounter_camera_filter()
+	_clear_dialogue_camera_filter()
+	# The current interlocutor is a camera subject for this modal view. Keep
+	# authored walls and all other bodies in the native collision sweep.
+	if is_instance_valid(subject):
+		dialogue_camera_exclusion = subject.get_rid()
+		arm.add_excluded_object(dialogue_camera_exclusion)
 	camera.rotation = Vector3.ZERO
 	first_person = false
 	perspective_blend = 0.0
@@ -813,11 +846,13 @@ func prepare_restored_camera(yaw: float) -> void:
 	shoulder_blend = shoulder_side
 	smooth_camera_distance = free_camera_distance
 	camera_height = 1.65
-	arm.rotation = Vector3(-0.2, yaw, 0)
+	arm.rotation = look
 	var pivot := global_position + Vector3(0, 1.45, 0)
-	var offset := Basis(Vector3.UP, yaw) * Vector3(0.30 * shoulder_side, 0, 0)
+	var offset := Basis(Vector3.UP, look.y) * Vector3(0.30 * shoulder_side, 0, 0)
 	var query := PhysicsRayQueryParameters3D.create(pivot, pivot + offset)
-	query.exclude = [get_rid()]
+	var exclusions: Array[RID] = [get_rid()]
+	if dialogue_camera_exclusion.is_valid(): exclusions.append(dialogue_camera_exclusion)
+	query.exclude = exclusions
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit:
 		offset = (hit.position - pivot) * 0.75

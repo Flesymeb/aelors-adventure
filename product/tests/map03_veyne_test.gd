@@ -266,7 +266,7 @@ static func transaction_checks(world: Node3D) -> Dictionary:
 	source.free()
 	return checks
 
-static func phase_checks(world: Node3D) -> Dictionary:
+static func phase_checks(world: Node3D, suppression_expected := false) -> Dictionary:
 	var boss: Node = world.veyne_encounter
 	if not boss.combat_allowed(): return {"ready":false}
 	var source := SnaielDamageSource.new()
@@ -280,9 +280,12 @@ static func phase_checks(world: Node3D) -> Dictionary:
 	var result: Dictionary = boss.actor.receive_contact(source,boss.actor.global_position+Vector3.UP)
 	checks.transition_contact_rejected = not result.get("accepted",false) and boss.actor.health==210
 	boss.finish_presentation()
-	checks.one_two_melee_wave = boss.reinforcements.wave_count==1 and boss.reinforcements.units.size()==2
+	if suppression_expected:
+		checks.explicit_node_suppresses_wave = world.dialogue_state.veyne_node_closed and boss.reinforcements.wave_count==0 and boss.reinforcements.units.is_empty()
+	else:
+		checks.one_two_melee_wave = boss.reinforcements.wave_count==1 and boss.reinforcements.units.size()==2
 	boss.begin_second_phase()
-	checks.phase_once = boss.phase_starts==1 and boss.actor.health==210 and boss.reinforcements.wave_count==1
+	checks.phase_once = boss.phase_starts==1 and boss.actor.health==210 and boss.reinforcements.wave_count==(0 if suppression_expected else 1)
 	boss.spawn_rifts()
 	checks.rifts_warn_before_active = boss.rifts.size()==2 and not boss.rifts[0].source.can_damage
 	var saved_warden: bool = world.dialogue_state.warden_defeated
@@ -295,6 +298,7 @@ static func phase_checks(world: Node3D) -> Dictionary:
 	checks.life_not_repeat = world.dialogue_state.lives==lives-1
 	world.training.recover_at_checkpoint()
 	checks.retry_reset = boss.actor.health==420 and not boss.actor.pressure_phase and boss.phase=="waiting" and boss.reinforcements.wave_count==0 and boss.reinforcements.units.is_empty() and boss.rifts.is_empty() and not boss.actor.beam_effect.active
+	checks.node_closure_preserved = not suppression_expected or world.dialogue_state.veyne_node_closed
 	checks.warden_preserved = world.dialogue_state.warden_defeated==saved_warden
 	checks.cp03_position = Vector2(world.player.global_position.x,world.player.global_position.z).distance_to(world.checkpoint_xz())<0.1
 	checks.ownership_released = world.pause_owners.is_empty() and world.player.camera.current and not boss.music.playing

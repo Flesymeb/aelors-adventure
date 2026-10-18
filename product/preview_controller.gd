@@ -36,6 +36,7 @@ var lamp_training: Node3D
 var element_abilities: Node3D
 var channel_guards: Node3D
 var chapter_pillar: Node3D
+var intelligence_interaction: Node3D
 var route_clue: Node3D
 var ambush_encounter: Node3D
 var line_encounter: Node3D
@@ -204,6 +205,10 @@ func _ready() -> void:
 		dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(dynamic_encounters)
 		dynamic_encounters.configure(self)
+	intelligence_interaction = preload("res://world/reinforcement_intelligence.gd").new()
+	intelligence_interaction.name = "ReinforcementIntelligence"
+	add_child(intelligence_interaction)
+	intelligence_interaction.configure(self)
 	_add_product_panels()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if entry_router else Input.MOUSE_MODE_CAPTURED
 
@@ -333,6 +338,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _set_pause_owner(owner_id: String, enabled: bool) -> void:
+	if enabled and owner_id == "dialogue" and not pause_owners.has("dialogue"):
+		player.prepare_dialogue_camera(_dialogue_camera_subject())
+	elif not enabled and owner_id == "dialogue" and pause_owners.has("dialogue"):
+		player.release_dialogue_camera()
 	var was_paused := not pause_owners.is_empty()
 	if enabled: pause_owners[owner_id] = true
 	else: pause_owners.erase(owner_id)
@@ -343,6 +352,15 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 		player.set_controls_open(now_paused)
 		get_tree().paused = now_paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if now_paused else Input.MOUSE_MODE_CAPTURED
+
+
+func _dialogue_camera_subject() -> CollisionObject3D:
+	if not is_instance_valid(dialogue_state): return null
+	match dialogue_state.dialogue_kind:
+		"hers": return training.hers if is_instance_valid(training) else null
+		"ronen": return bow_training.ronen if is_instance_valid(bow_training) else null
+		"isha": return isha
+	return null
 
 
 func _sync_dialogue_world_labels() -> void:
@@ -467,7 +485,7 @@ var homecoming_residents: Node3D
 
 func contextual_interaction_target() -> Node3D:
 	# This priority owns both the visible prompt and ordinary E recipient.
-	for target in [homecoming_residents, barrier, route_clue, line_record, pressure_encounter, bridge_actions, lamp_training, bow_training, training]:
+	for target in [homecoming_residents, intelligence_interaction, barrier, route_clue, line_record, pressure_encounter, bridge_actions, lamp_training, bow_training, training]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 

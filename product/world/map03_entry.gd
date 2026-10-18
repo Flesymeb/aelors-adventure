@@ -112,6 +112,10 @@ func _ready() -> void:
 	summoning_core.name = "SummoningCore"
 	add_child(summoning_core)
 	summoning_core.configure(self)
+	intelligence_interaction = preload("res://world/reinforcement_intelligence.gd").new()
+	intelligence_interaction.name = "ReinforcementNode"
+	add_child(intelligence_interaction)
+	intelligence_interaction.configure(self)
 	_place_player.call_deferred()
 
 func create_environment() -> Node3D:
@@ -174,7 +178,7 @@ func restored_xz(position: Vector3, map_id: String) -> Vector2:
 func checkpoint_xz() -> Vector2: return TOMB_GROUND.ENTRY
 func active_map_id() -> String: return dialogue_state.MAP03
 func contextual_interaction_target() -> Node3D:
-	for target in [summoning_core,rescue_encounter,veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
+	for target in [summoning_core,intelligence_interaction,rescue_encounter,veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 

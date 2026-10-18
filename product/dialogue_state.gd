@@ -41,7 +41,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false, "rescue_released": {}, "rescue_assembled": false, "rescue_supply_claimed": false, "rescue_order": "", "core_closed": false, "homecoming_completed": false}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "sq02_record_found": false, "sq02_completed": false, "veyne_node_closed": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false, "rescue_released": {}, "rescue_assembled": false, "rescue_supply_claimed": false, "rescue_order": "", "core_closed": false, "homecoming_completed": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -66,6 +66,9 @@ const MAP02 := "meadow-entry-v1"
 const MAP03 := "tomb-entry-v1"
 var cp03_claimed := false
 var ritual_record_read := false
+var sq02_record_found := false
+var sq02_completed := false
+var veyne_node_closed := false
 var ln02_revealed := false
 var ln02_north_cut := false
 var ln02_south_cut := false
@@ -298,6 +301,31 @@ func acquire_ritual_record() -> bool:
 	if not tomb_missing_conditions().is_empty(): return false
 	ritual_record_read = true
 	return true
+
+func acquire_deployment_record() -> bool:
+	if sq02_record_found or current_map != MAP02 or not cp02_claimed or not pressure_defeated() or health <= 0 or recovery_pending: return false
+	sq02_record_found = true
+	progression_changed.emit()
+	return true
+
+func interpret_deployment_record() -> bool:
+	if sq02_completed or not sq02_record_found or current_map != GROUND.MAP_ID or health <= 0 or recovery_pending: return false
+	sq02_completed = true
+	progression_changed.emit()
+	return true
+
+func close_veyne_node() -> bool:
+	if veyne_node_closed or not sq02_completed or not ritual_record_read or not ln02_purified or veyne_defeated or current_map != MAP03 or health <= 0 or recovery_pending: return false
+	veyne_node_closed = true
+	progression_changed.emit()
+	return true
+
+func intelligence_information() -> String:
+	if veyne_node_closed: return "增援节点已封住 · 维恩每次尝试的二阶段近战增援不会出现；仍须击败维恩。"
+	if sq02_completed:
+		return "玛拉：你已阻止维恩，记录会帮助我们守住村庄。" if veyne_defeated else "玛拉已核对符文 · 调查墓殿仪式记录、净化入口后，在左阶前的增援节点按 E 封印；只调查不会阻止增援。"
+	if sq02_record_found: return "完整布防记录已取得 · 沿已清理林路返回入口蓝光通道，回河谷聚落交给玛拉。"
+	return "林缘押送守卫后方、MF01 路碑另一侧的箱中有完整布防记录；回河谷交给玛拉核对。"
 
 func ln02_available() -> bool:
 	return current_map == MAP03 and cp03_claimed and lamp_owned and health > 0 and not recovery_pending and tomb_missing_conditions().is_empty()
@@ -1038,6 +1066,14 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var purified: bool = config.get_value("post_bow", "ln01_location_purified", false)
 	if (circuit_revealed or supply_cut or purified) and (not config.get_value("post_bow", "mf02_acquired", false) or not config.get_value("post_bow", "lamp_owned", false)): return "存档通道调查前置无效"
 	if supply_cut and not circuit_revealed or purified and not supply_cut: return "存档通道线路顺序无效"
+	for key in ["sq02_record_found", "sq02_completed", "veyne_node_closed"]:
+		if typeof(config.get_value("post_bow", key, false)) != TYPE_BOOL: return "存档增援情报状态无效"
+	var intelligence_found: bool = config.get_value("post_bow", "sq02_record_found", false)
+	var intelligence_complete: bool = config.get_value("post_bow", "sq02_completed", false)
+	var node_closed: bool = config.get_value("post_bow", "veyne_node_closed", false)
+	if intelligence_found and (not claimed or not e02_complete): return "存档布防记录前置无效"
+	if intelligence_complete and not intelligence_found: return "存档情报核对前置无效"
+	if node_closed and (not intelligence_complete or not config.get_value("post_bow", "ritual_record_read", false) or not config.get_value("post_bow", "ln02_purified", false)): return "存档增援节点前置无效"
 	var tomb_claimed: Variant = config.get_value("post_bow", "cp03_claimed", false)
 	var record_read: Variant = config.get_value("post_bow", "ritual_record_read", false)
 	if not tomb_claimed is bool or not record_read is bool: return "存档墓殿记录无效"
@@ -1189,6 +1225,8 @@ func quest_entries() -> Array[Dictionary]:
 		rows.append({"id":"line_record", "title":"墓殿方向与结界记号 · MF02", "complete":mf02_acquired, "context":mf02_information(), "action":"M 查阅墓殿方向 · 四位村民仍待救援" if mf02_acquired else "清除 E04，调查石旁固定标记", "steps":["固定标记已记录 · 保存后可继续查阅"] if mf02_acquired else []})
 	if mf02_acquired:
 		rows.append({"id":"ln01", "title":"林缘通道 · 解除结界", "complete":ln01_location_purified, "context":ln01_information(), "action":"旧灯显形 → 切断螺旋供能 → 净化箭头定位", "steps":["线路已显形" if ln01_revealed else "显露线路", "供能已切断" if ln01_supply_cut else "切断供能", "通道已稳定" if ln01_location_purified else "净化定位"]})
+	if cp02_claimed:
+		rows.append({"id":"sq02", "title":"敌方增援情报 · SQ02", "complete":sq02_completed, "context":intelligence_information(), "action":intelligence_information(), "steps":(["完整布防记录已取得"] if sq02_record_found else []) + (["玛拉已核对情报"] if sq02_completed else []) + (["主动封住增援节点"] if veyne_node_closed else [])})
 	if cp03_claimed:
 		rows.append({"id":"ritual_record", "title":"墓殿入口 · 仪式记录", "complete":ritual_record_read, "context":ritual_information(), "action":objective(), "steps":["CP03 灯台已启用 · 首次加命已领取"] + ([rescue_information()] if ritual_record_read else [])})
 		rows.append({"id":"ln02", "title":"墓殿入口 · 双供能结界", "complete":ln02_purified, "context":ln02_information(), "action":ln02_information(), "steps":["线路已显形" if ln02_revealed else "旧灯显形", "北侧供能已切断" if ln02_north_cut else "切断北侧供能", "南侧供能已切断" if ln02_south_cut else "切断南侧供能", "入口已净化" if ln02_purified else "主动净化入口"]})

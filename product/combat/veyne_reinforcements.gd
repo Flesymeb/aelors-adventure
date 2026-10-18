@@ -21,12 +21,20 @@ class Reinforcement extends "res://combat/snaiel/scripts/entities/enemy.gd":
 		super()
 		health_component.max_health = 32
 		health_component.health = 32
+	func perceives_target(_distance: float) -> bool:
+		# These units are summoned into an already active arena encounter. The
+		# training yard's 5m detection/6m home leash would discard that engagement
+		# immediately at the arena center. Use the Boss's room/LOS boundary; the
+		# retained navigation, supported-ground and posed-contact gates still apply.
+		return encounter.ARENA.contains(Vector2(target.global_position.x,target.global_position.z)) and line_clear(target.global_position)
 
 func configure(owner: Node3D) -> void: encounter = owner
 
 func summon() -> bool:
 	if wave_count > 0: return false
-	# No synthetic SQ02 state: the base encounter always uses the ordinary wave.
+	# Only the durable, explicitly operated node suppresses the temporary wave.
+	# Intelligence and ritual investigation alone leave the ordinary wave intact.
+	if encounter.state.veyne_node_closed: return false
 	wave_count += 1
 	for x in [-10.0,2.0]:
 		var unit: CharacterBody3D = preload("res://combat/snaiel/scenes/entities/BaseEnemy.tscn").instantiate()
