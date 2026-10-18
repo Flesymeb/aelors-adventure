@@ -23,6 +23,7 @@ var wave_clock := 0.0
 var wave_settled := false
 var telegraph: MeshInstance3D
 var warning_material: ShaderMaterial
+var heavy_presentation: Node3D
 
 func _ready() -> void:
 	target = encounter.world.player
@@ -33,7 +34,8 @@ func _ready() -> void:
 		return encounter.world.ground_policy.support(encounter.world,Vector2(point.x,point.z),[get_rid(),target.get_rid()])
 	contact_policy = func(damage_source,point): return encounter.world.training.player_hitbox.contact(damage_source,point)
 	result_listener = encounter.world.training.resolved_enemy_contact
-	attack_cue = func(): encounter.play_effect("heavy")
+	attack_cue = func():
+		if is_instance_valid(heavy_presentation): heavy_presentation.play_swing(source.global_position)
 	var old_model: Node = $Model
 	remove_child(old_model)
 	old_model.free()
@@ -91,6 +93,10 @@ func _ready() -> void:
 	add_child(telegraph)
 	telegraph.position.y = 0.025
 	telegraph.hide()
+	heavy_presentation = preload("res://combat/warden_heavy_presentation.gd").new()
+	heavy_presentation.name = "HeavyContactPresentation"
+	add_child(heavy_presentation)
+	heavy_presentation.configure(encounter.state)
 	dead.connect(encounter.settle_defeat)
 
 func _physics_process(delta: float) -> void:
@@ -125,6 +131,12 @@ func _physics_process(delta: float) -> void:
 			character.play("Idle",1,true)
 		return
 	super(delta)
+	# The retained enemy may abort directly on lost sight. That path stops the
+	# melee unit without emitting attacking_finished; retire only our visuals.
+	if attack_kind == "heavy" and not melee.attacking:
+		attack_kind = ""
+		telegraph.hide()
+		heavy_presentation.clear()
 	# Heavy contact is sampled only by the retained posed hand; the sector is
 	# an upper bound, never a body-centered substitute hit scan.
 	if phase == "telegraph": warning_material.set_shader_parameter("progress",minf(1,clock/1.15))
@@ -153,6 +165,7 @@ func tick_attack(board: SnaielBlackboard) -> int:
 	else:
 		heavy_started += 1
 		attack_kind = "heavy"
+		heavy_presentation.begin(heavy_started)
 		warning_material.set_shader_parameter("sector",1.0)
 		warning_material.set_shader_parameter("warning_color",Color(1,0.65,0.13,0.85))
 		melee.attack(0,true,false)
@@ -172,10 +185,16 @@ func on_attack_stage(stage: String) -> void:
 
 func _sample_contact() -> void:
 	if attack_kind != "heavy": return
+	var point: Vector3 = source.global_position
+	# Sample authored world collision with the same posed boulder volume, even
+	# when the player escaped its sector. No timer or player result implies floor
+	# contact. World feedback never calls the victim/damage policy.
+	if source.can_damage: _sample_world_contact(point)
 	var delta_to: Vector3 = target.global_position-global_position
 	delta_to.y = 0
-	if delta_to.length() > HEAVY_REACH or locked_direction.dot(delta_to.normalized()) < 0.5: return
-	var point: Vector3 = source.global_position
+	if delta_to.length() > HEAVY_REACH or locked_direction.dot(delta_to.normalized()) < 0.5:
+		previous_fist = point
+		return
 	if source.can_damage and contact_policy.is_valid():
 		var shape := SphereShape3D.new()
 		shape.radius = BOULDER_RADIUS
@@ -199,9 +218,35 @@ func _sample_contact() -> void:
 					if hit.collider == target: contact_policy.call(source,query.transform.origin)
 	previous_fist = point
 
+func _sample_world_contact(point: Vector3) -> void:
+	if not is_instance_valid(heavy_presentation) or heavy_presentation.settled: return
+	var shape := SphereShape3D.new()
+	shape.radius = BOULDER_RADIUS
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform.origin = point
+	query.collision_mask = 1
+	query.exclude = [get_rid(),target.get_rid()]
+	var space := get_world_3d().direct_space_state
+	var hit := space.get_rest_info(query)
+	if hit.is_empty():
+		var motion: Vector3 = point-previous_fist
+		if motion.length() <= 0.01: return
+		query.transform.origin = previous_fist
+		query.motion = motion
+		var fractions := space.cast_motion(query)
+		if fractions[0] >= 1: return
+		# get_rest_info does not use motion. Resolve the swept contact pose and
+		# require an actual surface normal/point before emitting anything.
+		query.transform.origin = previous_fist+motion*minf(1.0,fractions[1]+0.001)
+		query.motion = Vector3.ZERO
+		hit = space.get_rest_info(query)
+	if not hit.is_empty(): heavy_presentation.world_contact(hit,heavy_started)
+
 func _attack_finished() -> void:
 	attack_kind = ""
 	if telegraph: telegraph.hide()
+	if is_instance_valid(heavy_presentation): heavy_presentation.clear()
 	super()
 
 func interrupt_action() -> void:
@@ -210,6 +255,7 @@ func interrupt_action() -> void:
 	wave_clock = 0
 	if wave_source: wave_source.can_damage = false
 	if telegraph: telegraph.hide()
+	if is_instance_valid(heavy_presentation): heavy_presentation.clear()
 
 func enter_pressure_if_needed() -> bool:
 	if pressure_phase or health <= 0 or health > health_component.max_health * 0.5: return false
@@ -234,4 +280,5 @@ func reset_encounter() -> void:
 func _mcp_state() -> Dictionary:
 	var result := super()
 	result.merge({"boss":true,"creature_source":"res://assets/bosses/warden_actor.glb","pressure_phase":pressure_phase,"pressure_changes":pressure_changes,"next_wave":next_wave,"body_radius":BODY_RADIUS,"body_height":BODY_HEIGHT,"visual_clearance":VISUAL_CLEARANCE,"boulder_radius":BOULDER_RADIUS,"attack_kind":attack_kind,"attacks_started":attacks_started,"heavy_started":heavy_started,"waves_started":waves_started,"wave_clock":wave_clock,"wave_radius":WAVE_RADIUS,"heavy_reach":HEAVY_REACH,"warning_visible":telegraph.visible if telegraph else false})
+	result["heavy_presentation"] = heavy_presentation.snapshot() if is_instance_valid(heavy_presentation) else {}
 	return result

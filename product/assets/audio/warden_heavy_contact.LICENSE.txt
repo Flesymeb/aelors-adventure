@@ -1,0 +1,9 @@
+Warden stone contact: Kenney Impact Sounds (1.0), Audio/impactMining_000.ogg.
+Created/distributed by Kenney (www.kenney.nl), 2019-12-19.
+https://kenney.nl/assets/impact-sounds
+License: Creative Commons Zero, CC0 1.0.
+http://creativecommons.org/publicdomain/zero/1.0/
+Free for personal, educational and commercial use; attribution optional.
+Audio bytes are unchanged; product playback uses a lower pitch and Effects bus.
+Existing landing dust, impact-ring shader and interface swing sound retain
+their existing provenance and notices. No new rights claim for retained files.

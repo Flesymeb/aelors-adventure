@@ -18,6 +18,14 @@ void fragment() {
     float arc = sector < 0.5 ? 1.0 : step(0.5, p.y / max(r, 0.001));
     ALBEDO = warning_color.rgb;
     EMISSION = warning_color.rgb * 0.6;
-    float warning = ring * 0.45 + countdown * 0.5 + fill + spokes * 0.25;
+    // Heavy's frontal lane uses advancing arrowheads and a closing edge;
+    // the wave retains its complete radial perimeter and four spokes.
+    // The owner advances progress, so menus/focus pause the cue without TIME.
+    float chevron_y = p.y - abs(p.x) * 0.65;
+    float chevrons = 1.0 - smoothstep(0.025, 0.055,
+        min(abs(chevron_y - 0.30), abs(chevron_y - 0.61)));
+    float heavy_edge = (1.0 - smoothstep(0.02, 0.055, abs(r - mix(0.92, 0.25, progress)))) * 0.45;
+    float warning = sector < 0.5 ? ring * 0.45 + countdown * 0.5 + fill + spokes * 0.25
+        : ring * (0.5 + progress * 0.4) + fill + chevrons * 0.55 + heavy_edge;
     ALPHA = (release > 0.0 ? wavefront * 0.85 : warning) * arc * warning_color.a;
 }

@@ -37,6 +37,7 @@ var paused_by_menu := false
 var presentation_box := AABB()
 var flight_skin_boxes := {}
 var reveal_video: CanvasLayer
+var defeat_scene: CanvasLayer
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -95,6 +96,10 @@ func configure(owner_world: Node3D) -> void:
 	add_child(reveal_video)
 	reveal_video.completed.connect(finish_presentation)
 	reveal_video.fallback_requested.connect(_video_fallback)
+	defeat_scene = preload("res://ui/veyne_defeat_scene.gd").new()
+	defeat_scene.name = "VeyneDefeatScene"
+	defeat_scene.encounter = self
+	add_child(defeat_scene)
 	ground.call_deferred()
 
 func ground() -> void:
@@ -127,7 +132,7 @@ func registry() -> Dictionary:
 	result.merge(reinforcements.registry())
 	return result
 
-func can_save() -> bool: return phase not in ["reveal","phase_transition","battle"] and not victory_pending
+func can_save() -> bool: return phase not in ["reveal","phase_transition","battle"] and not victory_pending and not defeat_scene.active
 
 func _process(delta: float) -> void:
 	if not grounded: return
@@ -141,6 +146,7 @@ func _process(delta: float) -> void:
 	music.stream_paused = paused
 	cue.stream_paused = paused
 	effects.stream_paused = paused
+	if defeat_scene.active: return
 	if presentation:
 		if paused: actor.animator.pause(); return
 		frame_presentation()
@@ -212,6 +218,9 @@ func presentation_points() -> Array[Vector3]:
 			points.append(skeleton.global_transform * skeleton.get_bone_global_pose(bone).origin)
 	points.append(world.player.global_position)
 	points.append(world.player.global_position+Vector3.UP*1.8)
+	if is_instance_valid(defeat_scene) and defeat_scene.active:
+		points.append(device.global_position)
+		points.append(device.global_position+Vector3.UP)
 	return points
 
 func cache_flight_skin_bounds() -> void:
@@ -287,7 +296,8 @@ func frame_presentation() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var half_vertical := deg_to_rad(reveal_camera.fov)*0.5
 	var half_horizontal := atan(tan(half_vertical)*viewport_size.x/maxf(viewport_size.y,1.0))
-	var distance := radius/sin(minf(half_vertical,half_horizontal)*0.78)+0.5
+	var caption_scale := clampf(state.text_scale-1.0,0.0,1.0) if defeat_scene.active else 0.0
+	var distance := radius/sin(minf(half_vertical,half_horizontal)*(0.78-0.10*caption_scale))+0.5
 	var best := center+Vector3.UP*distance
 	var best_score := -INF
 	var exclusions: Array[RID] = [actor.get_rid(),world.player.get_rid()]
@@ -310,6 +320,9 @@ func frame_presentation() -> void:
 		if score > best_score: best_score = score; best = candidate
 	reveal_camera.global_position = best
 	reveal_camera.look_at(center,Vector3.FORWARD if absf((best-center).normalized().dot(Vector3.UP)) > 0.98 else Vector3.UP)
+	if caption_scale > 0:
+		# Reserve the larger caption's lower screen area for accessibility scales.
+		reveal_camera.look_at(center-reveal_camera.global_basis.y*radius*0.38*caption_scale,Vector3.UP)
 
 func finish_presentation() -> void:
 	if phase not in ["reveal","phase_transition"]: return
@@ -396,6 +409,7 @@ func set_menu_paused(paused: bool) -> void:
 	cue.stream_paused = paused
 	effects.stream_paused = paused
 	if is_instance_valid(reveal_video): reveal_video.set_paused(paused)
+	if is_instance_valid(defeat_scene): defeat_scene.set_paused(paused)
 	# SceneTree pause suspends the pausable actor/timeline; combat_allowed()
 	# rejects menu-time contacts. Retain clocks, footprint and instance dedup so
 	# resume continues the same attack instead of silently starting a new one.
@@ -423,9 +437,10 @@ func play_effect(kind: String) -> void:
 	effects.play()
 
 func settle_defeat() -> void:
-	if state.veyne_defeated: return
+	if state.veyne_defeated or actor.health > 0: return
 	phase = "victory"
-	actor.interrupt_action()
+	# on_death already cancelled attacks before selecting Death. Interrupting
+	# again here travels the animation tree back to Idle and erases that motion.
 	world.player.release_encounter_camera()
 	actor.engaged = false
 	clear_rifts()
@@ -440,11 +455,13 @@ func settle_defeat() -> void:
 	actor.collision_layer = 0
 	music.stop()
 	play_cue("victory")
+	defeat_scene.begin()
 	world.training.tell("维恩已败 · 法术瓦解。检查祭坛取得解除钥印；四位村民与召唤核心仍待处理。",7)
 	state.progression_changed.emit()
 
 func interrupt() -> void:
 	if not grounded: return
+	if is_instance_valid(defeat_scene): defeat_scene.shutdown()
 	if is_instance_valid(reveal_video): reveal_video.shutdown()
 	actor.interrupt_action()
 	world.player.release_encounter_camera()
@@ -465,6 +482,7 @@ func restore_history() -> void:
 	if grounded: interrupt()
 
 func _exit_tree() -> void:
+	if is_instance_valid(defeat_scene): defeat_scene.shutdown()
 	if is_instance_valid(reveal_video): reveal_video.shutdown()
 	if is_instance_valid(music): release_score()
 

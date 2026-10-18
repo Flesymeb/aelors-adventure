@@ -5,6 +5,15 @@ const CIRCUIT = preload("res://tests/map03_barrier_test.gd")
 const HISTORY = preload("res://tests/chapter_travel_test.gd")
 const STATE = preload("res://dialogue_state.gd")
 
+class HeavyPresentationProbe extends Node:
+	# Explicitly attached by a Developer diagnostic; never normal startup.
+	var observations: Dictionary = {}
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		observations = await load("res://tests/map03_warden_test.gd").heavy_presentation_checks(self)
+	func _mcp_state() -> Dictionary:
+		return observations
+
 class WardenRouter extends ENTRY.DiagnosticTombRouter:
 	func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_ALWAYS
@@ -64,6 +73,48 @@ static func binding_checks() -> Dictionary:
 	actor.health_component.health = 60
 	checks.phase_not_replayed = not actor.enter_pressure_if_needed() and actor.health==60 and actor.pressure_changes==1 and encounter.cues==1
 	actor.free(); encounter.free(); native.free()
+	return checks
+
+static func heavy_presentation_checks(parent: Node) -> Dictionary:
+	# Explicit disposable presentation fixture. These callbacks test ownership,
+	# never establish a real boulder/floor contact or ordinary encounter entry.
+	var fx := preload("res://combat/warden_heavy_presentation.gd").new()
+	parent.add_child(fx)
+	fx.configure(null)
+	fx.begin(11)
+	var checks := {"no_contact_no_burst":not fx.active and fx.bursts==0,
+		"missing_surface_rejected":not fx.world_contact({},11),
+		"invalid_normal_rejected":not fx.world_contact({"point":Vector3.ZERO,"normal":Vector3.ZERO},11),
+		"stale_attack_rejected":not fx.world_contact({"point":Vector3.ZERO,"normal":Vector3.UP},10)}
+	var hit := {"point":Vector3(1,0,2),"normal":Vector3.UP}
+	checks.one_world_response = fx.world_contact(hit,11) and fx.active and fx.settled and fx.bursts==1 and fx.contact_kind=="floor"
+	checks.repeat_contact_suppressed = not fx.world_contact(hit,11) and fx.bursts==1
+	checks.effects_bus_and_locality = fx.impact.bus=="Effects" and fx.swing.bus=="Effects" and fx.global_position.distance_to(hit.point+Vector3.UP*0.035)<0.001
+	# AudioStreamPlayer3D starts pending voices on its next physics update.
+	# Exercise both live voices rather than asking an unstarted swing to pause.
+	fx.play_swing(hit.point)
+	await parent.get_tree().physics_frame
+	await parent.get_tree().process_frame
+	checks.pause_starts_with_live_voices = fx.impact.playing and fx.swing.playing and fx.impact.get_stream_playback()!=null and fx.swing.get_stream_playback()!=null
+	# Use the actual tree pause lifecycle: manually calling a notification does
+	# not suspend can_process(), and 3D audio reconciles playback against it.
+	# The opt-in probe remains ALWAYS and restores exactly the prior pause state.
+	var tree: SceneTree = parent.get_tree()
+	var prior_paused: bool = tree.paused
+	tree.paused = true
+	await tree.process_frame
+	await tree.process_frame
+	checks.pause_voices = fx.impact.stream_paused and fx.swing.stream_paused
+	tree.paused = prior_paused
+	await tree.process_frame
+	checks.resume_voices = not fx.impact.stream_paused and not fx.swing.stream_paused and fx.impact.playing and fx.swing.playing
+	fx._process(1.5)
+	checks.expiry_cleans_without_rearming = not fx.active and not fx.ring.visible and not fx.dust.emitting and not fx.impact.playing and not fx.world_contact(hit,11)
+	fx.begin(12)
+	checks.next_attack_can_contact = fx.world_contact({"point":Vector3.ZERO,"normal":Vector3.RIGHT},12) and fx.bursts==2 and fx.contact_kind=="stone"
+	fx.clear()
+	checks.interruption_cleans_singleton = not fx.active and not fx.ring.visible and not fx.dust.visible and not fx.impact.playing and not fx.swing.playing and fx.get_child_count()==4
+	fx.free()
 	return checks
 
 static func run() -> Dictionary:

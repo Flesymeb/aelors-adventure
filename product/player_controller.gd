@@ -6,6 +6,7 @@ var minimum_world_height := 7.0
 const MODEL_PATH := "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
 const ANIMATION_PATH := "res://Characters/QuaterniusAnimations/UAL1_Standard.glb"
 const SWORD_PATH := "res://Weapons/Sword_Bronze.gltf"
+const SWORD_MESH_QUALIFICATION := preload("res://actors/mesh_qualification.gd")
 const BOW_PATH := "res://Weapons/Bow_Golden.obj"
 const RANGER_PALETTE_SHADER := preload("res://ranger_palette.gdshader")
 const SKIN_NAMES := ["Forest", "Frost", "Ember"]
@@ -210,6 +211,7 @@ func _attach_weapons() -> void:
 	sword_holder.basis = Basis.from_euler(Vector3(0.496039, -0.808365, -2.084909))
 	if ResourceLoader.exists(SWORD_PATH):
 		var sword := (load(SWORD_PATH) as PackedScene).instantiate() as Node3D
+		SWORD_MESH_QUALIFICATION.qualify_tree(sword, true)
 		sword.position.y = 0.05  # The center of the handle is at source Y = -0.05.
 		sword_holder.add_child(sword)
 
@@ -240,6 +242,7 @@ func _attach_weapons() -> void:
 	sword_back_holder.basis = Basis.from_euler(Vector3(0.0681, 0.2316, -0.5581)) * Basis(Vector3.RIGHT, PI)
 	if ResourceLoader.exists(SWORD_PATH):
 		var stowed_sword := (load(SWORD_PATH) as PackedScene).instantiate() as Node3D
+		SWORD_MESH_QUALIFICATION.qualify_tree(stowed_sword, true)
 		stowed_sword.position.y = 0.05
 		sword_back_holder.add_child(stowed_sword)
 

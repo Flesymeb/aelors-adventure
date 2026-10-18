@@ -237,10 +237,16 @@ static func transaction_checks(world: Node3D) -> Dictionary:
 	world.dialogue_state.fail_save_after = 0
 	var result: Dictionary = boss.actor.receive_contact(source,boss.actor.global_position+Vector3.UP)
 	var checks := {"lethal_contact":result.get("outcome","")=="defeat","failed_save_rolls_back":not world.dialogue_state.veyne_defeated and boss.victory_pending,"damage_closed":not boss.actor.source.can_damage and not boss.actor.beam_effect.active}
+	checks.failed_save_no_defeat_beat = not boss.defeat_scene.active
 	boss.settle_defeat()
 	checks.commit_once = world.dialogue_state.veyne_defeated and boss.victory_commits==1 and not boss.victory_pending
+	checks.new_commit_beat = boss.defeat_scene.active
+	boss.settle_defeat()
+	checks.repeat_settlement_no_restart = boss.defeat_scene.consumed_commit == 1 and boss.victory_commits == 1
 	checks.key_separate = not world.dialogue_state.veyne_release_key
 	checks.wave_cleared = boss.reinforcements.units.is_empty()
+	checks.key_blocked_during_beat = boss.device.interaction_prompt() == ""
+	boss.defeat_scene.finish()
 	checks.key_approach_supported = world.ground_policy.place(world,world.player,boss.ARENA.KEY+Vector2(0,1.6))
 	checks.key_prompt_available = boss.device.interaction_prompt()!=""
 	world.dialogue_state.fail_save_after = 0
