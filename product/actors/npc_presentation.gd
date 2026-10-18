@@ -75,6 +75,9 @@ func _ready() -> void:
 	_apply_appearance()
 	preload("res://actors/mesh_qualification.gd").qualify_tree(visual)
 	_play_animation("Sword_Idle" if weapon_mode == "sword" else "Idle")
+	# A restored conversation can pause before this rig's first process tick.
+	# Evaluate the requested pose now without advancing its animation clock.
+	animation_player.advance(0)
 
 func _apply_appearance() -> void:
 	if not appearance: return

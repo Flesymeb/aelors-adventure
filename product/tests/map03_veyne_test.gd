@@ -144,7 +144,7 @@ static func camera_projection_checks() -> Dictionary:
 	checks.ordinary_movement_retains_camera = controller.movement_camera_basis(corrected,false,user_look).is_equal_approx(corrected)
 	return checks
 
-static func camera_owner_checks(world: Node3D) -> Dictionary:
+static func camera_owner_checks(world: Node3D, move := "dive") -> Dictionary:
 	var boss: Node = world.veyne_encounter
 	if not boss.combat_allowed(): return {"ready":false}
 	var p: Node3D = world.player
@@ -159,11 +159,28 @@ static func camera_owner_checks(world: Node3D) -> Dictionary:
 	# stair/evasion evidence. A stair-edge target has no valid dive landing.
 	world.ground_policy.place(world,p,Vector2(-4,-22))
 	world.ground_policy.place(world,boss.actor,Vector2(-4,-25))
-	var started: bool = boss.actor.dragon_actions.begin("dive")
+	var started: bool = boss.actor.dragon_actions.begin(move)
 	p._update_archery(0.016)
 	p.arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
 	var checks := {"started":started,"player_owns_framing":p.encounter_camera_active,"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.encounter_camera_look.is_equal_approx(old_rotation),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
 	checks.corrective_orbit_keeps_controls = p.movement_camera_basis(p.camera.global_basis,p.encounter_camera_active,p.encounter_camera_look).is_equal_approx(Basis(Vector3.UP,old_rotation.y))
+	if move == "charge":
+		var action: Node3D = boss.actor.dragon_actions
+		var danger: Array[Vector3] = boss.flight_camera_danger_targets()
+		checks.committed_lane_has_depth_and_escape = danger.size() == 9 and danger[0].distance_to(danger[-1]) > action.charge_length
+		for side in [-1.0,1.0]:
+			p.shoulder_side = side
+			p.shoulder_blend = side
+			p._update_archery(0.016)
+			var viewport_size: Vector2 = p.get_viewport().get_visible_rect().size
+			var aspect: float = viewport_size.x/viewport_size.y
+			checks[str(side)+"_charge_subjects_fit"] = p.subject_camera_points_fit(boss.flight_camera_subjects(),p.camera.global_position,p.camera.global_basis,p.camera.fov,aspect)
+			checks[str(side)+"_charge_player_unobscured"] = true
+			for height in [0.2,1.0,1.8]:
+				var target: Vector3 = p.global_position+Vector3.UP*height
+				checks[str(side)+"_charge_player_unobscured"] = checks[str(side)+"_charge_player_unobscured"] and not p.subject_camera_occluded(p.camera.global_position,target,boss.flight_camera_occluders())
+		p.shoulder_side = old_shoulder
+		p.shoulder_blend = old_shoulder
 	boss.actor.dragon_actions.tick(0.5)
 	p._update_archery(0.016)
 	checks.tracked_body_does_not_collapse_sweep = p.arm.get_hit_length() >= p.arm.spring_length-0.01 and p.encounter_camera_exclusion==boss.actor.get_rid()

@@ -744,17 +744,14 @@ func _update_encounter_camera(delta: float, ordinary_pivot: Vector3) -> void:
 	var ordinary_length := arm.spring_length
 	var best_rotation := encounter_camera_look
 	var best_score := -INF
-	var action: Node3D = owner.actor.dragon_actions
 	var player_targets: Array[Vector3] = []
 	for x in [-0.3,0.3]:
 		for y in [0.2,1.0,1.8]: player_targets.append(global_position+Vector3(x,y,0))
-	var landing_targets: Array[Vector3] = [action.landing+Vector3.UP*0.2]
-	for x in [-2.0,2.0]:
-		for z in [-2.0,2.0]: landing_targets.append(action.landing+Vector3(x,0.2,z))
+	var landing_targets: Array[Vector3] = owner.flight_camera_danger_targets()
 	var occluders: Array = owner.flight_camera_occluders()
 	# Test the user's yaw first, then a bounded orbit when a stone-clear view
 	# still hides the player behind the creature. Every candidate uses the
-	# same native collision-backed arm and the same committed landing area.
+	# same native collision-backed arm and the same committed danger area.
 	for yaw_offset in [0.0,-0.45,0.45,-0.9,0.9,-PI*0.5,PI*0.5]:
 		for step in 6:
 			var rotation := encounter_camera_look

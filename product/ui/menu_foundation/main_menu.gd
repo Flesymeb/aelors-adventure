@@ -113,10 +113,14 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 		parent.theme.default_font_size = int(22 * scale_now)
 		title.add_theme_font_size_override("font_size", int((parent.get_meta("page_heading_size", 32) if wide else 42) * scale_now))
 		scroll.custom_minimum_size.y = minf(column.get_combined_minimum_size().y, maxf(120, size_now.y - 140 - header.get_combined_minimum_size().y - footer.get_combined_minimum_size().y - 24))
-		if column.get_child_count() > 0 and column.get_child(0) is BaseButton and column.get_child(0).has_focus(): scroll.scroll_vertical = 0
+		_queue_page_focus_visibility(scroll)
 	column.minimum_size_changed.connect(func(): layout.call_deferred())
 	header.minimum_size_changed.connect(func(): layout.call_deferred())
 	footer.minimum_size_changed.connect(func(): layout.call_deferred())
+	# follow_focus handles a new focus owner, but unchanged focus also needs to
+	# follow the settled viewport after font scaling or a window resize.
+	scroll.resized.connect(func(): _queue_page_focus_visibility(scroll))
+	column.resized.connect(func(): _queue_page_focus_visibility(scroll))
 	get_viewport().size_changed.connect(layout)
 	parent.tree_exiting.connect(func():
 		if is_inside_tree() and get_viewport().size_changed.is_connected(layout): get_viewport().size_changed.disconnect(layout))
@@ -124,6 +128,33 @@ func create_page(parent: Control, heading: String, wide := false, source_column:
 	layout.call_deferred()
 	if parent == self: menu_container = panel
 	return column
+func _queue_page_focus_visibility(scroll: ScrollContainer) -> void:
+	if not is_instance_valid(scroll) or scroll.get_meta("focus_visibility_pending", false): return
+	scroll.set_meta("focus_visibility_pending", true)
+	_reconcile_page_focus_visibility.call_deferred(scroll)
+func _reconcile_page_focus_visibility(scroll: ScrollContainer) -> void:
+	# Container minimum sizes propagate through several deferred sorts. Wait for
+	# their frame boundary instead of measuring the old clipping rectangle.
+	await get_tree().process_frame
+	if not is_instance_valid(scroll): return
+	scroll.set_meta("focus_visibility_pending", false)
+	if not scroll.is_visible_in_tree(): return
+	var focused := get_viewport().gui_get_focus_owner()
+	if not is_instance_valid(focused) or not scroll.is_ancestor_of(focused): return
+	var focus_rect := Rect2(Vector2.ZERO, focused.size)
+	if focused.has_theme_stylebox("focus"):
+		var focus_frame := focused.get_theme_stylebox("focus")
+		if focus_frame is StyleBoxTexture:
+			focus_rect = focus_rect.grow_individual(focus_frame.get_expand_margin(SIDE_LEFT), focus_frame.get_expand_margin(SIDE_TOP), focus_frame.get_expand_margin(SIDE_RIGHT), focus_frame.get_expand_margin(SIDE_BOTTOM))
+		elif focus_frame is StyleBoxFlat:
+			focus_rect = focus_rect.grow_individual(focus_frame.get_expand_margin(SIDE_LEFT), focus_frame.get_expand_margin(SIDE_TOP), focus_frame.get_expand_margin(SIDE_RIGHT), focus_frame.get_expand_margin(SIDE_BOTTOM))
+	focus_rect = (scroll.get_global_transform().affine_inverse() * focused.get_global_transform()) * focus_rect
+	# Scroll only the missing portion, keeping the same Control and any existing
+	# scroll position that already exposes its complete themed focus frame.
+	if focus_rect.position.y < 0.0:
+		scroll.scroll_vertical -= ceili(-focus_rect.position.y)
+	elif focus_rect.end.y > scroll.size.y:
+		scroll.scroll_vertical += ceili(focus_rect.end.y - scroll.size.y)
 func button(column: BoxContainer, text: String, callback: Callable, icon_index := -1, source_button: Button = null) -> Button:
 	var item := source_button if source_button != null else Button.new()
 	item.text = text
@@ -375,4 +406,6 @@ func open_help() -> void:
 func _restore_parent_focus() -> void:
 	# Deferred child cleanup may finish after loading/resuming hid the parent.
 	if not is_visible_in_tree() or not menu_container.is_visible_in_tree(): return
-	if is_instance_valid(return_focus) and return_focus.is_visible_in_tree(): return_focus.grab_focus()
+	if is_instance_valid(return_focus) and return_focus.is_visible_in_tree():
+		return_focus.grab_focus()
+		_queue_page_focus_visibility(find_child("PageScroll", true, false) as ScrollContainer)

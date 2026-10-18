@@ -20,6 +20,86 @@ class CameraReadinessWorld extends "res://preview_controller.gd":
 	func _dialogue_camera_subject() -> CollisionObject3D:
 		return camera_subject
 
+static func paused_actor_pose_checks(parent: Node) -> Dictionary:
+	# Actual retained rigs, synchronously initialized in a disposable world.
+	# No gameplay frame, save/history setup, input dispatch or reward owner runs.
+	var viewport := SubViewport.new()
+	viewport.name = "PausedActorPoseReadiness"
+	viewport.own_world_3d = true
+	viewport.process_mode = Node.PROCESS_MODE_DISABLED
+	var world := CameraReadinessWorld.new()
+	world.process_mode = Node.PROCESS_MODE_DISABLED
+	viewport.add_child(world)
+	parent.add_child(viewport)
+	var player := preload("res://Player.tscn").instantiate()
+	player.configure_equipment(false, false, "unarmed")
+	world.player = player
+	world.add_child(player)
+	var coach := preload("res://Hers.tscn").instantiate()
+	world.add_child(coach)
+	world.camera_subject = coach
+	var paused := parent.get_tree().paused
+	var mouse_mode := Input.mouse_mode
+	var physics_frame := Engine.get_physics_frames()
+	var idle_frame := Engine.get_process_frames()
+	var checks := {}
+	var observations := {}
+	checks.coach_initial_pose_evaluated = _pose_matches_clip(coach.actor)
+	for mode in ["unarmed", "sword"]:
+		player.velocity = Vector3.ZERO
+		player.configure_equipment(mode == "sword", false, mode)
+		var position: Vector3 = player.global_position
+		player.velocity = Vector3(1, 2, 3)
+		var before := _actor_pose_observation(player)
+		world._prepare_restored_actor_pose()
+		var assigned: String = player.animation_player.current_animation
+		var animation_time: float = player.animation_player.current_animation_position
+		world._set_pause_owner("dialogue", true)
+		var after := _actor_pose_observation(player)
+		observations[mode] = {"before": before, "after": after}
+		checks[mode + "_pose_evaluated"] = _pose_matches_clip(player)
+		checks[mode + "_restored_idle_selected"] = assigned == ("Sword_Idle" if mode == "sword" else "Idle")
+		checks[mode + "_clip_and_time_retained"] = player.animation_player.current_animation == assigned and is_equal_approx(player.animation_player.current_animation_position, animation_time)
+		checks[mode + "_possession_and_mounts"] = player.owns_sword == (mode == "sword") and player.sword_holder.visible == (mode == "sword") and not player.sword_back_holder.visible and not player.owns_bow and not player.bow_holder.visible and not player.bow_back_holder.visible
+		checks[mode + "_paused_without_movement"] = parent.get_tree().paused and player.controls_open and player.global_position == position and player.velocity == Vector3(1, 2, 3)
+		world._set_pause_owner("controls", true)
+		world._set_pause_owner("controls", false)
+		checks[mode + "_nested_pose_preserved"] = after == _actor_pose_observation(player) and parent.get_tree().paused
+		# Entry promotion restores equipment a second time while the dialogue
+		# still owns pause. Its floor cache must not leave a queued Jump blend.
+		player.velocity = Vector3.ZERO
+		player.configure_equipment(mode == "sword", false, mode)
+		world._prepare_restored_actor_pose()
+		checks[mode + "_entry_promotion_pose"] = _pose_matches_clip(player) and player.animation_player.current_animation == assigned and parent.get_tree().paused
+		world._set_pause_owner("dialogue", false)
+		checks[mode + "_controls_return"] = not parent.get_tree().paused and not player.controls_open
+	checks.no_world_frame = Engine.get_physics_frames() == physics_frame and Engine.get_process_frames() == idle_frame
+	parent.get_tree().paused = paused
+	Input.mouse_mode = mouse_mode
+	viewport.free()
+	return {"scope": "isolated retained-rig zero-time pose initialization; no ordinary Continue, earned coaching or exported combat acceptance", "checks": checks, "observations": observations}
+
+static func _pose_matches_clip(actor: Node3D) -> bool:
+	var clip: Animation = actor.animation_player.get_animation(actor.animation_player.current_animation)
+	var matched := 0
+	for index in clip.get_track_count():
+		if clip.track_get_type(index) != Animation.TYPE_ROTATION_3D: continue
+		var path: NodePath = clip.track_get_path(index)
+		var bone_name: String = path.get_subname(0) if path.get_subname_count() > 0 else ""
+		if bone_name not in ["upperarm_l", "lowerarm_l", "upperarm_r", "lowerarm_r"]: continue
+		var bone: int = actor.skeleton.find_bone(bone_name)
+		if bone < 0 or not actor.skeleton.get_bone_pose_rotation(bone).is_equal_approx(clip.rotation_track_interpolate(index, actor.animation_player.current_animation_position)):
+			return false
+		matched += 1
+	return matched == 4
+
+static func _actor_pose_observation(actor: Node3D) -> Dictionary:
+	var bones := {}
+	for bone_name in ["upperarm_l", "lowerarm_l", "upperarm_r", "lowerarm_r"]:
+		var rotation: Quaternion = actor.skeleton.get_bone_pose_rotation(actor.skeleton.find_bone(bone_name))
+		bones[bone_name] = [rotation.x, rotation.y, rotation.z, rotation.w]
+	return {"clip": actor.animation_player.current_animation, "time": actor.animation_player.current_animation_position, "bones": bones}
+
 static func restored_camera_readiness_checks(parent: Node) -> Dictionary:
 	# Synchronous, disposable native fixture. In particular, do not await/thaw a
 	# frame to obtain a better pose: that would hide the ordering under test.

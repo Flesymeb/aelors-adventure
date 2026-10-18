@@ -253,7 +253,7 @@ func flight_camera_subjects() -> Array[Vector3]:
 	var points: Array[Vector3] = []
 	if not grounded or phase != "battle" or state.health <= 0 or state.recovery_pending: return points
 	var action: Node3D = actor.dragon_actions
-	if action.kind != "dive" or action.stage not in ["warning","flight","active","recovery"]: return points
+	if action.kind not in ["dive","charge"] or action.stage not in ["warning","flight","active","recovery"]: return points
 	var skeleton: Skeleton3D = actor.character.skeleton
 	var box := AABB()
 	var first := true
@@ -267,12 +267,33 @@ func flight_camera_subjects() -> Array[Vector3]:
 	for corner in 8:
 		var point := box.get_endpoint(corner)
 		points.append(point)
-		# Anticipate the committed apex without chasing an airborne origin.
-		points.append(point-actor.global_position+action.landing+Vector3.UP*5.0)
-	for x in [-3.0,3.0]:
-		for z in [-3.0,3.0]: points.append(action.landing + Vector3(x,0,z))
+		if action.kind == "dive":
+			# Anticipate the committed apex without chasing an airborne origin.
+			points.append(point-actor.global_position+action.landing+Vector3.UP*5.0)
+		else:
+			# Frame the supported stopping point, not the player's old target.
+			points.append(point-actor.global_position+action.charge_endpoint)
+	if action.kind == "charge": points.append_array(flight_camera_danger_targets())
+	else:
+		for x in [-3.0,3.0]:
+			for z in [-3.0,3.0]: points.append(action.landing+Vector3(x,0,z))
 	for x in [-0.45,0.45]:
 		for y in [0.0,1.9]: points.append(world.player.global_position + Vector3(x,y,0))
+	return points
+
+func flight_camera_danger_targets() -> Array[Vector3]:
+	var action: Node3D = actor.dragon_actions
+	var points: Array[Vector3] = []
+	if action.kind == "charge":
+		var side := Vector3(-action.direction.z,0,action.direction.x)
+		# Match the warning's rounded swept extent, with lateral room to escape.
+		for along in [-1.4,action.charge_length*0.5,action.charge_length+1.4]:
+			for lateral in [-2.4,0.0,2.4]:
+				points.append(action.start+action.direction*along+side*lateral+Vector3.UP*0.2)
+	else:
+		points.append(action.landing+Vector3.UP*0.2)
+		for x in [-2.0,2.0]:
+			for z in [-2.0,2.0]: points.append(action.landing+Vector3(x,0.2,z))
 	return points
 
 func flight_camera_occluders() -> Array:

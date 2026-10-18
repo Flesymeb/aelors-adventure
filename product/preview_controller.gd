@@ -261,9 +261,22 @@ func _place_player() -> void:
 		push_error("Forest spawn has no safe collision support")
 		_recovery_error("出生点尚未准备好 · 请重新启动或读取安全存档。")
 		return
+	# Training restores possession/selection after its own supported placement.
+	# Keep the player disabled until that existing setup has completed; otherwise
+	# a restored dialogue can pause first and expose an unevaluated/default rig.
+	for attempt in 120:
+		if is_instance_valid(training) and training.grounded: break
+		await get_tree().physics_frame
+	if not is_instance_valid(training) or not training.grounded:
+		if entry_router:
+			entry_failed.emit("村庄角色尚未准备好。请重试或返回标题。")
+		else:
+			_recovery_error("村庄角色尚未准备好 · 请重新启动或读取安全存档。")
+		return
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	player.set_meta("spawn_position", player.global_position)
 	player.prepare_restored_camera(float(restored_position.get("yaw", player.arm.rotation.y)))
+	_prepare_restored_actor_pose()
 	if dialogue_state.persistence_error != "":
 		_recovery_error(dialogue_state.persistence_error)
 		return
@@ -340,6 +353,7 @@ func _input(event: InputEvent) -> void:
 func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 	if enabled and owner_id == "dialogue" and not pause_owners.has("dialogue"):
 		player.prepare_dialogue_camera(_dialogue_camera_subject())
+		_prepare_dialogue_pose()
 	elif not enabled and owner_id == "dialogue" and pause_owners.has("dialogue"):
 		player.release_dialogue_camera()
 	var was_paused := not pause_owners.is_empty()
@@ -352,6 +366,28 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 		player.set_controls_open(now_paused)
 		get_tree().paused = now_paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if now_paused else Input.MOUSE_MODE_CAPTURED
+
+
+func _prepare_dialogue_pose() -> void:
+	# Restored equipment may have requested its idle while processing was
+	# disabled. play() alone leaves the skeleton at its previous/rest pose until
+	# a process tick, which dialogue immediately suspends. Evaluate only this
+	# actor's existing clip: no world tick, input, reward or animation-time step.
+	if is_instance_valid(player.animation_player) and player.animation_player.is_playing():
+		player.animation_player.advance(0)
+
+
+func _prepare_restored_actor_pose() -> void:
+	# Safe placement has established standing support, but CharacterBody3D's
+	# floor cache may still describe the old position. Do not initialize the
+	# restored idle through a locomotion tick or retain an airborne/blended pose.
+	if not is_instance_valid(player.animation_player): return
+	var clip := "Sword_Idle" if player.weapon_mode == "sword" and player.owns_sword else "Idle"
+	if not player.animation_player.has_animation(clip): return
+	player.current_animation = clip
+	player.animation_player.speed_scale = 1.0
+	player.animation_player.play(clip, 0)
+	player.animation_player.advance(0)
 
 
 func _dialogue_camera_subject() -> CollisionObject3D:
@@ -461,6 +497,7 @@ func _load_opening(slot: int) -> void:
 		return
 	player.prepare_restored_camera(float(restored.yaw))
 	training.restore_history()
+	_prepare_restored_actor_pose()
 	if route_clue: route_clue.restore_history()
 	if line_record: line_record.restore_history()
 	if barrier: barrier.restore_history()
@@ -988,6 +1025,7 @@ func restore_destination_history() -> void:
 	if dialogue_state.homecoming_completed and not meadow_slice and not is_instance_valid(homecoming_residents):
 		homecoming_residents = preload("res://ui/homecoming_scene.gd").populate_village(self)
 	training.restore_history()
+	_prepare_restored_actor_pose()
 	gameplay_hud.restore_view()
 
 func travel_safe() -> bool:
