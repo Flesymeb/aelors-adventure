@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "semantic_role": "opaque full-bleed father-and-daughter lantern prologue before the village attack",
-  "family": "prologue-video",
+  "semantic_role": "Four distinct opaque full-bleed opening story beats with canonical live/portrait cast identities",
+  "family": "opening_story",
   "runtime_variant": "one distinct Theora per opening beat",
-  "generation_status": "story_length_media_generated_samples_reviewed_runtime_pending",
+  "generation_status": "canonical_cast_media_generated_decoded_source_samples_reviewed_godot_acceptance_pending",
   "provider": "Bailian/DashScope",
   "model": "wan3.0-video",
   "requested_duration_seconds": 10,
@@ -13,15 +13,15 @@
   "chroma": "none",
   "source_keyframe": "opening_01.png",
   "source_keyframe_review": {
-    "identities": "Oren: gray hair and beard, embroidered brown coat; Isha: brown braids, embroidered green cloak and ivory blouse",
+    "identities": "Aelor: brown hair under olive green Ranger hood/cowl, green tunic/cloak and brown cross straps/bracers; Isha: auburn-brown hair under ivory linen bonnet, grey dress, cream neckline/cuffs, brown front lacing/belt; Oren: grey hair and beard, embroidered brown robe and round bronze brooch.",
     "location": "riverside lantern workshop with stone village bridge at dusk",
-    "chronology": "peaceful village before attack; young Aelor in background is empty-handed",
+    "chronology": "Peaceful village before attack; Aelor empty-handed with no weapons. Abduction retains Oren plus the same three captives. All abductees absent from plea.",
     "terms": "Existing illustration and new AI-generated footage remain subject to their provider service terms; no CC0 or MIT license asserted."
   },
-  "authored_direction": "Locked camera. Oren carefully turns the old metal lantern wick knob and lowers its lid while Isha steadies it and smiles. Amber flame brightens, river reflections ripple and chimney smoke drifts. Preserve faces, costumes, location and peaceful chronology; no attack, rift, weapons, text or UI.",
+  "authored_direction": "Each shot uses its corrected canonical keyframe with actual cast/environment motion; original 10/8/10/10 second narrative timing retained. Fixed-composition assault also uses same canonical last frame to prevent invented equipment.",
   "qualification": {
-    "status": "Changed media requires current Godot decoding/lifecycle retest; independent acceptance pending.",
-    "continuity_limitations": "Illustrated cast and live low-poly actors retain different rendering styles. Background wounded helper in plea resembles Oren; exact continuity remains unverified."
+    "status": "All corrected source stills and separated decoded motion samples inspected; final Theora decoder and ordinary Godot lifecycle/identity acceptance remains pending.",
+    "continuity_limitations": "Illustrated and live low-poly rendering styles differ; canonical faces, headwear, costume silhouettes and palette were matched to existing bound portraits. Independent natural/skip, fault/recovery, caption-scale and audio acceptance remain required."
   },
   "fallback": "opening_01.png",
   "historical_submissions": [
@@ -45,6 +45,112 @@
     "source_sha256": "3e541acf1f09ce2fc192acfd9f15c197d9779da94c875e82e4e642797089677d"
   },
   "shots": {
+    "prologue": {
+      "provider": "Bailian/DashScope",
+      "tool": "video-sprite-pipeline bailian-i2v",
+      "model": "wan3.0-video",
+      "task_id": "ed5cac76-56b6-43f7-92bd-faf4c56397dc",
+      "create_request_id": "f12e5c97-c8cd-975c-9535-6b3097081e08",
+      "completion_request_id": "7b65dbd9-4b5f-9873-8363-7c22ff17abf3",
+      "task_status": "SUCCEEDED",
+      "requested_duration_seconds": 10,
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "source_video": "canonical_source/prologue/source.mp4",
+      "source_keyframe": "opening_01.png",
+      "last_keyframe": null,
+      "prompt": "Locked cinematic camera in a peaceful medieval river-village lantern workshop before the attack. Preserve exact faces and all costume identities throughout. Grey-haired short-bearded father Oren wears embroidered brown robe and round bronze brooch; he slowly turns the old lantern wick knob while his young daughter Isha steadies the lantern and smiles. Isha has auburn brown hair under ivory linen bonnet, plain grey dress, cream gathered neckline and cream cuffs; no braids or green cloak. Background unarmed young Aelor wears olive green ranger hood pulled up, green cowl and tunic, leather chest straps, belt and bracers; no cream scarf or brown overcoat and no weapons or equipment appear. His hands stay empty and relaxed. Amber lamp flame flickers, river reflections ripple, mist and chimney smoke drift. Gentle distinct hand and face movement. No attack or rift yet, no text, no UI, no zoom, no morphing, no new people.",
+      "conversion": "GStreamer decodebin -> videoconvert/videoscale/videorate -> I420 1280x720 30fps -> theoraenc quality=48 -> oggmux; no audio stream; no retiming or looping",
+      "reviewed_source_seconds": [
+        0.5,
+        4,
+        7.5,
+        9.5
+      ],
+      "motion_review": "Oren works lantern while bonneted grey-dressed Isha steadies it; unarmed green-hooded Aelor approaches, no weapons.",
+      "runtime_acceptance": "not_run; requires current candidate Godot playback and independent Tester"
+    },
+    "assault": {
+      "provider": "Bailian/DashScope",
+      "tool": "video-sprite-pipeline bailian-i2v",
+      "model": "wan3.0-video",
+      "task_id": "37dcbea8-8e41-4ee1-a0d8-8e956d7ca031",
+      "create_request_id": "78da28f8-549f-9aaa-a8b3-7edf8c53c0a2",
+      "completion_request_id": "b35ad713-84b7-9ff3-8026-660e8018cab0",
+      "task_status": "SUCCEEDED",
+      "requested_duration_seconds": 8,
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "source_video": "canonical_source/assault_unarmed/source.mp4",
+      "source_keyframe": "opening_02.png",
+      "last_keyframe": "opening_02.png",
+      "prompt": "A single fixed camera shot. Keep the EXACT photographed composition, every human and costume and equipment exactly as shown in FIRST and LAST frame, no camera movement whatsoever. The hooded young civilian in background is UNARMED throughout every frame: absolutely NO bow, NO arrows, NO quiver, NO sword, NO sheath, NO dagger, NO weapons can appear anywhere on his hands, back, belt, shoulders or body. He stays at the same background position behind the barrels for the entire shot and only turns his head slightly toward the rift; his arms hang with empty hands. Do not move him closer to camera or make him a fighter. Foreground father in embroidered brown robe embraces daughter in ivory linen bonnet and grey dress; preserve their faces and silhouettes, they only breathe and flinch subtly. Violet rift over bridge pulses, existing distant monsters move slightly in place, smoke and flames drift and flicker, water ripples. Continuous actual subtle cast and environmental motion, not a still zoom. Exact stable faces and costumes, mature painted medieval realism. No cuts, no zoom, no new people, no new props, no text, UI, weapons, body morphing, rescue or victory.",
+      "conversion": "GStreamer decodebin -> videoconvert/videoscale/videorate -> I420 1280x720 30fps -> theoraenc quality=48 -> oggmux; no audio stream; no retiming or looping",
+      "reviewed_source_seconds": [
+        0.5,
+        2.5,
+        4,
+        6,
+        7.5
+      ],
+      "motion_review": "Oren protects bonneted grey-dressed Isha; green-hooded Aelor stays behind barrels with empty hands, no visible bow/quiver/sword; rift and distant cast/environment move.",
+      "runtime_acceptance": "not_run; requires current candidate Godot playback and independent Tester"
+    },
+    "abduction": {
+      "provider": "Bailian/DashScope",
+      "tool": "video-sprite-pipeline bailian-i2v",
+      "model": "wan3.0-video",
+      "task_id": "1432a391-cacf-464b-a4cf-a8b2af2331a4",
+      "create_request_id": "1e62c0dc-27b7-94f2-a1e3-d7f25258cfe4",
+      "completion_request_id": "748ab437-1539-983e-961a-4903b666a9c1",
+      "task_status": "SUCCEEDED",
+      "requested_duration_seconds": 10,
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "source_video": "canonical_source/abduction/source.mp4",
+      "source_keyframe": "opening_03.png",
+      "last_keyframe": null,
+      "prompt": "Locked cinematic camera, two-depth medieval bridge abduction. Preserve EXACTLY FOUR human captives and their faces and costumes in the bridge midground throughout: grey-haired short-bearded Oren in embroidered brown robe and bronze brooch looking back, middle-aged male farmer brown vest, young adult woman cream and grey dress, elderly man grey tunic. Four separate people alive unharmed, no additional captives or duplicated bodies. Existing armored fantasy creatures slowly escort these same four a small step toward the forest, keep all four visible and distinct. Safe foreground Isha kneels behind stone wall, auburn hair in ivory linen bonnet, grey dress with cream neckline and cuffs, brown lacing and belt; no braids or green cloak; she turns slightly after father. Background unarmed Aelor wears olive green ranger hood pulled up, green cowl and tunic, brown chest straps and bracers, hands empty, no sword bow arrows quiver or powers. Old unlit lantern remains on crate, not in inventory. Mist drifts and river ripples, warm firelight flickers, no rescue or reunion, no gore. Stable faces, anatomy and costume silhouettes. No text, UI, zoom or camera cuts.",
+      "conversion": "GStreamer decodebin -> videoconvert/videoscale/videorate -> I420 1280x720 30fps -> theoraenc quality=48 -> oggmux; no audio stream; no retiming or looping",
+      "reviewed_source_seconds": [
+        0.5,
+        4,
+        7.5,
+        9.5
+      ],
+      "motion_review": "Exactly four distinct living captives remain visible: Oren, farmer, young woman, elderly man; bonneted grey-dressed Isha kneels and green-hooded unarmed Aelor advances near end.",
+      "runtime_acceptance": "not_run; requires current candidate Godot playback and independent Tester"
+    },
+    "plea": {
+      "provider": "Bailian/DashScope",
+      "tool": "video-sprite-pipeline bailian-i2v",
+      "model": "wan3.0-video",
+      "task_id": "cfbade98-3751-4e64-89d2-558765c3edf3",
+      "create_request_id": "f0c70043-e17b-9f5b-93f8-fcc7423543b3",
+      "completion_request_id": "8ca0ab47-ce07-9982-9b3e-fd16dd20ce08",
+      "task_status": "SUCCEEDED",
+      "requested_duration_seconds": 10,
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "source_video": "canonical_source/plea_full/source.mp4",
+      "source_keyframe": "opening_04.png",
+      "last_keyframe": null,
+      "prompt": "Locked cinematic camera in a damaged medieval river village, keep exact faces and costumes. The unarmed young man has a dark olive green ranger hood and layered green tunic, brown leather straps, empty hands and no weapons. The young woman has auburn brown hair under ivory linen bonnet, plain grey dress and cream cuffs; she urgently lowers her pointing hand slightly and speaks to him, he listens and nods once. Preserve both faces and costume silhouettes throughout. Mist drifts, warm lantern flames flicker and water ripples. Oren and the three captives have already been abducted and must not appear; no new people. Mature painted realism, restrained natural face and hand movement, stable proportions. No camera zoom, no text, no UI, no morphing, no new equipment, no rescue or reunion.",
+      "conversion": "GStreamer decodebin -> videoconvert/videoscale/videorate -> I420 1280x720 30fps -> theoraenc quality=48 -> oggmux; no audio stream; no retiming or looping",
+      "reviewed_source_seconds": [
+        0.5,
+        5,
+        9.5
+      ],
+      "motion_review": "Green-hooded unarmed Aelor listens and nods; bonneted grey-dressed Isha lowers pointing hand and speaks; Oren and all three abductees absent.",
+      "runtime_acceptance": "not_run; requires current candidate Godot playback and independent Tester"
+    }
+  },
+  "historical_shots": {
     "prologue": {
       "provider": "Bailian/DashScope",
       "model": "wan3.0-video",
@@ -89,5 +195,25 @@
       "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
       "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
     }
-  }
+  },
+  "canonical_prototype": {
+    "task_id": "30301600-862b-43d3-a6e7-4e3a96dcdbfb",
+    "duration_seconds": 5,
+    "source_video": "canonical_source/plea/source.mp4",
+    "reviewed_source_seconds": [
+      0.5,
+      2.5,
+      4.5
+    ],
+    "result": "Stable canonical hood/bonnet identities and actual arm/head movement; used to qualify treatment before full shots."
+  },
+  "rejected_canonical_submissions": [
+    {
+      "task_id": "cfcf1cd2-428b-42f0-a1f1-31a282f6084b",
+      "duration_seconds": 8,
+      "source_video": "canonical_source/assault/source.mp4",
+      "result": "rejected_not_bound",
+      "reason": "Bow/quiver appeared on Aelor at separated middle/end frames despite unarmed prompt. Regenerated once with fixed first/last canonical keyframe; selected task 37dcbea8-8e41-4ee1-a0d8-8e956d7ca031 reviewed without equipment."
+    }
+  ]
 }

@@ -8,3 +8,13 @@ Reward cue: retained Kenney Interface Sounds, CC0 1.0; existing dialogue license
 Hers: retained Quaternius Ranger + complete base head + UAL1/UAL2, CC0.
 Practice bale: retained EmacEArt prefab, see Documentation/LICENSE.txt.
 No new rights claim for unchanged retained baseline files.
+
+Resolved-contact cues: Kenney Impact Sounds (1.0), Kenney (www.kenney.nl),
+CC0 1.0, https://kenney.nl/assets/impact-sounds
+https://creativecommons.org/publicdomain/zero/1.0/
+block_contact.ogg: Audio/impactMetal_medium_001.ogg (unchanged source).
+parry_contact.ogg: Audio/impactMetal_light_003.ogg (unchanged source).
+hurt_contact.ogg: Audio/impactSoft_medium_002.ogg (unchanged source).
+lethal_contact.ogg: Audio/impactSoft_heavy_001.ogg (unchanged source).
+The source license permits personal, educational and commercial use.
+Runtime volume/pitch and short bounded particles adapt presentation only.

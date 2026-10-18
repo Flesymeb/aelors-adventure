@@ -236,7 +236,8 @@ func _ready() -> void:
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var column := create_page(self, "开场暂停" if cinematic else ("暂停" if pause_world else "艾洛的冒险"), pause_world != null or cinematic != null, source_column, source_heading)
+	var cinematic_heading := "抵达暂停" if cinematic and cinematic.revealing else "开场暂停"
+	var column := create_page(self, cinematic_heading if cinematic else ("暂停" if pause_world else "艾洛的冒险"), pause_world != null or cinematic != null, source_column, source_heading)
 	menu_buttons_box_container = column
 	var subtitle := source_subtitle
 	subtitle.reparent(get_meta("header_column") as VBoxContainer)
@@ -272,7 +273,7 @@ func _ready() -> void:
 	reflow(self)
 func refresh() -> void:
 	if cinematic:
-		status_label.text = "河谷遇袭 · %d / 4\n演出已暂停 · 尚未替换冒险进度" % (cinematic.beat + 1)
+		status_label.text = "河谷村庄 · 已安全抵达\n画面交还已暂停" if cinematic.revealing else "河谷遇袭 · %d / 4\n演出已暂停 · 尚未替换冒险进度" % (cinematic.beat + 1)
 		return
 	if pause_world:
 		var chapter := "第三章 · 裂隙墓殿" if state.current_map == state.MAP03 else "第二章 · 林缘草甸" if state.current_map == state.MAP02 else "第一章 · 河谷聚落"
@@ -337,10 +338,11 @@ func _build_cinematic(column: BoxContainer, resume: Button, settings: Button, un
 	for item in [resume, settings, unused, quit_button]:
 		for connection in item.pressed.get_connections(): item.pressed.disconnect(connection.callable)
 	unused.queue_free()
-	actions.append(button(column, "继续开场", cinematic.close_pause, 1, resume))
+	actions.append(button(column, "继续冒险" if cinematic.revealing else "继续开场", cinematic.close_pause, 1, resume))
 	actions.append(button(column, "设置", func(): _open_sub_menu(preload("res://ui/title_settings.tscn")), 3, settings))
-	actions.append(button(column, "跳过开场", cinematic.finish))
-	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", "开场恢复边界已保留。下次可选择继续重播或跳过，原有存档仍可加载。", router.return_to_title)))
+	if not cinematic.revealing: actions.append(button(column, "跳过开场", cinematic.finish))
+	var return_message := "安全落脚点已保存，下次可继续冒险。" if cinematic.revealing else "开场恢复边界已保留。下次可选择继续重播或跳过，原有存档仍可加载。"
+	actions.append(button(column, "返回标题", func(): show_confirmation("返回标题？", return_message, router.return_to_title)))
 	actions.append(button(column, "退出", try_exit_game, 4, quit_button))
 	for index in actions.size(): column.move_child(actions[index], index)
 	status_label = paragraph(column, "")

@@ -12,7 +12,8 @@
       "video": "prologue.ogv",
       "motion_duration_seconds": 10,
       "video_audio": "muted; retained score and ambience own audio",
-      "fallback_image": "opening_01.png"
+      "fallback_image": "opening_01.png",
+      "cast_identity_reference": "res://assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png"
     },
     {
       "image": "opening_02.png",
@@ -22,7 +23,8 @@
       "video": "assault.ogv",
       "motion_duration_seconds": 8,
       "fallback_image": "opening_02.png",
-      "video_audio": "muted; retained score and ambience own audio"
+      "video_audio": "muted; retained score and ambience own audio",
+      "cast_identity_reference": "res://assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png"
     },
     {
       "image": "opening_03.png",
@@ -32,7 +34,8 @@
       "video": "abduction.ogv",
       "motion_duration_seconds": 10,
       "fallback_image": "opening_03.png",
-      "video_audio": "muted; retained score and ambience own audio"
+      "video_audio": "muted; retained score and ambience own audio",
+      "cast_identity_reference": "res://assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png"
     },
     {
       "image": "opening_04.png",
@@ -42,7 +45,8 @@
       "video": "plea.ogv",
       "motion_duration_seconds": 10,
       "fallback_image": "opening_04.png",
-      "video_audio": "muted; retained score and ambience own audio"
+      "video_audio": "muted; retained score and ambience own audio",
+      "cast_identity_reference": "res://assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png"
     }
   ],
   "runtime_direction": {
@@ -55,5 +59,7 @@
     "safety": "暂停菜单暂停演出时间与动效；退出恢复有效开场边界；旧存档不被清空；字幕100/150/200%缩放可读",
     "prologue_motion": "Each beat plays its own story-length Theora clip once. No loop or time-stretched still. Missing media and Reduced Motion retain the existing keyframe and captions."
   },
-  "continuity_review": "已检查：四名被掳者数量；开场艾洛无武器；伊莎/奥伦身份；求援画面中已移除被掳的奥伦；未把结局或营救提前画入开场。图像生成不是当前候选的实现或验收。"
+  "continuity_review": "Source stills and separated decoded source motion reviewed: green-hooded unarmed Aelor and linen-bonnet/grey-dressed Isha match bound canonical portrait identity; Oren and same three distinct captives remain four living humans in abduction and absent from plea. Rejected first assault generation introduced equipment; selected replacement reviewed without it. Four story durations remain 10/8/10/10 seconds. Godot decoder/lifecycle, caption scaling, audio and independent natural/skip acceptance remain pending.",
+  "family": "opening_story",
+  "maximum_normal_viewing_share": 0.2631578947368421
 }

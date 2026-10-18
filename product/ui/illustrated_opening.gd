@@ -1,6 +1,11 @@
 extends Control
 ## Presentation clock only. AdventureState/router own the single durable commit.
 signal completed
+signal world_revealed
+const WORLD_REVEAL_SECONDS := 0.35
+var revealing := false
+var reveal_elapsed := 0.0
+var reveal_veil: ColorRect
 var router: Node
 var state: Node
 var slides: Array = []
@@ -134,6 +139,9 @@ func _show_beat() -> void:
 		cue.stop()
 
 func _process(delta: float) -> void:
+	if revealing:
+		_process_world_reveal(delta)
+		return
 	if finished: return
 	_layout()
 	if pause_menu or get_tree().paused:
@@ -168,6 +176,11 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _layout() -> void:
+	if revealing:
+		toolbar.hide()
+		caption_panel.hide()
+		hint.hide()
+		return
 	var view := get_viewport_rect().size
 	var text_size: float = state.text_scale
 	# Cover the canvas without distorting the authored 16:9 shot.
@@ -191,7 +204,7 @@ func _layout() -> void:
 func _draw() -> void:
 	# Native canvas drawing avoids shader TIME, which is not the story clock.
 	# Marks stay at the margins; faces and subtitles are deliberately clear.
-	if state == null or state.graphics_quality == "low": return
+	if revealing or state == null or state.graphics_quality == "low": return
 	for edge in 16:
 		var opacity := 0.008 * float(16 - edge)
 		draw_rect(Rect2(edge * 2, 0, 2, size.y), Color(0.12, 0.08, 0.04, opacity))
@@ -205,17 +218,17 @@ func _draw() -> void:
 		draw_circle(pos, 1.1, Color(0.82, 0.5 if beat in [1, 2] else 0.72, 0.32, 0.18))
 
 func _unhandled_input(event: InputEvent) -> void:
-	if finished or pause_menu or not inputs_armed: return
+	if (finished and not revealing) or pause_menu or not inputs_armed: return
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		open_pause()
 		get_viewport().set_input_as_handled()
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and is_node_ready() and not finished:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and is_node_ready() and (not finished or revealing):
 		open_pause()
 
 func open_pause() -> void:
-	if pause_menu or finished: return
+	if pause_menu or (finished and not revealing): return
 	skip_hold = 0
 	pause_menu = preload("res://ui/menu_foundation/main_menu.tscn").instantiate()
 	pause_menu.router = router
@@ -233,7 +246,40 @@ func close_pause() -> void:
 	pause_menu = null
 	inputs_armed = false
 	skip_hold = 0
-	get_tree().paused = false
+	get_tree().paused = revealing
+
+func begin_world_reveal() -> void:
+	# Called only after the router's existing grounded/save boundary succeeded.
+	# Stop every story stream and reuse its canvas and pause UI over the real world.
+	shutdown()
+	for child in get_children():
+		if child is Control: child.hide()
+	revealing = true
+	reveal_elapsed = 0.0
+	inputs_armed = false
+	reveal_veil = ColorRect.new()
+	reveal_veil.name = "ReadyWorldVeil"
+	reveal_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	reveal_veil.color = Color(0.035, 0.04, 0.035, 1)
+	reveal_veil.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(reveal_veil)
+	show()
+	queue_redraw()
+	# Reduced Motion has no animated wait, but keeps the same fresh-input gate.
+	if state.reduced_motion: _process_world_reveal(0.0)
+
+func _process_world_reveal(delta: float) -> void:
+	if not revealing or pause_menu: return
+	if not inputs_armed:
+		if router._confirmation_held(): return
+		inputs_armed = true
+	reveal_elapsed = WORLD_REVEAL_SECONDS if state.reduced_motion else minf(WORLD_REVEAL_SECONDS, reveal_elapsed + delta)
+	var fraction := reveal_elapsed / WORLD_REVEAL_SECONDS
+	reveal_veil.color.a = 1.0 - smoothstep(0.0, 1.0, fraction)
+	if reveal_elapsed < WORLD_REVEAL_SECONDS or router._confirmation_held(): return
+	revealing = false
+	hide()
+	world_revealed.emit()
 
 func finish() -> void:
 	if finished or not inputs_armed: return
@@ -321,6 +367,11 @@ func _set_presentation_paused(value: bool) -> void:
 func shutdown() -> void:
 	# Called synchronously by the router before deferred deletion on every exit.
 	finished = true
+	revealing = false
+	if is_instance_valid(pause_menu):
+		pause_menu.hide()
+		pause_menu.queue_free()
+		pause_menu = null
 	_stop_video()
 	for player in [music, ambience, cue]:
 		if is_instance_valid(player): player.stop()

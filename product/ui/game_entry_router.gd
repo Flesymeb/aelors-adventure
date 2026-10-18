@@ -108,8 +108,8 @@ func _opening_finished() -> void:
 	if route != "opening": return
 	opening.shutdown()
 	opening.hide()
-	opening.queue_free()
-	opening = null
+	# Retain the same canvas/pause owner, hidden behind real loading feedback.
+	# No movie frame is stretched over world initialization.
 	_start_loading()
 
 func _start_loading() -> void:
@@ -208,14 +208,33 @@ func _process(delta: float) -> void:
 		initialized = true
 		world.restore_destination_history()
 		if entry_kind == "new": world.gameplay_hud.notify("河谷村庄灯台已启用")
-		world._set_pause_owner("entry", false)
-		get_tree().paused = not world.pause_owners.is_empty()
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED
-		loading.queue_free()
-		loading = null
-		title.queue_free()
-		title = null
-		route = "game_over" if state.lives == 0 else "world"
+		if replaying_opening and is_instance_valid(opening):
+			route = "entry_reveal"
+			loading.hide()
+			get_tree().paused = true
+			opening.world_revealed.connect(_world_revealed, CONNECT_ONE_SHOT)
+			opening.begin_world_reveal()
+		else:
+			_release_entry_controls()
+
+func _world_revealed() -> void:
+	if route != "entry_reveal": return
+	_release_entry_controls()
+
+func _release_entry_controls() -> void:
+	# The original entry owner blocks held controls and restores nested dialogue
+	# pause/camera state. Neither reveal completion nor Continue grants facts.
+	if is_instance_valid(opening):
+		opening.shutdown()
+		opening.hide()
+		opening.queue_free()
+		opening = null
+	world._set_pause_owner("entry", false)
+	get_tree().paused = not world.pause_owners.is_empty()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED
+	if loading: loading.queue_free(); loading = null
+	if title: title.queue_free(); title = null
+	route = "game_over" if state.lives == 0 else "world"
 
 func _confirmation_held() -> bool:
 	return Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER) or Input.is_key_pressed(KEY_SPACE) or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_joy_button_pressed(0, JOY_BUTTON_A)

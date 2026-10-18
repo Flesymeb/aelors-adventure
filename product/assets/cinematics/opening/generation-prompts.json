@@ -12,6 +12,37 @@
   "images": [
     {
       "scene": 1,
+      "source": "exec-de565a57-e9da-4077-9a6f-8a545cd99f52.png",
+      "destination": "opening_01.png",
+      "tool": "image_gen.imagegen",
+      "operation": "edit existing opening composition using bound canonical portrait as face/headwear/costume reference"
+    },
+    {
+      "scene": 2,
+      "source": "exec-4c65ed37-4005-4291-8700-a911769a3319.png",
+      "destination": "opening_02.png",
+      "tool": "image_gen.imagegen",
+      "operation": "edit existing opening composition using bound canonical portrait as face/headwear/costume reference"
+    },
+    {
+      "scene": 3,
+      "source": "exec-d0ad59cd-ccc9-4fc5-825b-18f6011d17c3.png",
+      "destination": "opening_03.png",
+      "tool": "image_gen.imagegen",
+      "operation": "edit existing opening composition using bound canonical portrait as face/headwear/costume reference"
+    },
+    {
+      "scene": 4,
+      "source": "exec-7288d421-bc22-4691-8f5f-8f5218779b5c.png",
+      "destination": "opening_04.png",
+      "tool": "image_gen.imagegen",
+      "operation": "edit existing opening composition using bound canonical portrait as face/headwear/costume reference"
+    }
+  ],
+  "rights_note": "AI-generated for this user project; provider service terms apply; not declared CC0 or MIT.",
+  "prior_images": [
+    {
+      "scene": 1,
       "source": "exec-4dca2fed-c014-4c94-b91f-f870601432ad.png",
       "destination": "opening_01.png"
     },
@@ -31,5 +62,24 @@
       "destination": "opening_04.png"
     }
   ],
-  "rights_note": "AI-generated for this user project; provider service terms apply; not declared CC0 or MIT."
+  "canonical_identity_revision": {
+    "reference": "res://assets/dialogue/portrait_source/v3/aelor-isha-halfbody-v3.png",
+    "live_bindings": [
+      "res://Player.tscn",
+      "res://player_controller.gd",
+      "res://ranger_head_assembly.gd",
+      "res://Isha.tscn",
+      "res://isha_npc.gd",
+      "res://assets/dialogue/aelor_portrait.tres",
+      "res://assets/dialogue/isha_portrait.tres"
+    ],
+    "selection": "Adapt the existing four painted compositions; retain qualified live rigs, complete Ranger head, weapon mounts and dialogue bindings.",
+    "aelor": "Recognizable young face, medium brown tousled hair, dark olive green ranger hood pulled up, green cowl and layered green tunic/cloak, brown cross chest straps and bracers; no cream scarf or brown overcoat; empty hands and no weapons throughout.",
+    "isha": "Recognizable young face, auburn-brown hair under ivory linen bonnet tied behind head, grey long dress with square cream gathered neckline and cuffs, brown front lacing and belt; no braids or green cloak.",
+    "oren_and_captives": "Retain grey-haired short-bearded Oren in embroidered brown robe and round bronze brooch, plus the same farmer in brown vest, young woman in cream and grey and elderly man in grey tunic; exactly four captives alive in abduction.",
+    "plea": "Oren and three captives remain absent; remove ambiguous grey-haired helper and injured background survivor and replace them naturally with abandoned crates and timber; retain far-right hunter and old lantern on crate.",
+    "composition": "Four distinct opaque full-bleed 16:9 compositions, mature painted realism, cold mist and warm lamps, dark quiet lower caption area; no baked text, UI or watermarks.",
+    "source_review": "Each generated still visually inspected against the bound canonical portrait. This source review does not establish Godot import, decoder, lifecycle or independent acceptance.",
+    "rights": "Image edits were generated with the provided image_gen.imagegen tool for this project. Existing illustration and portrait are project-provided generation sources. Provider service terms apply; no CC0 or MIT claim."
+  }
 }

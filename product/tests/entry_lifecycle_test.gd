@@ -1,4 +1,56 @@
 extends RefCounted
+
+class RevealRouter extends Node:
+	var held := false
+	var audio: Node
+	func _confirmation_held() -> bool: return held
+
+static func ready_world_reveal_checks(holder: Node) -> Dictionary:
+	# Isolated native canvas clock; never constructs a world or writes a save.
+	# Router readiness/commit ordering is also exercised by ordinary entry smoke.
+	var owner := RevealRouter.new()
+	holder.add_child(owner)
+	var opening := preload("res://tests/opening_motion_test.gd").QuietOpening.new()
+	opening.router = owner
+	var preferences := preload("res://tests/opening_motion_test.gd").Preferences.new()
+	opening.state = preferences
+	opening.add_child(preferences)
+	holder.add_child(opening)
+	var emissions := [0]
+	opening.world_revealed.connect(func(): emissions[0] += 1)
+	var checks := {}
+	owner.held = true
+	opening.begin_world_reveal()
+	opening._process_world_reveal(1.0)
+	checks.held_skip_cannot_start_reveal = opening.revealing and opening.reveal_elapsed == 0 and emissions[0] == 0
+	owner.held = false
+	opening._process_world_reveal(0.12)
+	checks.actual_canvas_fades = opening.reveal_veil.color.a > 0 and opening.reveal_veil.color.a < 1 and emissions[0] == 0
+	var before: float = opening.reveal_elapsed
+	opening.pause_menu = Control.new()
+	opening.add_child(opening.pause_menu)
+	opening._process_world_reveal(2.0)
+	checks.pause_suspends_reveal = opening.reveal_elapsed == before and emissions[0] == 0
+	opening.pause_menu.free()
+	opening.pause_menu = null
+	owner.held = true
+	opening._process_world_reveal(1.0)
+	checks.held_attack_cannot_release_controls = opening.revealing and emissions[0] == 0
+	owner.held = false
+	opening._process_world_reveal(0.0)
+	opening._process_world_reveal(1.0)
+	checks.once_only_release = not opening.revealing and not opening.visible and emissions[0] == 1
+	preferences.reduced_motion = true
+	opening.pause_menu = Control.new()
+	opening.add_child(opening.pause_menu)
+	opening.begin_world_reveal()
+	checks.skip_from_pause_releases_old_menu = opening.pause_menu == null
+	checks.reduced_motion_immediate = emissions[0] == 2 and not opening.revealing and not opening.visible
+	opening.shutdown()
+	checks.shutdown_idempotent = not opening.revealing and opening.finished and emissions[0] == 2
+	opening.free()
+	owner.free()
+	return {"checks": checks, "scope": "isolated actual canvas/pause/fresh-input clock; no earned history or ordinary entry acceptance"}
 ## Explicit diagnostic only; never attached to the normal entry path.
 class CameraReadinessPlayer extends "res://player_controller.gd":
 	# Exercise the real restore helper without actor loading, controls files,
