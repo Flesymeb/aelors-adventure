@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 79 |
+| Open | 80 |
 | Closed | 45 |
-| All | 124 |
+| All | 125 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 62 |
+| Active | 63 |
 | Verified closed | 33 |
 | Policy invalidated | 8 |
 | Waived | 0 |
-| All in this run | 103 |
+| All in this run | 104 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -75,7 +75,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `practice_target_foreground_marker_overlap` | [#53](https://github.com/Flesymeb/aelors-adventure/issues/53) | OPEN | Original practice-marker repair remains insufficiently qualified. |
 | `vitals_pending_content_unobserved` | [#52](https://github.com/Flesymeb/aelors-adventure/issues/52) | OPEN | untitled issue |
 | `full_r01_acceptance_unassessed` | [#54](https://github.com/Flesymeb/aelors-adventure/issues/54) | OPEN | Early village reachability does not establish all-map route acceptance. |
-| `continued_dialogue_camera_inside_player` | [#55](https://github.com/Flesymeb/aelors-adventure/issues/55) | CLOSED | Independently verified resolved at loop 71. |
+| `continued_dialogue_camera_inside_player` | [#55](https://github.com/Flesymeb/aelors-adventure/issues/55) | REGRESSED | Close-range Hers dialogue lets the shipped camera intersect Aelor's torso. |
 | `fps.runtime.candidate-error-0d66533e4786` | [#56](https://github.com/Flesymeb/aelors-adventure/issues/56) | CLOSED | Independently verified resolved at loop 20. |
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
@@ -97,7 +97,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.lightning-ranged-hurt-callback` | [#74](https://github.com/Flesymeb/aelors-adventure/issues/74) | OPEN | Earned E02/E04 combat remains unqualified despite current CH01 lightning observations. |
 | `qa.e02-victory-unobserved` | [#73](https://github.com/Flesymeb/aelors-adventure/issues/73) | OPEN | Migrated E02 victory and full cover/recovery acceptance remain unobserved. |
 | `qa.full-closeout-incomplete` | [#75](https://github.com/Flesymeb/aelors-adventure/issues/75) | OPEN | untitled issue |
-| `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | Earned assembly and complete cinematic recovery equivalence remain unobserved. |
+| `qa.later-rescue-route-continuity` | [#76](https://github.com/Flesymeb/aelors-adventure/issues/76) | OPEN | Earned defeat and rescue cinematic equivalence remain unobserved. |
 | `qa.mf01-earned-path-unverified` | [#77](https://github.com/Flesymeb/aelors-adventure/issues/77) | BLOCKED | MF01 earning, committed Continue and its information/scale matrix remain unverified. |
 | `qa.e02-lightning-evidence-gap` | [#78](https://github.com/Flesymeb/aelors-adventure/issues/78) | OPEN | Exact E02 lightning acceptance and live E03 binding qualification remain missing despite supported local attribution and resource loads. |
 | `qa.full-milestone-evidence-gap` | [#79](https://github.com/Flesymeb/aelors-adventure/issues/79) | OPEN | The bounded independent review does not establish full milestone acceptance or close the existing full-closeout gaps. |
@@ -107,7 +107,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | Training-label obstruction and final cue recovery remain unqualified. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | OPEN | untitled issue |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | OPEN | untitled issue |
-| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | Earned Boss entry and live Warden/Veyne observations remain unavailable. |
+| `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | OPEN | The admitted Boss Continue history does not contain earned tomb entry. |
 | `qa.case-finalization-unavailable` | [#89](https://github.com/Flesymeb/aelors-adventure/issues/89) | CLOSED | Independently verified resolved at loop 53. |
 | `warden-acceptance-unverified` | [#87](https://github.com/Flesymeb/aelors-adventure/issues/87) | OPEN | untitled issue |
 | `qa.aerial-validation-gap` | [#88](https://github.com/Flesymeb/aelors-adventure/issues/88) | OPEN | untitled issue |
@@ -137,15 +137,16 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `village-performance-target-missed` | [#113](https://github.com/Flesymeb/aelors-adventure/issues/113) | OPEN | Sustained three-scene performance remains unmeasured. |
 | `runtime-source-attribution-gap` | [#114](https://github.com/Flesymeb/aelors-adventure/issues/114) | OPEN | Final runtime-log probes did not provide current-run branch attribution. |
 | `formal-collection-deadline-exhausted` | [#115](https://github.com/Flesymeb/aelors-adventure/issues/115) | CLOSED | Independently verified resolved at loop 71. |
-| `r05-current-combat-observation-gap` | [#116](https://github.com/Flesymeb/aelors-adventure/issues/116) | OPEN | Positive coached counterplay is observed; the full R05 negative and recovery matrix remains incomplete. |
+| `r05-current-combat-observation-gap` | [#116](https://github.com/Flesymeb/aelors-adventure/issues/116) | OPEN | Sword geometry repair is verified locally; complete R05 presentation and recovery acceptance remains incomplete. |
 | `r15-current-restoration-observation-gap` | [#118](https://github.com/Flesymeb/aelors-adventure/issues/118) | OPEN | HUD event/history and presentation verification remains incomplete after the original persistent-text symptom was independently cleared. |
 | `r12-current-rescue-observation-gap` | [#117](https://github.com/Flesymeb/aelors-adventure/issues/117) | OPEN | untitled issue |
 | `restoration-history-qualification-limits` | [#119](https://github.com/Flesymeb/aelors-adventure/issues/119) | OPEN | Required positive-Continue restoration lacked qualified history. |
 | `r15-bounded-recapture-request` | [#120](https://github.com/Flesymeb/aelors-adventure/issues/120) | OPEN | RECAPTURE_REQUEST: GAME_JOURNEY:r15-first-sword-acquisition-nested-pause-lifecycle |
 | `adjacent-settings-continuity-unassessed` | [#121](https://github.com/Flesymeb/aelors-adventure/issues/121) | CLOSED | Independently verified resolved at loop 75. |
-| `r05-sword-mesh-uv-degeneracy` | [#122](https://github.com/Flesymeb/aelors-adventure/issues/122) | OPEN | Native validation reproduced zero-area UV triangles on the visible sword. |
-| `adjacent-settings-observation` | [#123](https://github.com/Flesymeb/aelors-adventure/issues/123) | OPEN | The bounded adjacent settings check found no demonstrated layout defect. |
-| `title-current-matrix-unverified` | [#124](https://github.com/Flesymeb/aelors-adventure/issues/124) | OPEN | The observed title and entry flow do not complete the frozen title acceptance matrix. |
+| `r05-sword-mesh-uv-degeneracy` | [#122](https://github.com/Flesymeb/aelors-adventure/issues/122) | CLOSED | Independently verified resolved at loop 80. |
+| `adjacent-settings-observation` | [#123](https://github.com/Flesymeb/aelors-adventure/issues/123) | OPEN | untitled issue |
+| `title-current-matrix-unverified` | [#124](https://github.com/Flesymeb/aelors-adventure/issues/124) | OPEN | untitled issue |
+| `village-building-uv-degeneracy` | [#125](https://github.com/Flesymeb/aelors-adventure/issues/125) | OPEN | Native validation still reproduces degenerate UV triangles on retained village buildings. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -153,7 +154,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 79 | 45 | 124 |
+| GitHub HoH namespace | 80 | 45 | 125 |
 | Outside this run's table | 17 | 4 | 21 |
 
 Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
@@ -190,7 +191,7 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-80-a0dfeb4f3c55` | `development_snapshot:attempt-e812ffdd5f51bb5886096943` | NEEDS VISUAL QA |
+| `loop-80-a0dfeb4f3c55` | `development_snapshot:attempt-e812ffdd5f51bb5886096943` | BLOCKED |
 
 ### Project Planner
 
@@ -217,7 +218,22 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-80-a0dfeb4f3c55` |
+| Product completion | BLOCKED |
+| Review scope | `product` |
+| Findings | 6 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `continued_dialogue_camera_inside_player` | MINOR | unlabelled | unlabelled | Close-range Hers dialogue lets the shipped camera intersect Aelor's torso. |
+| `village-building-uv-degeneracy` | MINOR | unlabelled | unlabelled | Native validation still reproduces degenerate UV triangles on retained village buildings. |
+| `r05-current-combat-observation-gap` | MAJOR | unlabelled | unlabelled | Sword geometry repair is verified locally; complete R05 presentation and recovery acceptance remains incomplete. |
+| `tomb_entry_acceptance_unverified` | MAJOR | unlabelled | unlabelled | The admitted Boss Continue history does not contain earned tomb entry. |
+| `qa.later-rescue-route-continuity` | MAJOR | unlabelled | unlabelled | Earned defeat and rescue cinematic equivalence remain unobserved. |
+| `r15-bounded-recapture-request` | NOTE | unlabelled | unlabelled | RECAPTURE_REQUEST: GAME_JOURNEY:r15-first-sword-acquisition-nested-pause-lifecycle |
 
 ---
 
@@ -4381,5 +4397,5 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 - Latest attempted: `loop-80-a0dfeb4f3c55`
 - Latest warm start: `loop-80-3b2cea5119b0`
 - Last published: `loop-80-a0dfeb4f3c55`
-- Best verified: `loop-79-3b2cea5119b0`
+- Best verified: `loop-80-a0dfeb4f3c55`
 - Generated by the HoH host from immutable run evidence.
