@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "origin": "generated",
+  "image": {
+    "file": "reunion.png",
+    "tool": "image_gen.imagegen",
+    "generation_id": "01a14ed7-8cde-7460-a8ee-7ebc65c7d820",
+    "references": "Live village cast staging; retained opening_01 and farewell images for narrative identities and later clothing",
+    "review": "Four rescued men, Isha and Aelor; no baked text; distinct clothing, village reunion, hands/faces visually inspected"
+  },
+  "usage_terms": "Generated material remains subject to the applicable image/video provider service terms; no CC0 or MIT grant asserted.",
+  "preview": {
+    "provider": "Bailian/DashScope",
+    "model": "wan3.0-video",
+    "task_id": "d7be5b41-ce42-45ef-9023-fcbdb80d777d",
+    "task_status": "SUCCEEDED",
+    "resolution": "720P",
+    "asset_kind": "environment",
+    "chroma": "none",
+    "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+    "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+  },
+  "runtime_status": "Developer isolated production-router core closure and village arrival observed. Native movie decoding, natural return, 200-percent captions and separate skip cleanup observed. Prepared history establishes no earning; independent acceptance pending.",
+  "speech": "Host-configured Kokoro bm_george British English fallback, 10.125 seconds, PCM16 WAV; Chinese translated narrator captions. Mandarin model construction remains unavailable; listening and mix quality unverified. See ../story_narration.json.",
+  "acceptance_authority": false,
+  "final_motion": {
+    "model": "wan3.0-video",
+    "task_id": "2af1c735-b729-45cf-9ca9-4b0e7457133a",
+    "task_status": "SUCCEEDED",
+    "duration_seconds": 12,
+    "resolution": "720P",
+    "runtime_file": "homecoming.ogv",
+    "conversion": "GStreamer Theora 1280x720 30fps quality48; generated audio omitted",
+    "review": "Twelve separated samples reviewed: Oren/Isha embrace, quartet reactions, Aelor acknowledgment; no short loop, pan over still, text or premature rescue state"
+  }
+}

@@ -1,6 +1,9 @@
 extends "res://combat/snaiel/scripts/animations/character_animations.gd"
 ## Native Phons golem rig; no humanoid retargeting or Ranger socket assumptions.
 const CLIPS := {"Idle":"Idle", "Walk":"Walk", "Punch":"Attack1", "HitReact":"Defence3", "Wave":"Attack3", "Reveal":"IdlePieces", "Death":"IdlePieces"}
+var presentation_clip := ""
+var presentation_position := 0.0
+var prior_callback := AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 
 func configure(model: Node3D) -> void:
 	anim_player = model.find_child("AnimationPlayer",true,false)
@@ -22,7 +25,9 @@ func configure(model: Node3D) -> void:
 	# Private aliases leave the imported native library unchanged.
 	anim_player.add_animation_library("warden",library)
 	# The inherited durable defeated restore addresses the exact default key.
-	anim_player.get_animation_library("").add_animation("Death",library.get_animation("Death"))
+	var native_library: AnimationLibrary = anim_player.get_animation_library("")
+	if native_library.has_animation("Death"): native_library.remove_animation("Death")
+	native_library.add_animation("Death",library.get_animation("Death"))
 	anim_player.stop()
 	anim_tree = AnimationTree.new()
 	model.add_child(anim_tree)
@@ -79,6 +84,7 @@ static func reversed_clip(native: Animation) -> Animation:
 	return result
 
 func play(clip: String, speed: float = 1.0, restart := false) -> void:
+	if presentation_clip != "": end_presentation(false)
 	# Wave uses a native clip outside the five-state inherited blend tree.
 	if clip == "Wave":
 		anim_tree.active = false
@@ -93,3 +99,82 @@ func play(clip: String, speed: float = 1.0, restart := false) -> void:
 		anim_player.speed_scale = 1.0
 		anim_tree.active = true
 	super(clip,speed,restart)
+
+func begin_presentation(clip: String) -> void:
+	# The existing native player is the sole pose owner. Only this clip is
+	# sampled while encounter AI, contact and physics remain world-paused.
+	if presentation_clip != "": end_presentation(false)
+	prior_callback = anim_player.callback_mode_process
+	anim_tree.active = false
+	anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	anim_player.speed_scale = 1.0
+	presentation_clip = "warden/"+clip
+	presentation_position = 0.0
+	active_clip = clip
+	anim_player.play(presentation_clip)
+	anim_player.seek(0.0,true)
+	anim_player.pause()
+
+func advance_presentation(delta: float) -> void:
+	if presentation_clip == "": return
+	presentation_position = minf(presentation_position+delta,anim_player.get_animation(presentation_clip).length)
+	anim_player.seek(presentation_position,true)
+
+func end_presentation(hold_final: bool) -> void:
+	if presentation_clip == "": return
+	if hold_final:
+		presentation_position = anim_player.get_animation(presentation_clip).length
+		anim_player.seek(presentation_position,true)
+		anim_player.pause()
+	else: anim_player.stop()
+	anim_player.callback_mode_process = prior_callback
+	presentation_clip = ""
+	if not hold_final:
+		anim_tree.active = true
+		active_clip = ""
+		super.play("Idle",1.0,true)
+
+func presentation_bounds(model_root: Node3D) -> AABB:
+	# Include the scattered pieces and the assembled pose before choosing a
+	# camera. A capsule/rest-mesh box cannot describe this native assembly rig.
+	var clip: Animation = anim_player.get_animation(presentation_clip)
+	var bounds := AABB()
+	for fraction in [0.0,0.5,1.0]:
+		anim_player.seek(clip.length*fraction,true)
+		var posed := posed_world_bounds(model_root)
+		bounds = posed if fraction == 0.0 else bounds.merge(posed)
+	anim_player.seek(presentation_position,true)
+	return bounds
+
+func posed_world_bounds(model_root: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	skeleton.force_update_all_bone_transforms()
+	for mesh in model_root.find_children("*","MeshInstance3D",true,false):
+		if not mesh.skin or not mesh.mesh: continue
+		var transforms: Array[Transform3D] = []
+		for bind in mesh.skin.get_bind_count():
+			var bone: int = mesh.skin.get_bind_bone(bind)
+			if bone < 0: bone = skeleton.find_bone(mesh.skin.get_bind_name(bind))
+			transforms.append(skeleton.get_bone_global_pose(bone)*mesh.skin.get_bind_pose(bind))
+		for surface in mesh.mesh.get_surface_count():
+			var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+			var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+			var influences: int = weights.size()/vertices.size()
+			for vertex in vertices.size():
+				var point := Vector3.ZERO
+				for influence in influences:
+					var i := vertex*influences+influence
+					if weights[i] > 0: point += (transforms[bones[i]]*vertices[vertex])*weights[i]
+				point = skeleton.global_transform*point
+				box = AABB(point,Vector3.ZERO) if first else box.expand(point)
+				first = false
+	return box
+
+func _mcp_state() -> Dictionary:
+	var result := super()
+	result["presentation_clip"] = presentation_clip
+	result["presentation_position"] = presentation_position
+	return result

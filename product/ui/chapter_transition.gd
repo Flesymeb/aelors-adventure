@@ -39,6 +39,11 @@ var video_clock := 0.0
 var video_stall := 0.0
 var video_active := false
 var motion_resource_path := ""
+var arrival_camera: Camera3D
+var arrival_previous: Camera3D
+var tomb_arrival := false
+var arrival_warden_model: Node3D
+var arrival_warden_visible := true
 
 # Motion is optional until its source has been qualified. Missing media never
 # prevents legitimate travel or replaces the retained illustrated fallback.
@@ -85,6 +90,32 @@ func _start_arrival_video() -> void:
 	# Keep the illustration visible until the first decoded frame advances.
 	video.hide()
 	picture.show()
+
+func _start_story_video() -> void:
+	if skipped or returning or destination_map != state.MAP02 or state.reduced_motion or beat > 1: return
+	var file := str(slides[beat].get("video",""))
+	if file not in ["farewell.ogv","passage.ogv"] or not ResourceLoader.exists(ART+file): return
+	video.stream = load(ART+file)
+	if video.stream == null: return
+	video_active = true
+	video_finished = false
+	video_failed = false
+	video_clock = 0
+	video_stall = 0
+	video.volume = 0
+	video.play()
+	video.paused = paused
+	video.hide()
+
+func _update_story_video(delta: float) -> void:
+	if not video_active: return
+	var next := video.stream_position
+	video_stall = video_stall + delta if next <= video_clock+0.0001 else 0.0
+	video_clock = next
+	if next > 0.03: video.show()
+	if video_stall > 1.0 and not video_finished:
+		video_failed = true
+		_stop_video()
 
 func request_skip() -> void:
 	if not armed or paused: return
@@ -200,6 +231,7 @@ func _show_beat() -> void:
 		# Live retained actor/equipment remains visible through this chapter beat.
 		picture.hide()
 		world.get_viewport().disable_3d = false
+	if beat < 2: _start_story_video()
 	if beat == 1: cue.play()
 	if beat == 2: _start_arrival_video()
 
@@ -228,6 +260,7 @@ func _process(delta: float) -> void:
 		if not Input.is_key_pressed(KEY_SPACE) and not Input.is_key_pressed(KEY_ENTER) and not Input.is_key_pressed(KEY_E): armed = true
 		return
 	if finished or paused or phase != "story": return
+	_update_story_video(delta)
 	elapsed += delta
 	total_elapsed += delta
 	if Input.is_key_pressed(KEY_SPACE):
@@ -312,7 +345,18 @@ func reveal_arrival() -> void:
 	_show_beat()
 	veil.color.a = 1
 	await fade_to(0)
-	var duration := 0.0 if skipped else float(slides[2].duration_seconds)
+	tomb_arrival = destination_map == state.MAP03
+	if tomb_arrival and not skipped:
+		arrival_previous = get_viewport().get_camera_3d()
+		arrival_warden_model = world.warden_encounter.actor.model
+		arrival_warden_visible = arrival_warden_model.visible
+		arrival_camera = Camera3D.new()
+		world.add_child(arrival_camera)
+		arrival_camera.fov = 52
+		arrival_camera.current = true
+		world.get_viewport().disable_3d = false
+		picture.hide()
+	var duration := 0.0 if skipped else 10.0 if tomb_arrival else float(slides[2].duration_seconds)
 	while not skipped and (paused or (not video_finished and video_active) or elapsed < duration):
 		await get_tree().process_frame
 		if not is_inside_tree() or phase != "arrival": return
@@ -337,9 +381,11 @@ func reveal_arrival() -> void:
 				skip_hold += delta
 				if skip_hold >= 0.8: request_skip()
 			else: skip_hold = 0.0
+		if tomb_arrival: _frame_tomb_arrival()
 		picture.scale = Vector2.ONE if state.reduced_motion else Vector2.ONE * (1.02 + 0.02 * elapsed / maxf(duration, 0.1))
 	phase = "revealing"
 	await fade_to(1)
+	_release_arrival_camera()
 	_stop_video()
 	picture.hide()
 	plate.hide()
@@ -350,7 +396,38 @@ func reveal_arrival() -> void:
 	cue.stop()
 	completed.emit()
 
+func _frame_tomb_arrival() -> void:
+	if not is_instance_valid(arrival_camera): return
+	var center := Vector3.ZERO
+	var offset := Vector3(0,3.0,5.6)
+	if is_instance_valid(arrival_warden_model): arrival_warden_model.visible = arrival_warden_visible and elapsed >= 3.4
+	if elapsed < 3.4:
+		for actor in world.rescue_encounter.captives.values():
+			center += actor.global_position
+			actor.presentation.animation_player.advance(get_process_delta_time())
+		center /= 4.0
+		captions.text = "第三章 · 裂隙墓殿\n四位村民仍被拘束在右院。旧灯与解除器能带他们离开。"
+	elif elapsed < 6.8:
+		center = world.warden_encounter.actor.global_position
+		offset = Vector3(-2.5,3.2,5.0)
+		captions.text = "锁印看守守住右院。先解除入口的两条供能，再选择战斗路线。"
+	else:
+		center = world.veyne_encounter.device.global_position
+		offset = Vector3(3,4,6)
+		captions.text = "左阶通往维恩与召唤祭坛。两场战斗和四人集合后，才能用旧灯关闭核心。"
+	arrival_camera.global_position = center+offset
+	arrival_camera.look_at(center+Vector3.UP)
+
+func _release_arrival_camera() -> void:
+	if is_instance_valid(arrival_warden_model): arrival_warden_model.visible = arrival_warden_visible
+	arrival_warden_model = null
+	if is_instance_valid(arrival_camera):
+		arrival_camera.current = false
+		arrival_camera.queue_free()
+	if is_instance_valid(arrival_previous): arrival_previous.current = true
+
 func _release_world() -> void:
+	_release_arrival_camera()
 	_stop_video()
 	if released or not is_instance_valid(world) or world.is_queued_for_deletion(): return
 	released = true

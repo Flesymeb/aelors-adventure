@@ -27,6 +27,8 @@ var source_ui_visibility: Array[Dictionary] = []
 var source_collision_state: Array[Dictionary] = []
 var recovery_id := ""
 var replaying_opening := false
+var homeward := false
+var homecoming: CanvasLayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -322,13 +324,17 @@ func restore_map(slot: int) -> void:
 	await return_to_title()
 	enter_adventure("load", slot)
 
+func travel_home() -> bool:
+	if route != "world" or state.current_map != state.MAP03 or not state.core_closed or not state.rescue_assembled or not state.warden_defeated or not state.veyne_defeated: return false
+	return travel_to(state.GROUND.MAP_ID)
+
 func travel_to(map_id: String) -> bool:
 	if route != "world" or map_id == state.current_map or map_id not in [state.GROUND.MAP_ID, state.MAP02, state.MAP03]: return false
 	if not state.departure_available() or not state.departure_confirmed or state.conversation_active or state.lives <= 0: return false
 	if map_id == state.MAP03 and (state.current_map != state.MAP02 or not state.tomb_missing_conditions().is_empty()):
 		world.training.tell("墓殿通道尚未开放 · " + "、".join(state.tomb_missing_conditions()), 6)
 		return false
-	if state.current_map == state.MAP03 and map_id != state.MAP02: return false
+	if state.current_map == state.MAP03 and map_id != state.MAP02 and not (map_id == state.GROUND.MAP_ID and state.core_closed and state.rescue_assembled and state.warden_defeated and state.veyne_defeated): return false
 	if not world.travel_safe(): return false
 	if not preload("res://ui/chapter_transition.gd").available():
 		world.training.tell("通道暂时无法开启 · 请在村庄整顿后重试", 5)
@@ -343,6 +349,7 @@ func travel_to(map_id: String) -> bool:
 	travel_history = state.adventure_snapshot()
 	source_world = world
 	destination_map = map_id
+	homeward = state.current_map == state.MAP03 and map_id == state.GROUND.MAP_ID and state.core_closed and not state.homecoming_completed
 	transition = preload("res://ui/ChapterTransition.tscn").instantiate()
 	transition.world = source_world
 	transition.shorter = state.cp02_claimed
@@ -398,16 +405,38 @@ func _poll_travel() -> void:
 	get_tree().paused = false
 
 func _finish_travel() -> void:
+	if homeward:
+		if not is_instance_valid(world.homecoming_residents): world.homecoming_residents = preload("res://ui/homecoming_scene.gd").populate_village(world)
+		get_tree().paused = false
+		while route == "travel_initializing" and not world.homecoming_residents.grounded:
+			await get_tree().process_frame
+		if route != "travel_initializing": return
 	if not state.commit_arrival(destination_map):
 		_travel_failed("目的地尚未开放，已返回上一处落脚点。")
 		return
 	state.conversation_active = false
+	if homeward and not state.commit_homecoming():
+		_travel_failed("返乡前置未满足，已保留墓殿边界。")
+		return
 	if state.save_progress(world.player.global_position, world.player.arm.rotation.y) != OK:
 		_travel_failed("无法保存新的落脚点，已返回上一处边界。")
 		return
 	world.restore_destination_history()
 	route = "travel_reveal"
-	await transition.reveal_arrival()
+	transition.world = world
+	if homeward:
+		# Residents are recreated from saved identities; their readiness precedes playback.
+		get_tree().paused = false
+		transition.hide()
+		get_viewport().disable_3d = false
+		homecoming = preload("res://ui/homecoming_scene.gd").new()
+		homecoming.world = world
+		homecoming.name = "Homecoming"
+		add_child(homecoming)
+		await homecoming.completed
+		homecoming = null
+	else:
+		await transition.reveal_arrival()
 	# Input consumed by skip/confirmation cannot become an attack on arrival.
 	while _confirmation_held(): await get_tree().process_frame
 	world._set_pause_owner("entry", false)
@@ -421,6 +450,7 @@ func _finish_travel() -> void:
 	get_tree().paused = not world.pause_owners.is_empty()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED
 	route = "world"
+	homeward = false
 	world.gameplay_hud.notify(state.checkpoint_name() + " · 落脚点已保存")
 
 func _travel_failed(message: String) -> void:

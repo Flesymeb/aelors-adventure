@@ -2,11 +2,11 @@
   "schema_version": 1,
   "semantic_role": "opaque full-bleed father-and-daughter lantern prologue before the village attack",
   "family": "prologue-video",
-  "runtime_variant": "prologue.ogv",
-  "generation_status": "succeeded_motion_reviewed",
+  "runtime_variant": "one distinct Theora per opening beat",
+  "generation_status": "story_length_media_generated_samples_reviewed_runtime_pending",
   "provider": "Bailian/DashScope",
   "model": "wan3.0-video",
-  "requested_duration_seconds": 5,
+  "requested_duration_seconds": 10,
   "requested_resolution": "720P",
   "requested_aspect_ratio": "16:9",
   "asset_kind": "environment",
@@ -19,47 +19,9 @@
     "terms": "Existing illustration and new AI-generated footage remain subject to their provider service terms; no CC0 or MIT license asserted."
   },
   "authored_direction": "Locked camera. Oren carefully turns the old metal lantern wick knob and lowers its lid while Isha steadies it and smiles. Amber flame brightens, river reflections ripple and chimney smoke drifts. Preserve faces, costumes, location and peaceful chronology; no attack, rift, weapons, text or UI.",
-  "submission": {
-    "task_id": "7b8071d0-8c97-4cbf-a877-91a7e1e41aea",
-    "create_request_id": "33963062-58d4-9722-bf35-c3c1bc64feff",
-    "completion_request_id": "8ab26b45-8104-9d48-84a4-189a3dfde954",
-    "task_status": "SUCCEEDED",
-    "fresh_submission_count": 1,
-    "source_video": "prologue-source.mp4",
-    "source_sha256": "3e541acf1f09ce2fc192acfd9f15c197d9779da94c875e82e4e642797089677d"
-  },
-  "conversion": {
-    "tool": "GStreamer 1.24 theoraenc/oggmux",
-    "reason": "Configured FFmpeg lacks libtheora encoder; used installed native GStreamer codec.",
-    "input": "prologue-source.mp4",
-    "output": "prologue.ogv",
-    "video_codec": "Theora",
-    "audio": "omitted; existing cinematic audio retains ownership",
-    "quality": 48,
-    "frame_rate": 30,
-    "duration_seconds": 5,
-    "source_dimensions": [
-      1278,
-      720
-    ],
-    "runtime_dimensions": [
-      1280,
-      720
-    ],
-    "transform": "One black pixel padded on left and right; square pixels; no trim, no temporal interpolation.",
-    "runtime_sha256": "4b372c2b442baf535ae17d012acc5e1b95c5655f2d4a8735fc38c0e856744d7e",
-    "first_frame": "prologue-first-frame.png"
-  },
   "qualification": {
-    "generated_motion": "Six source samples and native start/middle/end views show actual character, lantern and environment motion.",
-    "identity_in_motion": "Reviewed against opening_01.png; Oren/Isha costumes, old lantern and peaceful village continuity retained.",
-    "runtime_decoding": "Godot 4.7 VideoStreamPlayer observed playing at 0.27, 1.75 and 2.03 seconds; finished near 4.97 seconds; completed_hold at 6.46-second presentation time with stream released.",
-    "native_caption_scaling": "Rendered Chinese caption and reached Reading/Feedback Settings at 100%, 150%, 200%; focus/value return observed and original 100% restored.",
-    "pause": "Ordinary Escape freezes decoded video, caption clock and owned audio; resumes same shot. Focus-loss notification handler also checked diagnostically; physical OS focus loss remains independent verification.",
-    "completion": "38-second natural opening and separate early skip both reached grounded unarmed control with 3 lives, 0 XP, no sword/bow/lamp, Q01 not yet accepted and same village checkpoint.",
-    "cleanup": "Natural finish and early skip leave zero prologue decoders. Return to title releases decoder and resumes menu score; reentry starts one fresh decoder.",
-    "illustrated_fallback": "Actual Reduced Motion and missing-media cases show illustration without decoder; injected decoder stall releases media to illustration without completing story.",
-    "acceptance": "Developer-scoped observations only; independent Tester and qualified unfinished-opening history remain required."
+    "status": "Changed media requires current Godot decoding/lifecycle retest; independent acceptance pending.",
+    "continuity_limitations": "Illustrated cast and live low-poly actors retain different rendering styles. Background wounded helper in plea resembles Oren; exact continuity remains unverified."
   },
   "fallback": "opening_01.png",
   "historical_submissions": [
@@ -73,17 +35,59 @@
       "source_video": null
     }
   ],
-  "motion_review": {
-    "sample_positions_seconds": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      4.75
-    ],
-    "observed_action": "Oren turns and releases the old lantern handle; amber light brightens. Isha steadies the lantern, smiles and looks up. River reflections and background figures move. Camera composition remains stable.",
-    "continuity": "Reviewed gray-bearded Oren in brown coat, braided Isha in green/ivory, same riverside workshop/bridge and old metal lantern. Background Aelor remains empty-handed; no attack, rift, text or UI.",
-    "limitations": "Generated hand detail may merit independent visual review; no independent QA claimed."
+  "prior_five_second_source": {
+    "task_id": "7b8071d0-8c97-4cbf-a877-91a7e1e41aea",
+    "create_request_id": "33963062-58d4-9722-bf35-c3c1bc64feff",
+    "completion_request_id": "8ab26b45-8104-9d48-84a4-189a3dfde954",
+    "task_status": "SUCCEEDED",
+    "fresh_submission_count": 1,
+    "source_video": "prologue-source.mp4",
+    "source_sha256": "3e541acf1f09ce2fc192acfd9f15c197d9779da94c875e82e4e642797089677d"
+  },
+  "shots": {
+    "prologue": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "739efbd6-f1c7-4df4-8c2f-5ce5b603bb90",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    },
+    "assault": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "d719ee2f-a137-4629-83f8-c6c1ddb9b142",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    },
+    "abduction": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "36cbb870-fe46-47fb-bc37-0bb5e1dde538",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    },
+    "plea": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "032a74f1-11df-4598-91fc-afdd58beb267",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    }
   }
 }

@@ -1,6 +1,7 @@
 extends "res://preview_controller.gd"
 ## Thin destination adapter: retained product controls/combat/UI, Warden after the LN02 boundary.
 const TOMB_GROUND = preload("res://world/map03_ground.gd")
+var summoning_core: Node3D
 var ritual_record: Node3D
 var return_passage: Node3D
 var entrance_circuit: Node3D
@@ -107,6 +108,10 @@ func _ready() -> void:
 	rescue_encounter = preload("res://world/map03_rescue.tscn").instantiate()
 	add_child(rescue_encounter)
 	rescue_encounter.configure(self)
+	summoning_core = preload("res://world/map03_core.gd").new()
+	summoning_core.name = "SummoningCore"
+	add_child(summoning_core)
+	summoning_core.configure(self)
 	_place_player.call_deferred()
 
 func create_environment() -> Node3D:
@@ -160,6 +165,7 @@ func restore_destination_history() -> void:
 	warden_encounter.restore_history()
 	veyne_encounter.restore_history()
 	rescue_encounter.restore_history()
+	if is_instance_valid(summoning_core): summoning_core.restore_history()
 
 func restored_xz(position: Vector3, map_id: String) -> Vector2:
 	var xz := TOMB_GROUND.entry_xz(position,map_id)
@@ -168,7 +174,7 @@ func restored_xz(position: Vector3, map_id: String) -> Vector2:
 func checkpoint_xz() -> Vector2: return TOMB_GROUND.ENTRY
 func active_map_id() -> String: return dialogue_state.MAP03
 func contextual_interaction_target() -> Node3D:
-	for target in [rescue_encounter,veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
+	for target in [summoning_core,rescue_encounter,veyne_encounter.device,warden_encounter.device,entrance_circuit,ritual_record,return_passage]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 

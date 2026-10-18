@@ -1,6 +1,5 @@
 extends CanvasLayer
-## Opening presentation adapted to a same-world earned boundary.
-## Uses the same fullscreen, gentle zoom and native margin wear as the opening.
+## Earned live-world briefing. The world stays paused; only selected visual clips advance.
 signal completed
 const ART := "res://assets/cinematics/guard_approach/"
 var world: Node3D
@@ -23,15 +22,22 @@ var pause_button: Button
 var veil: ColorRect
 var wear: Control
 var previous_disable_3d := false
+var previous_camera: Camera3D
+var camera: Camera3D
+var previous_mouse_mode: Input.MouseMode
+var encounter: Node3D
+var hidden_presentations: Dictionary = {}
+var ambience: AudioStreamPlayer
+var isha_animation: AnimationPlayer
+var isha_animation_record: Dictionary = {}
+var live_ready := false
 var released := false
 
 static func eligible(adventure: Node) -> bool:
 	return adventure.guard_briefing_available() and adventure.guard_briefing_acknowledged and not adventure.guard_interlude_seen and not adventure.guards_defeated() and available()
 
 static func available() -> bool:
-	for name in ["guard_01.png","guard_02.png","guard_03.png"]:
-		if not ResourceLoader.exists(ART+name): return false
-	return FileAccess.file_exists(ART+"SOURCE.json")
+	return ResourceLoader.exists("res://combat/ChannelMeleeGuard.tscn") and ResourceLoader.exists("res://combat/ChannelRangedGuard.tscn") and FileAccess.file_exists(ART+"storyboard.json")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -48,6 +54,7 @@ func _ready() -> void:
 	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	root.add_child(picture)
+	picture.hide()
 	wear = Control.new()
 	wear.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	wear.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -89,20 +96,52 @@ func _ready() -> void:
 		button.add_theme_stylebox_override("normal",button_frame)
 		button.add_theme_stylebox_override("hover",button_frame)
 		button.add_theme_stylebox_override("pressed",button_frame)
+		button.add_theme_stylebox_override("focus",button_frame)
+		button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 		button.add_theme_color_override("font_color",Color(1,0.94,0.80))
 		button.add_theme_color_override("font_hover_color",Color.WHITE)
 		button.add_theme_color_override("font_pressed_color",Color.WHITE)
 	get_viewport().size_changed.connect(_layout)
+	previous_mouse_mode = Input.mouse_mode
 	world._set_pause_owner("guard_interlude",true)
 	previous_disable_3d = world.get_viewport().disable_3d
-	world.get_viewport().disable_3d = true
+	world.get_viewport().disable_3d = false
+	for label in world.find_children("*","Label3D",true,false):
+		hidden_presentations[label] = label.visible
+		label.hide()
+	previous_camera = get_viewport().get_camera_3d()
+	camera = Camera3D.new()
+	camera.name = "GuardRouteCamera"
+	camera.fov = 54
+	world.add_child(camera)
+	camera.current = true
+	encounter = world.get("channel_guards")
+	live_ready = is_instance_valid(encounter) and encounter.begin_presentation()
+	for visual in [world.get("gameplay_hud"),world.get("weapon_label")]:
+		if is_instance_valid(visual):
+			hidden_presentations[visual] = visual.visible
+			visual.hide()
+	var isha: Node3D = world.get("isha")
+	if is_instance_valid(isha):
+		isha_animation = isha.get("idle_player")
+		if is_instance_valid(isha_animation):
+			isha_animation_record = {"callback":isha_animation.callback_mode_process,"position":isha_animation.current_animation_position}
+			isha_animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	ambience = AudioStreamPlayer.new()
+	ambience.name = "GuardBriefingAir"
+	ambience.bus = "Effects"
+	ambience.stream = preload("res://assets/cinematics/opening/ambience.ogg")
+	ambience.volume_db = -19
+	add_child(ambience)
+	ambience.play()
 	_show_beat()
 	_layout()
 	_refresh_presentation()
 
 func _show_beat() -> void:
-	picture.texture = load(ART+slides[beat].image)
 	captions.text = chapter_title + "\n" + slides[beat].caption
+	if not live_ready: captions.text += "\n桥后的三名守卫仍在原处；准备好后再前往。"
+	_update_camera()
 
 func _layout() -> void:
 	var size := get_viewport().get_visible_rect().size
@@ -110,16 +149,22 @@ func _layout() -> void:
 	captions.custom_minimum_size.x = size.x*0.88-36
 	plate.custom_minimum_size.x = size.x*0.88
 	plate.size = Vector2(size.x*0.88,0)
-	plate.position = Vector2(size.x*0.06,size.y-plate.size.y-28)
+	plate.position = Vector2(size.x*0.06,size.y-plate.get_combined_minimum_size().y-28)
 	for button in actions.get_children(): button.add_theme_font_size_override("font_size",int(18*state.text_scale))
 	actions.position = Vector2(maxf(16,size.x-actions.size.x-24),24)
 
 func _process(delta: float) -> void:
 	if finished: return
 	if not armed:
-		if not Input.is_key_pressed(KEY_SPACE) and not Input.is_key_pressed(KEY_ENTER) and not Input.is_key_pressed(KEY_E): armed = true
+		if not Input.is_key_pressed(KEY_SPACE) and not Input.is_key_pressed(KEY_ENTER) and not Input.is_key_pressed(KEY_E) and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT): armed = true
 		return
-	if paused: return
+	var suspended: bool = paused or world.pause_owners.keys().any(func(owner): return owner != "guard_interlude")
+	ambience.stream_paused = suspended
+	plate.visible = not world.pause_owners.keys().any(func(owner): return owner != "guard_interlude")
+	actions.visible = plate.visible
+	if suspended: return
+	if live_ready: encounter.presentation_step(delta,beat,elapsed)
+	if is_instance_valid(isha_animation): isha_animation.advance(delta)
 	elapsed += delta
 	total_elapsed += delta
 	if Input.is_key_pressed(KEY_SPACE):
@@ -135,13 +180,35 @@ func _process(delta: float) -> void:
 	_layout()
 
 func _refresh_presentation() -> void:
-	var motion: bool = not state.reduced_motion and state.graphics_quality != "low"
 	var duration := float(slides[beat].duration_seconds)
-	picture.pivot_offset = get_viewport().get_visible_rect().size*0.5
-	picture.scale = Vector2.ONE*(1.02+0.02*elapsed/duration if motion else 1.0)
-	# Black boundaries never blend two story identities into one composition.
+	# Cuts remain intelligible under Reduced Motion; only the optional dolly stops.
+	_update_camera()
 	veil.color.a = maxf(1.0-clampf(elapsed/0.18,0,1),clampf((elapsed-duration+0.18)/0.18,0,1))
 	wear.queue_redraw()
+
+func _update_camera() -> void:
+	if not is_instance_valid(camera): return
+	var player: Node3D = world.get("player")
+	var isha: Node3D = world.get("isha")
+	var target := player.global_position + Vector3.UP if is_instance_valid(player) else Vector3.ZERO
+	var offset := Vector3(-5,3.2,-6)
+	if beat == 0:
+		# The connected approach: begin over the restored bridge route.
+		var bridge: Node3D = world.get("bridge_actions")
+		if is_instance_valid(bridge) and is_instance_valid(bridge.get("lamp")): target = bridge.lamp.global_position.lerp(bridge.trapped_position,0.6) + Vector3.UP
+		elif live_ready: target = encounter.enemies[0].home.lerp(target,0.55)
+		offset = Vector3(-6,4,-7)
+	elif beat == 1 and is_instance_valid(isha):
+		target = isha.global_position + Vector3.UP*1.15
+		offset = Vector3(-2.8,1.1,3.4)
+	elif live_ready:
+		target = Vector3.ZERO
+		for enemy in encounter.enemies: target += enemy.global_position
+		target = target/3.0 + Vector3.UP
+		offset = Vector3(6.0,3.2,1.6)
+	var dolly := 0.0 if state.reduced_motion else clampf(elapsed/float(slides[beat].duration_seconds),0,1)*0.6
+	camera.global_position = target + offset + Vector3(dolly,0,0)
+	camera.look_at(target,Vector3.UP)
 
 func _draw_wear() -> void:
 	if state.graphics_quality == "low": return
@@ -158,6 +225,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		if armed: toggle_pause()
 		get_viewport().set_input_as_handled()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not finished:
+		paused = true
+		armed = false
+		skip_hold = 0
+		if is_instance_valid(pause_button): pause_button.text = "继续 [Esc]"
+		if is_instance_valid(ambience): ambience.stream_paused = true
 
 func toggle_pause() -> void:
 	if not armed or finished: return
@@ -180,12 +255,26 @@ func finish() -> void:
 func _release_world() -> void:
 	if released or not is_instance_valid(world) or world.is_queued_for_deletion(): return
 	released = true
+	if is_instance_valid(encounter): encounter.end_presentation()
+	if is_instance_valid(isha_animation) and not isha_animation_record.is_empty():
+		isha_animation.seek(isha_animation_record.position,true)
+		isha_animation.callback_mode_process = isha_animation_record.callback
+	if is_instance_valid(ambience): ambience.stop()
+	for visual in hidden_presentations:
+		if is_instance_valid(visual): visual.visible = hidden_presentations[visual]
+	if is_instance_valid(camera):
+		camera.current = false
+		camera.queue_free()
+	if is_instance_valid(previous_camera): previous_camera.current = true
 	world.get_viewport().disable_3d = previous_disable_3d
 	world._set_pause_owner("guard_interlude",false)
+	var player: Node = world.get("player")
+	if is_instance_valid(player): player.set_controls_open(not world.pause_owners.is_empty())
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if not world.pause_owners.is_empty() else previous_mouse_mode
 
 func _exit_tree() -> void:
 	# Interrupted playback remains unseen and replayable; never commits a save.
 	_release_world()
 
 func _mcp_state() -> Dictionary:
-	return {"beat":beat+1,"image":slides[beat].image if not slides.is_empty() else null,"elapsed":total_elapsed,"caption":captions.text if is_instance_valid(captions) else null,"paused":paused,"finished":finished,"inputs_armed":armed,"zoom":picture.scale.x if is_instance_valid(picture) else null,"transition_alpha":veil.color.a if is_instance_valid(veil) else null}
+	return {"beat":beat+1,"shot":slides[beat].get("shot","") if not slides.is_empty() else null,"elapsed":total_elapsed,"caption":captions.text if is_instance_valid(captions) else null,"paused":paused,"finished":finished,"inputs_armed":armed,"live_cast":live_ready,"camera_current":is_instance_valid(camera) and camera.current,"transition_alpha":veil.color.a if is_instance_valid(veil) else null}

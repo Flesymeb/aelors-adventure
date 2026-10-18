@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "duration_seconds": 12,
+  "captions": [
+    {
+      "start": 0,
+      "end": 3.5,
+      "text": "旁白：河谷的灯，再一次照亮归路。"
+    },
+    {
+      "start": 3.5,
+      "end": 7.5,
+      "text": "旁白：四位村民一同归来，伊莎拥抱了父亲。"
+    },
+    {
+      "start": 7.5,
+      "end": 12,
+      "text": "旁白：桥的另一边，新的清晨正等待着他们。"
+    }
+  ],
+  "media": "homecoming.ogv",
+  "fallback": "live village quartet and Isha; same committed facts; no replacement reward owner",
+  "narration_status": "English fallback synthesized and bound; independent listening and Mandarin recovery remain unresolved",
+  "narration": "../story_narration.wav"
+}

@@ -90,3 +90,18 @@ static func start_live_case(world: Node3D) -> Dictionary:
 	var result: Dictionary = boss.actor.receive_contact(source,boss.actor.global_position+Vector3.UP)
 	source.free()
 	return {"ready":boss.defeat_scene.active,"result":result.get("outcome",""),"clip":boss.actor.character.current_clip(),"position":boss.actor.character.current_position(),"key_uncollected":not world.dialogue_state.veyne_release_key}
+
+static func native_mesh_preservation_checks() -> Dictionary:
+	var native: Node3D = load("res://assets/bosses/veyne_dragon.glb").instantiate()
+	var originals := {}
+	for mesh in native.find_children("*","MeshInstance3D",true,false): originals[mesh] = mesh.mesh
+	load("res://actors/mesh_qualification.gd").qualify_tree(native)
+	var same := true
+	var custom_surfaces := 0
+	for mesh in originals:
+		same = same and mesh.mesh == originals[mesh]
+		for surface in mesh.mesh.get_surface_count():
+			var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+			if arrays[Mesh.ARRAY_CUSTOM0] != null: custom_surfaces += 1
+	native.free()
+	return {"native_custom_surface_retained":custom_surfaces > 0,"valid_dragon_meshes_unchanged":same}

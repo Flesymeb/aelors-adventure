@@ -43,6 +43,68 @@ class PhaseEncounter extends Node3D:
 	var cues := 0
 	func enter_pressure_phase() -> void: cues += 1
 
+class QuietTraining extends RefCounted:
+	var allow_commit := true
+	func commit() -> bool: return allow_commit
+	func tell(_text: String, _seconds: float) -> void: pass
+class QuietPlayer extends RefCounted:
+	func release_encounter_camera() -> void: pass
+class QuietWorld extends Node3D:
+	var training := QuietTraining.new()
+	var player := QuietPlayer.new()
+class DeadActor extends CharacterBody3D:
+	var health := 0.0
+	var engaged := false
+class BeatProbe extends CanvasLayer:
+	var active := false
+	var starts := 0
+	func begin() -> bool:
+		starts += 1
+		active = true
+		return true
+class SettlementEncounter extends "res://combat/map03_warden.gd":
+	func play_cue(_kind: String) -> void: pass
+	func _process(_delta: float) -> void: pass
+	func _exit_tree() -> void: pass
+
+static func durable_performance_checks(parent: Node) -> Dictionary:
+	# The real settlement owner with a memory-only save seam. No fabricated
+	# Continue, ordinary earning or native performance acceptance is implied.
+	var world := QuietWorld.new()
+	parent.add_child(world)
+	var state: Node = CIRCUIT.prepared()
+	state.inventory = null
+	state.reveal_ln02(); state.cut_ln02_supply("north"); state.cut_ln02_supply("south"); state.purify_ln02()
+	var boss := SettlementEncounter.new()
+	boss.world = world
+	boss.state = state
+	boss.actor = DeadActor.new()
+	boss.music = AudioStreamPlayer.new()
+	boss.defeat_scene = BeatProbe.new()
+	for child in [boss.actor,boss.music,boss.defeat_scene]: boss.add_child(child)
+	world.add_child(boss)
+	var before: Dictionary = state.adventure_snapshot()
+	boss.actor.health = 10
+	boss.settle_defeat()
+	var checks := {"live_boss_no_beat":boss.defeat_scene.starts==0 and not state.warden_defeated}
+	boss.actor.health = 0
+	world.training.allow_commit = false
+	boss.settle_defeat()
+	checks.failed_commit_no_beat = boss.defeat_scene.starts==0 and boss.victory_pending and not state.warden_defeated and state.adventure_snapshot()==before
+	world.training.allow_commit = true
+	boss.settle_defeat()
+	checks.durable_commit_starts_once = boss.defeat_scene.starts==1 and boss.victory_commits==1 and state.warden_defeated and not boss.victory_pending
+	checks.device_and_rescue_separate = not state.warden_lock_released and not state.emergency_release_tool and not state.rescue_assembled and state.rescue_released.is_empty()
+	checks.performance_blocks_save = not boss.can_save()
+	boss.settle_defeat()
+	checks.repeat_no_beat = boss.defeat_scene.starts==1 and boss.victory_commits==1
+	boss.defeat_scene.active = false
+	checks.completed_victory_savable = boss.can_save()
+	checks.device_caption = preload("res://ui/warden_defeat_scene.gd").caption_for(false).contains("尚未操作") and preload("res://ui/warden_defeat_scene.gd").caption_for(true).contains("已取得")
+	world.free()
+	state.free()
+	return checks
+
 static func binding_checks() -> Dictionary:
 	var native: Node3D = preload("res://assets/bosses/warden_actor.glb").instantiate()
 	var animator: AnimationPlayer = native.find_child("AnimationPlayer",true,false)
@@ -182,6 +244,9 @@ static func transaction_checks(world: Node3D) -> Dictionary:
 	source.damage_attributes.health = 500
 	var result: Dictionary = boss.actor.receive_contact(source,boss.actor.global_position+Vector3.UP)
 	var checks := {"death_resolved":result.get("outcome","")=="defeat","victory_committed_once":world.dialogue_state.warden_defeated and boss.victory_commits==1,"attacks_stopped":not boss.actor.source.can_damage and not boss.actor.wave_source.can_damage and not boss.actor.hitbox.enabled,"device_separate":not world.dialogue_state.warden_lock_released and not world.dialogue_state.emergency_release_tool}
+	checks.new_durable_aftermath = boss.defeat_scene.active and not boss.can_save() and boss.actor.character.current_clip()=="warden/Death"
+	boss.defeat_scene.finish()
+	checks.skip_preserves_device = not boss.defeat_scene.active and not world.dialogue_state.warden_lock_released and not world.dialogue_state.emergency_release_tool and world.player.camera.current
 	checks.device_approach_supported = world.ground_policy.place(world,world.player,Vector2(5.1,-12.5))
 	checks.device_reachable = boss.device.interaction_prompt() != ""
 	checks.inspect_commit = boss.device.interact() and world.dialogue_state.warden_lock_released and world.dialogue_state.emergency_release_tool
@@ -192,6 +257,7 @@ static func transaction_checks(world: Node3D) -> Dictionary:
 	world.dialogue_state.restore_config(config)
 	boss.restore_history()
 	checks.restored_victory = boss.actor.health==0 and world.dialogue_state.warden_lock_released and world.dialogue_state.emergency_release_tool and not boss.music.playing
+	checks.restored_no_aftermath = not boss.defeat_scene.active and boss.victory_commits==1
 	world.dialogue_state.restore_adventure(old)
 	boss.restore_history()
 	source.free()

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "english_fallback_synthesized_listening_unverified",
+  "configured_engine": "expert-tools Kokoro-82M",
+  "audition": {
+    "lang": "z",
+    "voice": "zm_yunjian",
+    "speed": 0.95,
+    "status": "failed_model_construction",
+    "failure": "pkgutil.ImpImporter unavailable during model construction"
+  },
+  "selected_stream": "res://assets/cinematics/story_narration.wav",
+  "fallback": "Mandarin backend remains unavailable. English narrator with matching Chinese captions; voice identity, pronunciation and mix require independent listening.",
+  "recovery": {
+    "lang": "b",
+    "voice": "bm_george",
+    "speed": 0.95,
+    "duration_s": 10.125,
+    "sample_rate": 24000,
+    "format": "PCM16 mono WAV",
+    "text": "The valley lights the road home once more. Four villagers return together, and Isha embraces her father. Beyond the bridge, a new morning waits.",
+    "license": "Apache-2.0 (Kokoro-82M, licensed training audio)",
+    "source": "Host-configured expert-tools audio-qa tts",
+    "audible_quality": "unverified",
+    "binding": "ui/homecoming_scene.gd; Effects bus, local voice-off, pause/skip cleanup and music ducking"
+  }
+}

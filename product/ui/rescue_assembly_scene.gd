@@ -127,10 +127,12 @@ static func caption_at(seconds: float, veyne_defeated: bool) -> String:
 func _layout() -> void:
 	var view := get_viewport().get_visible_rect().size
 	var scale: float = world.dialogue_state.text_scale
+	caption.custom_minimum_size.x = view.x*0.88-36
 	caption.add_theme_font_size_override("font_size",int(21*scale))
 	plate.custom_minimum_size.x = view.x*0.88
 	plate.size = Vector2(view.x*0.88,0)
-	plate.position = Vector2(view.x*0.06,view.y-plate.get_combined_minimum_size().y-24)
+	plate.reset_size()
+	plate.position = Vector2(view.x*0.06,view.y-plate.size.y-24)
 	for button in [pause_button,skip_button]: button.add_theme_font_size_override("font_size",int(16*scale))
 	actions.reset_size()
 	actions.position = Vector2(24,20)

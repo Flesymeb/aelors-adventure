@@ -69,7 +69,7 @@ func protected_player() -> bool:
 	return protected_xz(Vector2(world.player.global_position.x, world.player.global_position.z))
 
 func combat_allowed() -> bool:
-	return initialized and state.current_map == state.MAP02 and state.cp02_claimed and state.mf01_acquired and state.lives > 0 and not state.recovery_pending and not state.conversation_active and world.pause_owners.is_empty() and not world.training.player_locked() and world.training.protection <= 0 and recovery_hold <= 0 and not protected_player() and not fixed_busy()
+	return initialized and not state.core_closed and state.current_map == state.MAP02 and state.cp02_claimed and state.mf01_acquired and state.lives > 0 and not state.recovery_pending and not state.conversation_active and world.pause_owners.is_empty() and not world.training.player_locked() and world.training.protection <= 0 and recovery_hold <= 0 and not protected_player() and not fixed_busy()
 
 func registry() -> Dictionary:
 	var result := {}
@@ -445,6 +445,7 @@ func collect(id: String) -> bool:
 	return true
 
 func _physics_process(delta: float) -> void:
+	if state.core_closed: return
 	if not initialized: return
 	recovery_hold = maxf(0,recovery_hold-delta)
 	pickup_delay = maxf(0,pickup_delay-delta)

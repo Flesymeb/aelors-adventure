@@ -10,27 +10,39 @@
       "caption": "河谷的灯火曾照亮每一条归路。奥伦和伊莎守着这份安宁。",
       "beat": "父女与旧灯，村庄安宁",
       "video": "prologue.ogv",
-      "motion_duration_seconds": 5,
-      "video_audio": "muted; existing cinematic score and ambience retain ownership",
+      "motion_duration_seconds": 10,
+      "video_audio": "muted; retained score and ambience own audio",
       "fallback_image": "opening_01.png"
     },
     {
       "image": "opening_02.png",
       "duration_seconds": 8,
       "caption": "直到裂隙在桥外张开。黑暗越过河岸，村庄遭到袭击。",
-      "beat": "裂隙开启，怪物袭村"
+      "beat": "裂隙开启，怪物袭村",
+      "video": "assault.ogv",
+      "motion_duration_seconds": 8,
+      "fallback_image": "opening_02.png",
+      "video_audio": "muted; retained score and ambience own audio"
     },
     {
       "image": "opening_03.png",
       "duration_seconds": 10,
       "caption": "奥伦护住了女儿，却与三名村民一起被掳向森林深处。",
-      "beat": "四名被掳者仍活着，伊莎留守"
+      "beat": "四名被掳者仍活着，伊莎留守",
+      "video": "abduction.ogv",
+      "motion_duration_seconds": 10,
+      "fallback_image": "opening_03.png",
+      "video_audio": "muted; retained score and ambience own audio"
     },
     {
       "image": "opening_04.png",
       "duration_seconds": 10,
       "caption": "伊莎向艾洛求援。循着桥后的痕迹去找他们——先向赫斯学习剑术。",
-      "beat": "空手艾洛接受救援方向，交还控制"
+      "beat": "空手艾洛接受救援方向，交还控制",
+      "video": "plea.ogv",
+      "motion_duration_seconds": 10,
+      "fallback_image": "opening_04.png",
+      "video_audio": "muted; retained score and ambience own audio"
     }
   ],
   "runtime_direction": {
@@ -41,7 +53,7 @@
     "audio": "村庄氛围→裂隙与警铃→低沉桥边余响→求援主题，服从主/音乐/音效设置",
     "controls": "可暂停、继续、跳过；完成或跳过提交相同的开场世界事实，空手/3命/任务与装备初始状态一致",
     "safety": "暂停菜单暂停演出时间与动效；退出恢复有效开场边界；旧存档不被清空；字幕100/150/200%缩放可读",
-    "prologue_motion": "First beat decodes the five-second authored lantern shot, then holds its last frame for the remaining caption time. Missing, failed or Reduced Motion playback retains opening_01.png. Generation and conversion provenance: motion-source.json and prologue-generation.json."
+    "prologue_motion": "Each beat plays its own story-length Theora clip once. No loop or time-stretched still. Missing media and Reduced Motion retain the existing keyframe and captions."
   },
   "continuity_review": "已检查：四名被掳者数量；开场艾洛无武器；伊莎/奥伦身份；求援画面中已移除被掳的奥伦；未把结局或营救提前画入开场。图像生成不是当前候选的实现或验收。"
 }

@@ -59,7 +59,7 @@ func protected_player() -> bool:
 	return false
 
 func combat_allowed() -> bool:
-	return initialized and state.element_practice_complete and not state.conversation_active and state.lives > 0 and world.pause_owners.is_empty() and not state.recovery_pending and recovery_hold <= 0 and not protected_player() and not world.training.monster.engaged and world.training.sim_phase == "idle" and world.bridge_encounter.can_save() and (world.channel_guards == null or world.channel_guards.can_save())
+	return initialized and not state.core_closed and state.element_practice_complete and not state.conversation_active and state.lives > 0 and world.pause_owners.is_empty() and not state.recovery_pending and recovery_hold <= 0 and not protected_player() and not world.training.monster.engaged and world.training.sim_phase == "idle" and world.bridge_encounter.can_save() and (world.channel_guards == null or world.channel_guards.can_save())
 
 func spawn_reason() -> String:
 	if not initialized or not world.training.grounded or not world.bow_training.grounded: return "terrain_initializing"
@@ -281,6 +281,7 @@ func collect(id: String) -> bool:
 	return true
 
 func _physics_process(delta: float) -> void:
+	if state.core_closed: return
 	if not initialized: return
 	recovery_hold = maxf(0,recovery_hold-delta)
 	pickup_delay = maxf(0,pickup_delay-delta)

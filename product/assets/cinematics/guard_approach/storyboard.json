@@ -1,35 +1,42 @@
 {
   "schema_version": 1,
   "title": "第一章·桥后的踪迹",
-  "duration_seconds": 6,
+  "duration_seconds": 9,
   "text_is_runtime_overlay": true,
   "slides": [
     {
-      "image": "guard_01.png",
-      "duration_seconds": 2,
+      "duration_seconds": 3,
       "caption": "桥路已通，危机未解。",
-      "beat": "恢复的桥与普通村民"
+      "beat": "恢复的桥与普通村民",
+      "shot": "restored_bridge_route"
     },
     {
-      "image": "guard_02.png",
-      "duration_seconds": 2,
+      "duration_seconds": 3,
       "caption": "奥伦与三名村民仍未归。",
-      "beat": "伊莎惦念失踪者"
+      "beat": "伊莎惦念失踪者",
+      "shot": "isha_missing_villagers"
     },
     {
-      "image": "guard_03.png",
-      "duration_seconds": 2,
+      "duration_seconds": 3,
       "caption": "守卫挡路，石柱尚未开启。",
-      "beat": "两近战Orc与一远程Ranger；未激活石柱"
+      "beat": "两近战Orc与一远程Ranger；未激活石柱",
+      "shot": "live_guard_patrol_cover"
     }
   ],
   "trigger_intent": "Earn both existing bridge actions, then ordinary Isha guard briefing. Bind through existing quest owner, no debug grant.",
   "completion_intent": "Return to reachable guard objective; both normal finish and skip commit briefing only, never guard victory, rescue or departure.",
   "runtime_direction": {
-    "motion": "same opening 2–4% gentle pan/zoom; Reduced Motion",
-    "transition": "same opening black/crossfade transition",
+    "motion": "Live route camera and the existing three guards, with manually advanced Idle/Walk skeletal clips; AI, projectiles and damage remain paused. Reduced Motion removes the dolly but keeps readable live poses and cuts.",
+    "transition": "Brief black cuts between connected route, Isha context and two melee guards plus archer/rock cover.",
     "captions": "engine native chapter title and scalable Chinese captions; caption stays within readable safe area",
-    "control": "world paused under one owner; pause/resume/skip; restore input/camera; durable once-only story boundary"
+    "control": "Existing guard_interlude pause owner; reversible actor/animation/collision snapshots, camera/HUD/mouse restore and retained fresh-input latch. Nested settings suspends camera, cast, captions and audio.",
+    "audio": "Retained opening ambience. No attack or victim-contact sound is synthesized during the reveal."
   },
-  "qualification_status": "bound; independent ordinary-route acceptance pending"
+  "qualification_status": "live-instance presentation implemented; ordinary-route, framing, motion and heard-audio acceptance pending",
+  "runtime_bindings": [
+    "res://combat/ChannelMeleeGuard.tscn",
+    "res://combat/ChannelRangedGuard.tscn",
+    "res://combat/channel_guard_encounter.gd",
+    "res://assets/cinematics/opening/ambience.ogg"
+  ]
 }

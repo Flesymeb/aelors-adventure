@@ -5,12 +5,14 @@
     {
       "image": "farewell.png",
       "caption": "伊莎：奥伦和三位村民仍待救援。带上剑、弓与旧灯，沿草甸追踪押送队。",
-      "duration_seconds": 1.6
+      "duration_seconds": 5.0,
+      "video": "farewell.ogv"
     },
     {
       "image": "passage.png",
       "caption": "蓝光汇聚，通道在艾洛身旁闭合。",
-      "duration_seconds": 1.6
+      "duration_seconds": 5.0,
+      "video": "passage.ogv"
     },
     {
       "image": "arrival.png",

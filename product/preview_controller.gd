@@ -265,6 +265,14 @@ func _place_player() -> void:
 	if dialogue_state.conversation_active and dialogue_state.lives > 0:
 		_set_pause_owner("dialogue", true)
 		dialogue.open_dialogue(true)
+	if dialogue_state.homecoming_completed and not meadow_slice:
+		if not is_instance_valid(homecoming_residents): homecoming_residents = preload("res://ui/homecoming_scene.gd").populate_village(self)
+		for attempt in 120:
+			if homecoming_residents.grounded: break
+			await get_tree().physics_frame
+		if not homecoming_residents.grounded:
+			entry_failed.emit("村庄团聚地点尚未准备好。")
+			return
 	entry_ready.emit()
 
 
@@ -376,6 +384,7 @@ func _dialogue_closed() -> void:
 	_try_guard_interlude()
 
 func _try_guard_interlude() -> void:
+	if not is_instance_valid(channel_guards) or not channel_guards.grounded: return
 	if not meadow_slice and pause_owners.is_empty() and get_node_or_null("GuardInterlude") == null and preload("res://ui/guard_interlude.gd").eligible(dialogue_state):
 		var interlude = preload("res://ui/guard_interlude.tscn").instantiate()
 		interlude.name = "GuardInterlude"
@@ -454,9 +463,11 @@ func _refresh_reading_controls() -> void:
 	if failure_panel: _layout_failure()
 
 
+var homecoming_residents: Node3D
+
 func contextual_interaction_target() -> Node3D:
 	# This priority owns both the visible prompt and ordinary E recipient.
-	for target in [barrier, route_clue, line_record, pressure_encounter, bridge_actions, lamp_training, bow_training, training]:
+	for target in [homecoming_residents, barrier, route_clue, line_record, pressure_encounter, bridge_actions, lamp_training, bow_training, training]:
 		if is_instance_valid(target) and target.interaction_prompt() != "": return target
 	return null
 
@@ -956,6 +967,8 @@ func destination_ready() -> bool:
 	return is_instance_valid(player) and player.has_meta("spawn_position") and is_instance_valid(training) and training.grounded and is_instance_valid(bow_training) and bow_training.grounded and is_instance_valid(bridge_encounter) and bridge_encounter.grounded and is_instance_valid(chapter_pillar) and chapter_pillar.grounded
 
 func restore_destination_history() -> void:
+	if dialogue_state.homecoming_completed and not meadow_slice and not is_instance_valid(homecoming_residents):
+		homecoming_residents = preload("res://ui/homecoming_scene.gd").populate_village(self)
 	training.restore_history()
 	gameplay_hud.restore_view()
 

@@ -41,7 +41,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
-const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false, "rescue_released": {}, "rescue_assembled": false, "rescue_supply_claimed": false, "rescue_order": ""}
+const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false, "rescue_released": {}, "rescue_assembled": false, "rescue_supply_claimed": false, "rescue_order": "", "core_closed": false, "homecoming_completed": false}
 var lamp_owned := false
 var trace_revealed := false
 var trace_investigated := false
@@ -77,6 +77,8 @@ var warden_lock_released := false
 var emergency_release_tool := false
 const CAPTIVE_IDS := ["oren", "villager_a", "villager_b", "villager_c"]
 var rescue_released: Dictionary = {}
+var core_closed := false
+var homecoming_completed := false
 var rescue_assembled := false
 var rescue_supply_claimed := false
 var rescue_order := ""
@@ -214,6 +216,8 @@ func begin() -> void:
 			logical_node = "B05" if bridge_briefing_acknowledged or bridge_first_action != "" else "B01"
 		if dialogue_kind == "isha" and guard_briefing_available():
 			logical_node = "G04" if guards_defeated() else "G01"
+		if dialogue_kind == "isha" and homecoming_completed:
+			logical_node = "END_RESCUE" if bridge_first_action == "rescue" else "END_LIGHT"
 	reward_feedback = ""
 	conversation_active = true
 
@@ -366,6 +370,25 @@ func assemble_captives() -> bool:
 	rescue_supply_claimed = true
 	return true
 
+func core_missing_conditions() -> Array[String]:
+	var missing: Array[String] = []
+	if not warden_defeated: missing.append("击败锁印看守")
+	if not veyne_defeated: missing.append("击败维恩")
+	if not rescue_assembled or not CAPTIVE_IDS.all(func(id): return rescue_released.has(id)): missing.append("四位村民安全集合")
+	if not lamp_owned or selected_equipment != "lamp": missing.append("装备旧灯")
+	return missing
+
+func close_summoning_core() -> bool:
+	if core_closed or current_map != MAP03 or health <= 0 or recovery_pending or conversation_active or not ln02_purified or not core_missing_conditions().is_empty(): return false
+	core_closed = true
+	tracked_quest = "rescue"
+	return true
+
+func commit_homecoming() -> bool:
+	if not core_closed or homecoming_completed or current_map != GROUND.MAP_ID or not rescue_assembled or not warden_defeated or not veyne_defeated: return false
+	homecoming_completed = true
+	return true
+
 static func valid_rescue_facts(released: Variant, assembled: Variant, supplied: Variant, order: Variant, lock: bool, tool: bool, key: bool) -> bool:
 	if not released is Dictionary or not assembled is bool or not supplied is bool or not order is String: return false
 	if released.size() > 4: return false
@@ -379,6 +402,8 @@ static func valid_rescue_facts(released: Variant, assembled: Variant, supplied: 
 	return true
 
 func rescue_information() -> String:
+	if homecoming_completed: return "奥伦、塔文、米洛和贝伦已平安回村。伊莎与父亲团聚，归路的灯火重新亮起。"
+	if core_closed: return "四人已集合，召唤核心已关闭；净化的灵光通道仍能安全回村。"
 	if rescue_assembled: return "四人已在入口内侧安全点集合 · 补给已领取。" + ("仍需沿左阶击败维恩，两场战斗都必须完成。" if not veyne_defeated else "两场战斗已完成；召唤核心仍需关闭。")
 	return "右院四名被掳者 · 旧灯逐人解除 %d/4。全部释放后，回入口内侧蓝灯集合点按 E 确认。先救人可先获补给，先打维恩可先取钥印；两场战斗都必须完成，无隐藏倒计时。" % rescue_released.size()
 
@@ -696,7 +721,9 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	return {"position": Vector3(xz.x, saved.y if map_id == GROUND.MAP_ID else 0, xz.y), "yaw": config.get_value("opening", "yaw", 0.0), "map_id": current_map}
 
 func objective() -> String:
-	if current_map == MAP03 and rescue_assembled: return "四人已在蓝灯旁集合 · 补给已领取。" + ("仍需沿左阶击败维恩。" if not veyne_defeated else "召唤核心仍需关闭。")
+	if homecoming_completed: return "四人平安归来 · 与伊莎和奥伦交谈，或沿灵光通道重访旧路。"
+	if core_closed: return "召唤核心已关闭 · 祭坛旁按 E，沿安全灵光通道回村。"
+	if current_map == MAP03 and rescue_assembled: return "四人已在蓝灯旁集合 · 补给已领取。" + ("仍需沿左阶击败维恩。" if not veyne_defeated else "前往左侧祭坛，用旧灯关闭召唤核心（E）。")
 	if current_map == MAP03 and warden_lock_released: return "右院 · 旧灯逐人解除拘束 %d/4；全部释放后，入口内侧蓝灯旁按 E 集合。" % rescue_released.size()
 	if current_map == MAP03: return "墓殿入口 · 调查右侧仪式石碑（E）；左侧蓝光通道可返回草甸" if not ritual_record_read and not ln02_revealed else ln02_information()
 	if current_map == MAP02:
@@ -885,6 +912,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if not (saved_health is int or saved_health is float) or not is_finite(float(saved_health)) or float(saved_health) < 0 or float(saved_health) > 100: return "存档生命无效"
 	var node: Variant = config.get_value("opening", "node", "D01")
 	if not node is String or (not NODES.data.has(node) and not HERS_NODES.data.has(node) and not RONEN_NODES.data.has(node)): return "存档对话无效"
+	if node.begins_with("END") and not config.get_value("post_bow","homecoming_completed",false): return "存档团聚对话前置无效"
 	var choices: Variant = config.get_value("opening", "choices", [])
 	if not choices is Array: return "存档选择无效"
 	for choice in choices:
@@ -1038,6 +1066,12 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if release_key and not caster_defeated: return "存档解除钥印条件无效"
 	if not valid_rescue_facts(config.get_value("post_bow","rescue_released",{}), config.get_value("post_bow","rescue_assembled",false), config.get_value("post_bow","rescue_supply_claimed",false), config.get_value("post_bow","rescue_order",""), lock_released, tool, release_key): return "存档营救事实无效"
 	if config.get_value("post_bow","rescue_order","") == "veyne_first" and not caster_defeated: return "存档营救顺序无效"
+	for key in ["core_closed", "homecoming_completed"]:
+		if typeof(config.get_value("post_bow",key,false)) != TYPE_BOOL: return "存档终局事实无效"
+	var closed: bool = config.get_value("post_bow","core_closed",false)
+	var returned: bool = config.get_value("post_bow","homecoming_completed",false)
+	if closed and (not boss_defeated or not caster_defeated or not config.get_value("post_bow","rescue_assembled",false) or not entrance_purified or not config.get_value("post_bow","lamp_owned",false)): return "存档核心关闭前置无效"
+	if returned and not closed: return "存档返乡前置无效"
 	if config.has_section_key("post_bow", "current_map") and current != map_id: return "存档地图边界无效"
 	return ""
 
@@ -1091,7 +1125,7 @@ func slot_preview(slot: int) -> Dictionary:
 # Read-only journal projection. These rows never grant equipment or rewards.
 func quest_entries() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
-	rows.append({"id": "rescue", "title": "伊莎的请求", "complete": false,
+	rows.append({"id": "rescue", "title": "伊莎的请求", "complete": homecoming_completed,
 		"context": ritual_information() if cp03_claimed else "伊莎的父亲和三位村民被怪物带走。出发前，先在河谷聚落做好准备。" if q01_accepted else "广场边的伊莎似乎需要帮助。靠近她，听听发生了什么。",
 		"action": objective(), "steps": (["答应伊莎的求援"] + ([rescue_information()] if cp03_claimed else [])) if q01_accepted else []})
 	if q01_accepted:

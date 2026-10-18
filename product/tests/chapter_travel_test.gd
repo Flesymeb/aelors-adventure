@@ -204,7 +204,8 @@ static func resource_checks() -> Dictionary:
 			duration += float(slide.duration_seconds)
 	checks.three_distinct_beats = referenced == ["farewell.png", "passage.png", "arrival.png"]
 	checks.provenance_references = source is Dictionary and source.get("files", []).map(func(record): return record.get("file", "")) == referenced
-	checks.bounded_playback = duration >= 3.0 and duration <= 6.0
+	checks.bounded_playback = is_equal_approx(duration,11.4)
+	checks.moving_departure_beats = storyboard.slides[0].get("video","") == "farewell.ogv" and storyboard.slides[1].get("video","") == "passage.ogv" and ResourceLoader.exists(transition.ART+"farewell.ogv") and ResourceLoader.exists(transition.ART+"passage.ogv")
 	for file in ["farewell.png", "passage.png", "arrival.png"]:
 		var texture := load(transition.ART + file) as Texture2D
 		checks[file + "_imported"] = texture != null and texture.get_size() == Vector2(1672, 941)

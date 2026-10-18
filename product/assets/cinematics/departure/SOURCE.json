@@ -111,5 +111,30 @@
     "adaptation": "Retained fullscreen overlay and awaited alpha-tween boundary; product router owns loading, world state and once-only completion. Addon autoload and project-settings writes are not installed.",
     "license": "MIT; full notice in LICENSES.txt",
     "scope": "Implementation component only; generated arrival video retains its separate provider provenance and terms."
-  }
+  },
+  "departure_motion": {
+    "farewell": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "7aa72f69-ac38-4018-870a-1e4c1a350186",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    },
+    "passage": {
+      "provider": "Bailian/DashScope",
+      "model": "wan3.0-video",
+      "task_id": "3e653b2f-e035-45e3-aaab-5b4c08371b04",
+      "task_status": "SUCCEEDED",
+      "resolution": "720P",
+      "asset_kind": "environment",
+      "chroma": "none",
+      "conversion": "GStreamer Theora 1280x720 30fps quality48; source audio omitted",
+      "motion_review": "Separated generated samples inspected; actual cast and environmental motion observed. Independent rendered quality pending."
+    }
+  },
+  "departure_motion_status": "Five-second complete beat samples reviewed; runtime and independent quality pending."
 }

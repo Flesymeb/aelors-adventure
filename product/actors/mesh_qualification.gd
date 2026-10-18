@@ -4,6 +4,9 @@ extends RefCounted
 static func qualify_tree(node: Node, preserve_linear_uvs := false) -> void:
 	for instance in node.find_children("*", "MeshInstance3D", true, false):
 		if not instance.mesh is ArrayMesh: continue
+		# Valid imports may contain custom channels with their own format flags.
+		# Rebuilding them merely to discover there is no UV repair loses that format.
+		if not _has_degenerate_uv(instance.mesh): continue
 		var output = ArrayMesh.new()
 		var changed = false
 		for surface in instance.mesh.get_surface_count():
@@ -48,6 +51,21 @@ static func qualify_tree(node: Node, preserve_linear_uvs := false) -> void:
 			changed = changed or repaired
 		if changed: instance.mesh = output
 
+
+static func _has_degenerate_uv(mesh: ArrayMesh) -> bool:
+	for surface in mesh.get_surface_count():
+		if mesh.surface_get_primitive_type(surface) != Mesh.PRIMITIVE_TRIANGLES: continue
+		var arrays := mesh.surface_get_arrays(surface)
+		if arrays[Mesh.ARRAY_TEX_UV] == null: continue
+		var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+		var count := indices.size() if not indices.is_empty() else uv.size()
+		for triangle in range(0,count-2,3):
+			var a: int = indices[triangle] if not indices.is_empty() else triangle
+			var b: int = indices[triangle+1] if not indices.is_empty() else triangle+1
+			var c: int = indices[triangle+2] if not indices.is_empty() else triangle+2
+			if absf((uv[b]-uv[a]).cross(uv[c]-uv[a])) <= 0.000000000001: return true
+	return false
 
 static func _sword_arrays(mesh: ArrayMesh, surface: int) -> Array:
 	# Expand indices directly, retaining the imported position/normal/color
