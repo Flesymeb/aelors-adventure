@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 63 |
-| Verified closed | 37 |
+| Active | 80 |
+| Verified closed | 41 |
 | Policy invalidated | 7 |
 | Waived | 0 |
-| All in this run | 107 |
+| All in this run | 128 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -150,6 +150,27 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `opening-live-cast-discontinuity` | [#126](https://github.com/Flesymeb/aelors-adventure/issues/126) | CLOSED | Independently verified resolved at loop 84. |
 | `title-resize-clips-focused-setting` | [#127](https://github.com/Flesymeb/aelors-adventure/issues/127) | CLOSED | Independently verified resolved at loop 83. |
 | `qa.formal-collection-incomplete` | [#128](https://github.com/Flesymeb/aelors-adventure/issues/128) | OPEN | Independent full milestone closeout remains incomplete. |
+| `adjacent-opening-cinematic` | [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | OPEN | Next-phase opening cinematic continuity remains absent. |
+| `camera-lamp-obstruction` | [#6](https://github.com/Flesymeb/aelors-adventure/issues/6) | CLOSED | Historical closure; current-version verification is not asserted. |
+| `finding-adjacent-return-to-title` | [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | OPEN | Return to Title remains a message-only placeholder outside this increment. |
+| `finding-failure-focus-hover-ambiguity` | [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | OPEN | Recovery hover/focus distinction remains insufficiently evidenced; the existing issue cannot be closed. |
+| `finding-failure-keyboard-navigation` | [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | CLOSED | Historical closure; current-version verification is not asserted. |
+| `finding-failure-screen-readability` | [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | CLOSED | Historical closure; current-version verification is not asserted. |
+| `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve clothing bands remain visible. |
+| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dialogue portraits remain absent in independently captured conversation states. |
+| `issue:milestone01-camera-environment` | [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | OPEN | Current shipped camera and environment remain blockout-level and leave the actor partially occluded. |
+| `issue:milestone01-missing-loop` | [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | BLOCKED | MAP01 milestone is only a locomotion shell; required narrative, combat, equipment, progression, and persistence loop is absent. |
+| `issue:r02-actor-animation-falloff` | [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | BLOCKED | R02 actor states are visually static and ordinary traversal can fall off the authored route without recovery. |
+| `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | OPEN | Sword and bow progression are independently demonstrated; full connected-slice and chapter acceptance remain unverified. |
+| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | Settings and save controls retain unfinished demo presentation. |
+| `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Historical closure; current-version verification is not asserted. |
+| `rpg.combat.audio_quality_unverified` | [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | OPEN | Captured combat audio establishes output causality, but perceptual quality remains unverified. |
+| `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | OPEN | The enabled Game Over Return to title action stops at an unavailable-title message. |
+| `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | OPEN | Required dialogue portraits are unbound in the reachable narrative interface. |
+| `rpg.pause.inherited_control_inventory` | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | OPEN | The pause/settings panel retains a dense English demo-style control inventory. |
+| `rpg.recovery.ammunition_not_restored` | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | OPEN | Checkpoint recovery restores health but leaves spent ammunition unchanged. |
+| `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | OPEN | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
+| `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | OPEN | The authored-village grass texture dependency remains broken. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -158,33 +179,39 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
 | GitHub HoH namespace | 80 | 48 | 128 |
-| Outside this run's table | 17 | 4 | 21 |
+| Outside this run's table | 0 | 0 | 0 |
 
-Earlier runs' issues retain their own evidence and are not automatically resolved by this run.
+---
 
-| GitHub | Issue ID | GitHub state | Source run |
-| --- | --- | --- | --- |
-| [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | `issue:milestone01-camera-environment` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | `issue:milestone01-missing-loop` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | `issue:r02-actor-animation-falloff` | OPEN | `aelors-adventure-astra-high-20261002` |
-| [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | `adjacent-opening-cinematic` | OPEN | `aelors-village-sol-local-20261004` |
-| [#6](https://github.com/Flesymeb/aelors-adventure/issues/6) | `camera-lamp-obstruction` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | `milestone-01-connected-slice-unavailable` | OPEN | `aelors-village-sol-local-20261004` |
-| [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | `r02-input-bindings` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | `village-grass-import-dependency` | OPEN | `aelors-village-sol-local-20261004` |
-| [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | `milestone-01-demo-overlay-presentation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | `isha-clothing-deformation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | `isha-dialogue-finished-presentation` | OPEN | `aelors-village-sol-local-20261004` |
-| [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | `finding-failure-keyboard-navigation` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | `finding-failure-screen-readability` | CLOSED | `aelors-village-sol-local-20261004` |
-| [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | `finding-adjacent-return-to-title` | OPEN | `aelors-village-sol-local-20261004` |
-| [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | `finding-failure-focus-hover-ambiguity` | OPEN | `aelors-village-sol-local-20261004` |
-| [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | `rpg.combat.audio_quality_unverified` | OPEN | `aelors-template-sol-local-20261006` |
-| [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | `rpg.continuity.return_to_title_stub` | OPEN | `aelors-template-sol-local-20261006` |
-| [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | `rpg.dialogue.portraits_unbound` | OPEN | `aelors-template-sol-local-20261006` |
-| [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | `rpg.pause.inherited_control_inventory` | OPEN | `aelors-template-sol-local-20261006` |
-| [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | `rpg.recovery.ammunition_not_restored` | OPEN | `aelors-template-sol-local-20261006` |
-| [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | `rpg.village.performance_below_target` | OPEN | `aelors-template-sol-local-20261006` |
+## Loop 95
+
+> A host-derived record of one Planner → Developer → QA Tester cycle.
+
+| Candidate | Base | Current state |
+| --- | --- | --- |
+| `loop-86-36e97d6a2a6c` | `warm_start:loop-85-36e97d6a2a6c` | PLANNED |
+
+### Project Planner
+
+| Field | Value |
+| --- | --- |
+| Status | PLANNED |
+| Focus | phase / milestone_05 |
+| Objective | Complete the existing early-village coach interaction's modal cue ownership and make the five allocated issues ready for bounded independent review where their prerequisites exist. Preserve the full original obligations, distinguish the label repair from evidence completion, and retain unavailable timing/history conditions as blocked. Target independently accepted old closures without adding unrelated gameplay, exports or aggregate milestone work. |
+| Strategy | `early-village-modal-owner-completion` |
+| Tasks | 1 |
+
+### Developer
+
+| Field | Value |
+| --- | --- |
+| Status | NOT STARTED |
+
+### QA Tester
+
+| Field | Value |
+| --- | --- |
+| Status | UNTESTED |
 
 ---
 
@@ -4672,10 +4699,10 @@ Earlier runs' issues retain their own evidence and are not automatically resolve
 
 ## Current pointers
 
-- Latest candidate: `loop-85-36e97d6a2a6c`
+- Latest candidate: `loop-86-36e97d6a2a6c`
 - Accepted candidate: `none`
-- Latest attempted: `loop-85-36e97d6a2a6c`
-- Latest warm start: `loop-85-7fbd3bfe7448`
+- Latest attempted: `loop-86-36e97d6a2a6c`
+- Latest warm start: `loop-86-36e97d6a2a6c`
 - Last published: `loop-85-36e97d6a2a6c`
 - Best verified: `loop-85-36e97d6a2a6c`
 - Generated by the HoH host from immutable run evidence.
