@@ -13,7 +13,8 @@
       "Original joint ordering and inverse-bind matrices retained; original GLB preserved unchanged",
       "normalize measured bounds to 1.72m",
       "opaque material rendering",
-      "Isha_Idle looping skeletal breathing on source spine/head; stationary NPC"
+      "Isha_Idle looping skeletal breathing on source spine/head; stationary NPC",
+      "Shoulder-facing fabric UV islands remapped to the existing pale sleeve atlas interior; cloth topology, normals, skin weights, bind matrices and idle/talk clips retained"
     ],
     "original_resource": "res://assets/dialogue/woman_comparison.glb",
     "idle": {
