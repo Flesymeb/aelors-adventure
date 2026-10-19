@@ -2,14 +2,58 @@ extends Node
 var test_results: Dictionary = {}
 var inspection: CanvasLayer
 var inspection_state: Node
+var local_router: Node
+var local_case := ""
 const ENTRY_NODES := {"isha": "D01", "hers": "H01", "ronen": "R01"}
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	test_results = await run(self)
 	inspection_state = preload("res://dialogue_state.gd").new()
 	inspection = preload("res://IshaDialogue.tscn").instantiate()
 	inspection.state = inspection_state
 	add_child(inspection)
 	show_case("hers",1.0)
+	inspection.footer.text = "独立布局检查 · F6 赫斯 / F7 罗恩本地交互检查（预置进度，不写冒险存档）"
+
+func _input(event: InputEvent) -> void:
+	# Available only in this explicitly launched test scene. The shipped
+	# chapter preview already owns both weapons, so its E interaction runs
+	# practice/refill instead of either acquisition conversation.
+	if local_router != null or test_results.is_empty(): return
+	if not event is InputEventKey or not event.pressed or event.echo: return
+	if event.keycode not in [KEY_F6, KEY_F7]: return
+	get_viewport().set_input_as_handled()
+	_start_local_village("hers" if event.keycode == KEY_F6 else "ronen")
+
+func _start_local_village(kind: String) -> void:
+	local_case = kind
+	inspection.root.hide()
+	local_router = preload("res://ui/title_menu.tscn").instantiate()
+	local_router.name = "LocalVillage"
+	add_child(local_router)
+	var local_state: Node = preload("res://ui/chapter_preview_state.gd").new()
+	local_state.name = "LocalPreviewState"
+	local_router.add_child(local_state)
+	local_state.prepare(1)
+	# Setup only: let real approach/E inputs reach the unowned equipment
+	# branch. All prerequisite facts remain explicitly seeded, never earned.
+	local_state.sword_owned = kind == "ronen"
+	local_state.bow_owned = false
+	local_state.selected_equipment = "sword" if local_state.sword_owned else "unarmed"
+	local_state.bag_history.erase("bow")
+	if not local_state.sword_owned: local_state.bag_history.erase("sword")
+	local_state.inventory.restore()
+	local_router.state = local_state
+	local_router.audio.state = local_state
+	local_router.entry_kind = "chapter_preview"
+	local_router.title.hide()
+	var banner := Label.new()
+	banner.text = "本地交互检查 · %s · 前置进度预置 · 不写冒险存档" % ("赫斯" if kind == "hers" else "罗恩")
+	banner.theme = preload("res://dialogue_theme.tres")
+	banner.position = Vector2(310, 8)
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	local_router.canvas.add_child(banner)
+	local_router._start_loading()
 func show_case(kind: String, scale: float) -> void:
 	inspection_state.dialogue_kind = kind
 	inspection_state.logical_node = ENTRY_NODES[kind]
@@ -20,7 +64,7 @@ func show_case(kind: String, scale: float) -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(inspection_state): inspection_state.free()
 func _mcp_state() -> Dictionary:
-	return {"diagnostic_fixture":true,"results":test_results,"inspection":inspection._mcp_state() if is_instance_valid(inspection) else null}
+	return {"diagnostic_fixture":true,"results":test_results,"local_case":local_case,"earned_progress":false,"local_entry_present":is_instance_valid(local_router),"inspection":inspection._mcp_state() if is_instance_valid(inspection) else null}
 ## Explicit isolated presentation checks. Never mounted on ordinary startup;
 ## no inventory grants, preference writes or adventure saves occur here.
 static func run(holder: Node) -> Dictionary:
@@ -70,10 +114,32 @@ static func run(holder: Node) -> Dictionary:
 	dialogue.nested_menu = false
 	dialogue._process(1.0)
 	checks.reveal_resumed = dialogue.reveal_count > reveal_before
+	# Production loading lays out the old focused line before restoring the
+	# saved node. The deferred scroll must not retain that detached button.
+	state.dialogue_kind = "isha"
+	state.logical_node = "D02"
+	state.text_scale = 2.0
+	dialogue._show_node(true)
+	dialogue.choice_buttons[1].grab_focus()
+	dialogue._layout()
+	dialogue._show_node(true)
+	await holder.get_tree().process_frame
+	checks.replaced_choice_focus_reset = dialogue.focused_choice == -1
+	dialogue.choice_buttons[2].grab_focus()
+	dialogue._layout()
+	# Container sorting and the deferred visibility callback settle after the
+	# frame signal; inspect geometry on the following frame.
+	await holder.get_tree().process_frame
+	await holder.get_tree().process_frame
+	var choice_rect: Rect2 = dialogue.choice_buttons[2].get_global_rect()
+	var scroll_rect: Rect2 = dialogue.reading_scroll.get_global_rect()
+	var replacement_layout := {"focus": dialogue.focused_choice, "choice": choice_rect, "scroll": scroll_rect}
+	# Scroll offsets are integer pixels while scaled panel edges are fractional.
+	checks.replacement_choice_scrolls = dialogue.focused_choice == 2 and scroll_rect.grow(1.0).encloses(choice_rect)
 	checks.merge(label_ownership_checks())
 	dialogue.free()
 	state.free()
-	return {"checks": checks, "views": views, "scope": "isolated presentation; no ordinary conversation or earned-state proof"}
+	return {"checks": checks, "views": views, "replacement_layout": replacement_layout, "scope": "isolated presentation; no ordinary conversation or earned-state proof"}
 
 static func label_ownership_checks() -> Dictionary:
 	var world: Node3D = preload("res://preview_controller.gd").new()

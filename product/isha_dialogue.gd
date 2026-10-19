@@ -141,12 +141,21 @@ func _layout() -> void:
 	footer.text = "E 补全 / 继续 · ↑↓ 选择\nEnter 确认 · Esc 离开\nF10 设置 · F5 存档" if large else "E 补全 / 继续 · ↑↓ 选择 · Enter 确认\nEsc 离开 · F10 设置 · F5 存档"
 	_layout_reading()
 	if focused_choice >= 0 and focused_choice < choice_buttons.size():
-		reading_scroll.ensure_control_visible.call_deferred(choice_buttons[focused_choice])
+		_scroll_to_focused_choice.call_deferred()
 	for i in portraits.size():
 		var portrait_width := minf(size.x * 0.235, size.y * 0.48)
 		var portrait_size := Vector2(portrait_width, portrait_width * 4.0 / 3.0)
 		portraits[i].position = Vector2(8 if i == 0 else size.x - portrait_width - 8, size.y - portrait_size.y - 12)
 		portraits[i].size = portrait_size
+
+func _scroll_to_focused_choice() -> void:
+	# Loading or changing a line replaces its buttons before deferred layout
+	# runs. Resolve the current choice here rather than retaining an old child.
+	if not opened or nested_menu or not root.is_visible_in_tree(): return
+	if focused_choice < 0 or focused_choice >= choice_buttons.size(): return
+	var choice := choice_buttons[focused_choice]
+	if not is_instance_valid(choice) or choice.is_queued_for_deletion(): return
+	if reading_scroll.is_ancestor_of(choice): reading_scroll.ensure_control_visible(choice)
 
 func _layout_reading() -> void:
 	# Font metrics include the bundled Chinese serif's actual ascent/descent.
