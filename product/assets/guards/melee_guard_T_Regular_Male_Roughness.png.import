@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkmpr8usq00qd"
-path="res://.godot/imported/melee_guard_T_Regular_Male_Roughness.png-da807c827cdaa24a12133b5790bcbf9a.ctex"
+path.s3tc="res://.godot/imported/melee_guard_T_Regular_Male_Roughness.png-da807c827cdaa24a12133b5790bcbf9a.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "a7966eb2bb9bf39a39350a651ff9804f"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/guards/melee_guard_T_Regular_Male_Roughness.png"
-dest_files=["res://.godot/imported/melee_guard_T_Regular_Male_Roughness.png-da807c827cdaa24a12133b5790bcbf9a.ctex"]
+dest_files=["res://.godot/imported/melee_guard_T_Regular_Male_Roughness.png-da807c827cdaa24a12133b5790bcbf9a.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
