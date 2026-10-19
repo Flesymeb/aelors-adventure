@@ -9,6 +9,8 @@ const AERIAL_INDEX = 3
 const AERIAL_DAMAGE = 24.0
 const FINISHER_INDEX = 4
 const FINISHER_DAMAGE = 28.0
+const SPIN_INDEX := 5
+var whirlwind: Node3D
 const PARRY_FOLLOWUP_SECONDS = 0.6
 var parry_followup_remaining := 0.0
 var finisher_buffered = false
@@ -139,6 +141,14 @@ func bind_player_combat() -> void:
 		strategies.append(strategy)
 	strategies.append(aerial_strategy())
 	strategies.append(finisher_strategy())
+	var spin := SnaielMeleeAttack.new()
+	spin.attack_name = "sword/Whirlwind"
+	spin.damage_attributes.health = 18.0
+	spin.anticipation = 0.25
+	spin.strike_delay = 0.0
+	spin.contact_time = 1.30
+	spin.recovery = 0.45
+	strategies.append(spin)
 	sword_events.configure(strategies)
 	sword_melee = SnaielMelee.new()
 	sword_melee.name = "SwordMelee"
@@ -153,6 +163,10 @@ func bind_player_combat() -> void:
 	sword_presentation.name = "SwordPresentation"
 	add_child(sword_presentation)
 	sword_presentation.configure(self)
+	whirlwind = preload("res://combat/sword_whirlwind.gd").new()
+	whirlwind.name = "SwordWhirlwind"
+	add_child(whirlwind)
+	whirlwind.configure(self)
 	player_hitbox = SnaielHitbox.new()
 	player_hitbox.name = "PlayerHitbox"
 	player_hitbox.entity = player
@@ -250,6 +264,7 @@ func sword_stage(stage: String) -> void:
 		if combo < 2: player._play_animation("sword/Sword_Regular_%s_Rec" % ("A" if combo == 0 else "B"), 2.8)
 
 func sword_finished() -> void:
+	if combo == SPIN_INDEX and whirlwind: whirlwind.stop()
 	if sword_presentation: sword_presentation.clear_presentation()
 	if combo == FINISHER_INDEX:
 		player.animation_player.callback_mode_process = finisher_animation_process
@@ -355,6 +370,7 @@ func restore_history() -> void:
 	if world.pressure_encounter: world.pressure_encounter.restore_history()
 	if world.ambush_encounter: world.ambush_encounter.restore_history()
 	if world.line_encounter: world.line_encounter.restore_history()
+	if world.get("route_patrols"): world.route_patrols.restore_history()
 	if world.channel_guards: world.channel_guards.restore_history()
 	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
 	if world.get("warden_encounter"): world.warden_encounter.restore_history()
@@ -362,6 +378,7 @@ func restore_history() -> void:
 	if feedback: feedback.clear_feedback()
 
 func can_save() -> bool:
+	if world.get("route_patrols") and not world.route_patrols.can_save(): return false
 	if world.get("veyne_encounter") and not world.veyne_encounter.can_save(): return false
 	if world.get("warden_encounter") and not world.warden_encounter.can_save(): return false
 	return phase != "death" and not monster.engaged and sim_phase == "idle" and (world.bridge_encounter == null or world.bridge_encounter.can_save()) and (world.dynamic_encounters == null or world.dynamic_encounters.can_save()) and (world.channel_guards == null or world.channel_guards.can_save()) and (world.pressure_encounter == null or world.pressure_encounter.can_save()) and (world.ambush_encounter == null or world.ambush_encounter.can_save()) and (world.line_encounter == null or world.line_encounter.can_save()) and (world.element_abilities == null or world.element_abilities.can_save()) and (world.lamp_training == null or world.lamp_training.reveal_remaining <= 0)
@@ -541,6 +558,8 @@ func start_swing() -> void:
 		player.animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 		player._play_animation(player.AERIAL_CLIP, player.AERIAL_PLAYBACK_SPEED)
 		player.animation_player.advance(0.0)
+	elif combo == SPIN_INDEX:
+		whirlwind.begin_pose()
 	elif combo == FINISHER_INDEX:
 		finisher_animation_process = player.animation_player.callback_mode_process
 		player.animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
@@ -574,6 +593,10 @@ func sword_landed() -> void:
 	player._play_animation("Jump_Land", 2.0)
 
 func interrupt(_reason: String) -> void:
+	# Whirlwind has hit-reaction armour, not invulnerability. Death/load and
+	# deliberate control changes still own their ordinary cleanup.
+	if _reason in ["hurt","heavy_hurt"] and whirlwind and whirlwind.active: return
+	if whirlwind: whirlwind.reset(_reason)
 	clear_lesson()
 	if is_instance_valid(practice_menu): practice_menu.close()
 	clear_parry_followup()
@@ -586,6 +609,7 @@ func interrupt(_reason: String) -> void:
 	if world.channel_guards and _reason in ["death", "load", "recovery"]: world.channel_guards.interrupt()
 	if world.ambush_encounter and _reason in ["death", "load", "recovery"]: world.ambush_encounter.interrupt()
 	if world.line_encounter and _reason in ["death", "load", "recovery"]: world.line_encounter.interrupt()
+	if world.get("route_patrols") and _reason in ["death","load","recovery"]: world.route_patrols.interrupt()
 	if world.pressure_encounter and _reason in ["death", "load", "recovery"]: world.pressure_encounter.interrupt()
 	if world.bridge_encounter and _reason in ["death", "load", "recovery"]: world.bridge_encounter.interrupt()
 	if world.dynamic_encounters and _reason in ["death", "load", "recovery"]: world.dynamic_encounters.interrupt()
@@ -688,6 +712,7 @@ func advance_player(delta: float) -> void:
 			sword_events.timeline.speed_scale = 1
 			_observe_stop_end("elapsed")
 		return
+	if whirlwind: whirlwind.advance(delta)
 	if player.traversal.action != "" and phase != "idle": interrupt("dodge")
 	if aerial_active and phase == "landing_recovery":
 		clock += delta
@@ -707,9 +732,10 @@ func advance_player(delta: float) -> void:
 		if world.line_encounter: registry.merge(world.line_encounter.registry())
 		if world.channel_guards: registry.merge(world.channel_guards.registry())
 		if world.dynamic_encounters: registry.merge(world.dynamic_encounters.registry())
+		if world.get("route_patrols"): registry.merge(world.route_patrols.registry())
 		if world.get("warden_encounter"): registry.merge(world.warden_encounter.registry())
 		if world.get("veyne_encounter"): registry.merge(world.veyne_encounter.registry())
-		if aerial_active:
+		if aerial_active or (whirlwind and whirlwind.active):
 			# Contact follows the retained hand mount and blade's local +Y axis.
 			# No body-centred aerial sphere or landing shockwave can award a hit.
 			sword_melee.sweep(player, player.sword_holder.global_position, player.sword_holder.global_basis.y.normalized(), registry, 3, true)
@@ -834,7 +860,9 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 	state.health -= last_hp_loss
 	var resolved := contact.duplicate(true)
 	resolved.merge({"accepted": last_outcome in ["hurt", "block", "parry", "dodge", "protected"], "outcome": last_outcome, "hp_before": before, "hp_after": state.health, "hp_loss": last_hp_loss, "simulated": simulated}, true)
-	if not simulated and last_outcome == "hurt" and state.health > 0:
+	var spin_armour: bool = whirlwind != null and whirlwind.active and state.health > 0
+	resolved["whirlwind_super_armor"] = spin_armour and not simulated and last_outcome == "hurt"
+	if not simulated and last_outcome == "hurt" and state.health > 0 and not spin_armour:
 		var requested: bool = resolved.get("heavy_impact_requested", false)
 		var guarded: bool = heavy_impact.active() or heavy_impact.guard_remaining > 0.0
 		var can_stagger: bool = requested and not guarded and player.is_on_floor() and player.traversal.get("posture") == "standing"
@@ -854,7 +882,7 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 			interrupt("hurt")
 			hurt_time = 0.45
 			player._play_animation("Hit_Chest")
-	contact.merge({"heavy_stagger_started": resolved.get("heavy_stagger_started", false)}, true)
+	contact.merge({"heavy_stagger_started": resolved.get("heavy_stagger_started", false), "whirlwind_super_armor": resolved.get("whirlwind_super_armor", false)}, true)
 	# Only simulated training/direct fall callers lack physical contact geometry.
 	var point: Vector3 = resolved.get("point", player.global_position + Vector3.UP)
 	if last_outcome == "parry":
@@ -862,15 +890,17 @@ func receive_attack(origin: Vector3, direction: Vector3, amount: float, simulate
 	elif last_outcome == "block":
 		feedback.impact(point, "◇ 格挡", last_hp_loss, "block", resolved)
 	elif not simulated and last_outcome == "hurt" and state.health > 0:
-		feedback.impact(point, "受击", last_hp_loss, "hurt", resolved)
+		feedback.impact(point, "霸体 · 受击" if spin_armour else "受击", last_hp_loss, "hurt", resolved)
 	if simulated and last_outcome in ["block", "parry", "dodge"]:
+		var newly_learned: bool = not state.practice_defense
 		state.practice_defense = true
 		if last_outcome == "parry": state.practice_parry = true
 		commit()
 		# Keep the timing result visible alongside the committed exercise.
 		# A generic completion notice must not erase early/success feedback.
 		var result_text = "振刀成功" if last_outcome == "parry" else ("格挡有效 · 振刀偏早" if last_outcome == "block" else "闪避有效")
-		tell(result_text + " · 防御练习完成；可挑战训练怪，或松开右键按 E 重试", 4)
+		var unlock_hint := "\n已解锁回旋斩 [%s] · 施放期间抗打断" % player.key_prompt("whirlwind") if newly_learned and state.practice_hit else ""
+		tell(result_text + " · 防御练习完成；可挑战训练怪，或松开右键按 E 重试" + unlock_hint, 4)
 	if state.health <= 0: settle_death(resolved)
 	return last_outcome
 
@@ -902,15 +932,6 @@ func recover_at_checkpoint() -> void:
 	if state.lives <= 0:
 		show_game_over()
 		return
-	if not world.meadow_slice: monster.reset_encounter()
-	if world.bridge_encounter: world.bridge_encounter.restore_history()
-	if world.pressure_encounter: world.pressure_encounter.restore_history()
-	if world.ambush_encounter: world.ambush_encounter.restore_history()
-	if world.line_encounter: world.line_encounter.restore_history()
-	if world.channel_guards: world.channel_guards.restore_history()
-	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
-	if world.get("warden_encounter"): world.warden_encounter.restore_history()
-	if world.get("veyne_encounter"): world.veyne_encounter.restore_history()
 	sim_phase = "idle"
 	hers.idle()
 	player.traversal.reset()
@@ -925,10 +946,24 @@ func recover_at_checkpoint() -> void:
 		return
 	player.velocity = Vector3.ZERO
 	state.health = 100
+	# Refill only an already owned bow, in the same durable recovery commit.
+	state.arrows = 12 if state.bow_owned else 0
 	state.recovery_pending = false
 	phase = "idle"
 	hurt_time = 0
 	interrupt("recovery")
+	parry_cooldown = 0
+	late_window = 0
+	if not world.meadow_slice: monster.reset_encounter()
+	if world.bridge_encounter: world.bridge_encounter.restore_history()
+	if world.pressure_encounter: world.pressure_encounter.restore_history()
+	if world.ambush_encounter: world.ambush_encounter.restore_history()
+	if world.line_encounter: world.line_encounter.restore_history()
+	if world.get("route_patrols"): world.route_patrols.restore_history()
+	if world.channel_guards: world.channel_guards.restore_history()
+	if world.dynamic_encounters: world.dynamic_encounters.restore_history()
+	if world.get("warden_encounter"): world.warden_encounter.restore_history()
+	if world.get("veyne_encounter"): world.veyne_encounter.restore_history()
 	player._update_animation(false)
 	protection = 2
 	feedback.clear_feedback()
@@ -1038,7 +1073,7 @@ func collect_remnant() -> void:
 	tell("初战奖励已领取 · +10 XP；继续完成巡路剑教学", 4)
 
 func player_snapshot() -> Dictionary:
-	return {"phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "parry_followup_remaining": parry_followup_remaining, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}, "heavy_impact": heavy_impact.observation()}
+	return {"whirlwind_active": whirlwind.active if whirlwind else false, "whirlwind_cooldown": whirlwind.cooldown if whirlwind else 0.0, "phase": phase, "phase_time": clock, "combo": combo + 1, "buffered": buffered, "finisher_buffered": finisher_buffered, "parry_followup_remaining": parry_followup_remaining, "finisher_active": combo == FINISHER_INDEX and phase != "idle", "aerial_active": aerial_active, "aerial_used": aerial_used, "aerial_landed": aerial_landed, "landing_recovery_left": aerial_recovery_left, "blocking": blocking, "parry_window": parry_window, "parry_cooldown": parry_cooldown, "health": state.health, "lives": state.lives, "last_outcome": last_outcome, "last_hp_loss": last_hp_loss, "protection": protection, "attack_instance": sword_source.instance if sword_source else 0, "damage_window": sword_source.can_damage if sword_source else false, "last_contact": player_hitbox.last_result if player_hitbox else {}, "heavy_impact": heavy_impact.observation()}
 
 func _mcp_state() -> Dictionary:
 	# Scalar correlation only; reading this never grants or saves equipment.

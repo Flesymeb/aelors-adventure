@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "kind": "dragon_voice_and_elemental_combat_audio",
+  "sample_rate": 44100,
+  "channels": 1,
+  "recording_sources": [
+    {
+      "file": "monster_attack.ogg",
+      "download_url": "https://opengameart.org/sites/default/files/monster-snarl-attack.ogg",
+      "source_url": "https://opengameart.org/content/monster-snarls",
+      "author": "Darsycho",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "34bf1ceef265725abf00ab3263bbbb492792e126bb1619addd4a5d3ad123347f"
+    },
+    {
+      "file": "troll_roars.ogg",
+      "download_url": "https://opengameart.org/sites/default/files/troll-roars_0.ogg",
+      "source_url": "https://opengameart.org/content/big-scary-troll-sounds",
+      "author": "Darsycho",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7dc09cc3c3e424b66ac564ac83ac89ee91885c964780694d13f2c4957ac813c7"
+    },
+    {
+      "file": "fire_crackle.ogg",
+      "download_url": "https://opengameart.org/sites/default/files/fire-1.ogg",
+      "source_url": "https://opengameart.org/content/fire-crackling/",
+      "author": "AntumDeluge",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f922929805bc6afdf0a35727fa3998033db544c1b6f62ed3aeab94341ed6ddeb"
+    }
+  ],
+  "authored_layers": "Deterministic original noise, wind, electrical and stone-impact synthesis; no UI beep substitutions",
+  "processing": "Source selection, pitch lowering, layering, edge fades, restrained echoes; Vorbis q5; headroom 0.84 peak before encode",
+  "builder": "tools/build_veyne_audio.py",
+  "files": [
+    {
+      "file": "roar_reveal.ogg",
+      "description": "Layered low creature roar for the dragon entrance",
+      "sha256": "08ad1ea5e8ead2731c7ed79861ce2461d28140aa21e5ff96ffa3707d736759b4",
+      "duration_seconds": 3.5029,
+      "peak_dbfs": -1.58,
+      "rms_dbfs": -15.58,
+      "source": "CC0 recordings plus original procedural layers"
+    },
+    {
+      "file": "roar_phase.ogg",
+      "description": "Distinct strained roar when the dragon enters phase two",
+      "sha256": "ff1443b9fcba962057648a68202b858b2192a61c4a1133a397ce975ee1f17812",
+      "duration_seconds": 3.425,
+      "peak_dbfs": -1.24,
+      "rms_dbfs": -16.18,
+      "source": "CC0 recordings plus original procedural layers"
+    },
+    {
+      "file": "death_roar.ogg",
+      "description": "A descending last roar and breath for the death presentation fallback",
+      "sha256": "f1e5c5c9f9f08a37161b809afec4e09b3d95e90aee38664ebdfe5fcdf879e7c6",
+      "duration_seconds": 4.9028,
+      "peak_dbfs": -1.64,
+      "rms_dbfs": -18.98,
+      "source": "CC0 recordings plus original procedural layers"
+    },
+    {
+      "file": "lightning_charge.ogg",
+      "description": "Crackling electrical windup, separate from the discharge",
+      "sha256": "9537dbcf231a5a9abb2232f4893135883f42f516eddc6468938adbb336ec4743",
+      "duration_seconds": 0.8971,
+      "peak_dbfs": -0.82,
+      "rms_dbfs": -17.56,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "lightning.ogg",
+      "description": "Broadband electrical snap followed by a low thunder roll",
+      "sha256": "6116238b0c4bc1620e586be79ca0c9d7253340d6fd3509af3aef1ea34c8880be",
+      "duration_seconds": 1.67,
+      "peak_dbfs": -1.51,
+      "rms_dbfs": -24.42,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "fire_inhale.ogg",
+      "description": "Audible air intake before fire breath",
+      "sha256": "56b7cf936eb92250bfd87a4e992a059d462d726eb5ec6d9e0c6e66b4d2959922",
+      "duration_seconds": 0.8722,
+      "peak_dbfs": -2.01,
+      "rms_dbfs": -16.57,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "fire_breath.ogg",
+      "description": "Crackling fire and broad rushing flame, looped only during active breath",
+      "sha256": "fc5217e218f45918f4b1229fafb5587646182bb7fcd9eb07f4f4403549e8b005",
+      "duration_seconds": 1.3,
+      "peak_dbfs": -2.32,
+      "rms_dbfs": -15.86,
+      "source": "CC0 recordings plus original procedural layers"
+    },
+    {
+      "file": "charge_warning.ogg",
+      "description": "Low body preparation and short creature growl before a charge",
+      "sha256": "eb69d6960ab96b1a0856d40d7c451b984fd7c8d96fedd1f65373c52304a0c19a",
+      "duration_seconds": 0.6846,
+      "peak_dbfs": -1.42,
+      "rms_dbfs": -14.39,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "charge.ogg",
+      "description": "Heavy rushing body and scraping air during forward charge",
+      "sha256": "17f34aed0ddf59c59574c1e2cbfa3fd9d5edf4badb5fff3db15a19a0043e92db",
+      "duration_seconds": 1.0,
+      "peak_dbfs": -1.49,
+      "rms_dbfs": -16.73,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "wing_takeoff.ogg",
+      "description": "Two broad leathery wing beats during takeoff",
+      "sha256": "c6983f26ca452d9acdddf660983b566b9eb9ba82aa7a667924ac6f197c517830",
+      "duration_seconds": 1.1,
+      "peak_dbfs": -0.88,
+      "rms_dbfs": -20.1,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "dive.ogg",
+      "description": "Rapid descending air rush during the committed dive",
+      "sha256": "1994cb7d6546e35bcec0a2c6b4920399ba4331c823411b2ecf5f4edf496906ab",
+      "duration_seconds": 0.7971,
+      "peak_dbfs": -1.31,
+      "rms_dbfs": -17.39,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "landing.ogg",
+      "description": "Grounded stone impact with low body weight and settling rubble",
+      "sha256": "7aed50c87fdbf1581ad9e0e31bbe0ae36bd8bbb7ad42ee06c9229c6691429179",
+      "duration_seconds": 1.93,
+      "peak_dbfs": -2.03,
+      "rms_dbfs": -22.62,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "claw.ogg",
+      "description": "Short claw and wing swish, distinct from lightning and flame",
+      "sha256": "abde1a6aa9ed6f956d40936a8d4bc3e339547af0066dedc9ca8c459b07072c63",
+      "duration_seconds": 0.521,
+      "peak_dbfs": -1.09,
+      "rms_dbfs": -16.17,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "rift_warning.ogg",
+      "description": "Growing electrical rift crackle",
+      "sha256": "50fd6f0d3a1112fceacccea1d4944e25a7d7a44194ad5f92405860f76b5ba18b",
+      "duration_seconds": 0.6971,
+      "peak_dbfs": -2.29,
+      "rms_dbfs": -17.27,
+      "source": "original procedural sound design"
+    },
+    {
+      "file": "rift_contact.ogg",
+      "description": "Brief magical crack on a resolved rift contact",
+      "sha256": "bbed14a8a1255ec61d173eed76a1de09b7de067d2ef6118970a39f10342da17d",
+      "duration_seconds": 0.8421,
+      "peak_dbfs": -0.75,
+      "rms_dbfs": -21.78,
+      "source": "original procedural sound design"
+    }
+  ]
+}

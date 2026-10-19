@@ -95,3 +95,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Additional effects integrated 2026-10-19:
+- Passage and sword-wake shader adapted from CasualGarageCoder, Ring of Power, CC0-1.0: https://godotshaders.com/shader/ring-of-power/ . See assets/shaders/PASSAGE_SOURCE.json.
+- Original world/sword DSP audio: CC0-1.0. See assets/audio/world_effects/SOURCE.json and tools/build_world_audio.py.
+- Dragon recordings: the authors, original links and CC0 evidence are in assets/audio/veyne/LICENSES.md.
+- Generated cinematic videos retain the applicable provider terms; they are not covered by the CC0 shader/audio grants. See assets/cinematics/departure/MOTION_1080_SOURCE.json and assets/cinematics/veyne/DEATH_SOURCE.json.

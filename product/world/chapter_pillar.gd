@@ -14,6 +14,8 @@ var flow: MeshInstance3D
 var particles: CPUParticles3D
 var prompted := false
 var stones: Array[Node3D] = []
+var ring_material: ShaderMaterial
+var ambient_voice: AudioStreamPlayer3D
 
 func configure(owner_world: Node3D) -> void:
 	world = owner_world
@@ -74,6 +76,33 @@ func configure(owner_world: Node3D) -> void:
 	particles.mesh = mote
 	particles.position.y = 0.3
 	add_child(particles)
+	var ring := MeshInstance3D.new()
+	ring.name = "PassageEnergyRing"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(3.8,3.8)
+	ring.mesh = plane
+	ring.position.y = 0.12
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring_material = ShaderMaterial.new()
+	ring_material.shader = preload("res://assets/shaders/passage_ring.gdshader")
+	var noise := NoiseTexture2D.new()
+	noise.width = 128
+	noise.height = 128
+	noise.seamless = true
+	noise.noise = FastNoiseLite.new()
+	ring_material.set_shader_parameter("noise_tex",noise)
+	ring.material_override = ring_material
+	add_child(ring)
+	ambient_voice = AudioStreamPlayer3D.new()
+	ambient_voice.name = "PassageHum"
+	ambient_voice.bus = "Effects"
+	ambient_voice.stream = preload("res://assets/audio/world_effects/portal_hum.ogg").duplicate()
+	ambient_voice.stream.loop = true
+	ambient_voice.unit_size = 5
+	ambient_voice.max_distance = 22
+	ambient_voice.volume_db = -18
+	add_child(ambient_voice)
+	ambient_voice.play()
 	visible = false
 	ground.call_deferred()
 
@@ -93,13 +122,15 @@ func ground() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not grounded: return
-	elapsed += delta
+	if not state.reduced_motion: elapsed += delta
 	# No shader TIME: product pause suspends the actual presentation clock.
 	var active: bool = return_passage or state.passage_missing_conditions().is_empty()
 	var pulse := 0.85 if active or state.reduced_motion else 0.35 + 0.4 * pow(maxf(0,sin(elapsed*2.0)),2)
 	flow.scale.x = pulse
 	flow.scale.z = pulse
 	light.light_energy = pulse * 2
+	ring_material.set_shader_parameter("effect_clock",0.0 if state.reduced_motion else elapsed)
+	ring_material.set_shader_parameter("strength",1.0 if active else 0.3)
 	particles.emitting = not state.reduced_motion
 	var near: bool = world.player.global_position.distance_to(global_position) < 2.5
 	if near and not prompted and world.pause_owners.is_empty():

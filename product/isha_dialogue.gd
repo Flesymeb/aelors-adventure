@@ -61,9 +61,15 @@ func _build() -> void:
 	speaker = Label.new()
 	speaker.name = "Speaker"
 	speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	speaker.add_theme_color_override("font_color",Color.html("#8f2028"))
+	var speaker_font := FontVariation.new()
+	speaker_font.base_font = preload("res://dialogue_theme.tres").default_font
+	speaker_font.variation_embolden = 0.6
+	speaker.add_theme_font_override("font",speaker_font)
 	panel.add_child(speaker)
 	body = RichTextLabel.new()
 	body.name = "DialogueBody"
+	preload("res://ui/quest_markup.gd").configure(body,preload("res://dialogue_theme.tres").default_font,true)
 	body.fit_content = true
 	body.scroll_active = false
 	body.focus_mode = Control.FOCUS_NONE
@@ -124,6 +130,7 @@ func _layout() -> void:
 	panel_content.add_theme_font_size_override("font_size", font_size)
 	speaker.add_theme_font_size_override("font_size", font_size + 3)
 	body.add_theme_font_size_override("normal_font_size", font_size)
+	body.add_theme_font_size_override("bold_font_size", font_size)
 	body.custom_minimum_size.y = 90 if not large else 145
 	for button in choice_buttons:
 		button.add_theme_font_size_override("font_size", font_size)
@@ -167,8 +174,8 @@ func open_dialogue(restored := false) -> void:
 func _show_node(full := false) -> void:
 	var node: Dictionary = state.current_nodes()[state.logical_node]
 	speaker.text = "—  %s  —" % node.speaker
-	body.text = state.bridge_response() if state.dialogue_kind == "isha" and state.logical_node == "B05" else node.text
-	reveal_count = float(body.text.length()) if full or state.instant_text else 0.0
+	body.text = preload("res://ui/quest_markup.gd").format_text(state.bridge_response() if state.dialogue_kind == "isha" and state.logical_node == "B05" else node.text,true)
+	reveal_count = float(body.get_parsed_text().length()) if full or state.instant_text else 0.0
 	body.visible_characters = int(reveal_count)
 	reveal_complete = full or state.instant_text
 	focused_choice = -1
@@ -201,8 +208,8 @@ func _process(delta: float) -> void:
 	if not opened or nested_menu or reveal_complete:
 		return
 	reveal_count += delta * state.reveal_speed
-	body.visible_characters = mini(int(reveal_count), body.text.length())
-	if body.visible_characters >= body.text.length(): _complete_line()
+	body.visible_characters = mini(int(reveal_count), body.get_parsed_text().length())
+	if body.visible_characters >= body.get_parsed_text().length(): _complete_line()
 
 func _complete_line() -> void:
 	reveal_complete = true
@@ -295,7 +302,7 @@ func _mcp_state() -> Dictionary:
 	for button in choice_buttons:
 		choice_layout.append({"text": button.text, "disabled": button.disabled, "focused": button.has_focus(), "rect": _rect_observation(button.get_global_rect())})
 	var minimum := panel_content.get_combined_minimum_size()
-	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.text, "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "counterpart_portrait_path": portraits[1].texture.resource_path if portraits.size() == 2 and portraits[1].texture else "", "player_portrait_active": portraits.size() == 2 and portraits[0].modulate == Color.WHITE, "counterpart_portrait_active": portraits.size() == 2 and portraits[1].modulate == Color.WHITE, "panel_rect": _rect_observation(panel.get_global_rect()), "reading_minimum": [minimum.x, minimum.y], "scroll_rect": _rect_observation(reading_scroll.get_global_rect()), "scroll_vertical": reading_scroll.scroll_vertical, "choices": choice_layout}
+	return {"opened": opened, "node": state.logical_node, "speaker": speaker.text, "body": body.get_parsed_text(), "visible_characters": body.visible_characters, "reveal_complete": reveal_complete, "focused_choice": focused_choice, "choices_disabled": not reveal_complete, "nested_menu": nested_menu, "text_scale": state.text_scale, "reveal_speed": state.reveal_speed, "portraits_bound": portraits.size() == 2 and portraits[0].texture != null and portraits[1].texture != null, "counterpart_portrait_path": portraits[1].texture.resource_path if portraits.size() == 2 and portraits[1].texture else "", "player_portrait_active": portraits.size() == 2 and portraits[0].modulate == Color.WHITE, "counterpart_portrait_active": portraits.size() == 2 and portraits[1].modulate == Color.WHITE, "panel_rect": _rect_observation(panel.get_global_rect()), "reading_minimum": [minimum.x, minimum.y], "scroll_rect": _rect_observation(reading_scroll.get_global_rect()), "scroll_vertical": reading_scroll.scroll_vertical, "choices": choice_layout}
 
 func _rect_observation(rect: Rect2) -> Dictionary:
 	return {"position": [rect.position.x, rect.position.y], "size": [rect.size.x, rect.size.y]}

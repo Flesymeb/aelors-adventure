@@ -2,6 +2,8 @@ extends CanvasLayer
 ## Frames an already committed victory. The enemy's death driver owns motion;
 ## this view never starts/replays Death or changes key, rescue or core facts.
 const DURATION := 4.2
+const MOVIE := "res://assets/cinematics/veyne/death.ogv"
+const MOVIE_DURATION := 10.1
 var encounter: Node3D
 var active := false
 var elapsed := 0.0
@@ -14,10 +16,25 @@ var pause_button: Button
 var skip_button: Button
 var last_text_scale := -1.0
 var feedback_was_visible := false
+var video: VideoStreamPlayer
+var movie_active := false
+var movie_position := 0.0
+var movie_stall := 0.0
+var presentation_status := "inactive"
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 7
+	video = VideoStreamPlayer.new()
+	video.name = "VeyneDeathFilm"
+	video.process_mode = Node.PROCESS_MODE_ALWAYS
+	video.expand = true
+	video.bus = "Effects"
+	video.volume = 1.0
+	video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	video.finished.connect(finish)
+	add_child(video)
+	video.hide()
 	plate = PanelContainer.new()
 	plate.theme = preload("res://dialogue_theme.tres")
 	var frame := StyleBoxTexture.new()
@@ -71,6 +88,7 @@ func begin() -> bool:
 	encounter.presentation_box = encounter.actor.character.posed_bounds(encounter.actor.model)
 	encounter.frame_presentation()
 	encounter.reveal_camera.current = true
+	_start_movie()
 	_layout()
 	show()
 	return true
@@ -82,12 +100,43 @@ func set_paused(paused: bool) -> void:
 	if active:
 		encounter.actor.character.set_speed(0.0 if paused else 1.0)
 		encounter.cue.stream_paused = paused
+		video.paused = paused
+		if is_instance_valid(encounter.creature_audio): encounter.creature_audio.set_paused(paused)
+
+func _start_movie() -> void:
+	movie_active = false
+	movie_position = 0.0
+	movie_stall = 0.0
+	presentation_status = "live_death"
+	# Reduced Motion keeps the existing stable native death shot and voice.
+	if not encounter.state.reduced_motion and ResourceLoader.exists(MOVIE):
+		var stream := load(MOVIE) as VideoStream
+		if stream != null:
+			video.stream = stream
+			video.paused = false
+			video.show()
+			video.play()
+			movie_active = true
+			presentation_status = "movie_with_audio"
+	if not movie_active and is_instance_valid(encounter.creature_audio):
+		encounter.creature_audio.play_event("death")
+
+func _fallback_from_movie() -> void:
+	movie_active = false
+	video.stop()
+	video.stream = null
+	video.hide()
+	presentation_status = "decoder_fallback"
+	# This never restarts victory or grants another item/reward transaction.
+	if is_instance_valid(encounter.creature_audio): encounter.creature_audio.play_event("death")
 
 func _process(delta: float) -> void:
 	if not active: return
 	# Transport freezes pause the tree without adding a product menu owner.
 	# Keep the already laid-out view stable while its pausable rig is held.
-	if get_tree().paused and not suspended(): return
+	if get_tree().paused and not suspended():
+		set_paused(true)
+		return
 	if not Input.is_key_pressed(KEY_SPACE) and not Input.is_key_pressed(KEY_ENTER) and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if not armed: pause_button.grab_focus.call_deferred()
 		armed = true
@@ -100,7 +149,15 @@ func _process(delta: float) -> void:
 	_layout()
 	if paused: return
 	elapsed += delta
-	if elapsed >= DURATION: finish()
+	if movie_active:
+		var position := video.stream_position
+		if position > movie_position + 0.001:
+			movie_position = position
+			movie_stall = 0.0
+		else: movie_stall += delta
+		if movie_stall > 2.0: _fallback_from_movie()
+		elif elapsed >= MOVIE_DURATION + 1.0: finish()
+	elif elapsed >= DURATION: finish()
 
 static func caption_for(assembled: bool, key_owned: bool) -> String:
 	var key_line := "解除钥印已取得。" if key_owned else "解除钥印留在祭坛；靠近后按 E 检查。"
@@ -109,6 +166,9 @@ static func caption_for(assembled: bool, key_owned: bool) -> String:
 
 func _layout() -> void:
 	var view := get_viewport().get_visible_rect().size
+	if is_instance_valid(video):
+		video.size = Vector2(maxf(view.x,view.y*16.0/9.0),maxf(view.y,view.x*9.0/16.0))
+		video.position = (view-video.size)*0.5
 	var state: Node = encounter.state
 	if not is_equal_approx(last_text_scale,state.text_scale):
 		last_text_scale = state.text_scale
@@ -146,6 +206,13 @@ func finish() -> void:
 func shutdown() -> void:
 	if not active: return
 	active = false
+	movie_active = false
+	if is_instance_valid(video):
+		video.stop()
+		video.stream = null
+		video.paused = false
+		video.hide()
+	if is_instance_valid(encounter.creature_audio): encounter.creature_audio.stop_all()
 	hide()
 	if is_instance_valid(encounter.actor): encounter.actor.character.set_speed(1.0)
 	var world: Node3D = encounter.world
@@ -159,4 +226,6 @@ func _exit_tree() -> void:
 	shutdown()
 
 func _mcp_state() -> Dictionary:
-	return {"active":active,"elapsed":elapsed,"armed":armed,"caption":caption.text if caption else "","paused":suspended() if active else false}
+	return {"active":active,"elapsed":elapsed,"armed":armed,"caption":caption.text if caption else "","paused":suspended() if active else false,
+		"presentation":presentation_status,"movie_active":movie_active,"movie_position":movie_position,
+		"movie_audio_bus":"Effects","movie_volume":video.volume if video else 0.0}

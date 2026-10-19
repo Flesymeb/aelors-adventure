@@ -4,14 +4,14 @@
   "slides": [
     {
       "image": "farewell.png",
-      "caption": "伊莎：奥伦和三位村民仍待救援。带上剑、弓与旧灯，沿草甸追踪押送队。",
-      "duration_seconds": 5.0,
+      "caption": "伊莎：请沿蓝色通道前往草甸，追踪押送队。奥伦和三位村民仍未脱险。",
+      "duration_seconds": 10.1,
       "video": "farewell.ogv"
     },
     {
       "image": "passage.png",
-      "caption": "蓝光汇聚，通道在艾洛身旁闭合。",
-      "duration_seconds": 5.0,
+      "caption": "艾洛带着剑、弓与旧灯穿过蓝光，沿草甸泥路继续追踪。",
+      "duration_seconds": 10.1,
       "video": "passage.ogv"
     },
     {

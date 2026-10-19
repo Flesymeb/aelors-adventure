@@ -41,6 +41,7 @@ func _ready() -> void:
 	add_child(label)
 	label.visible = false
 	restore(false,false)
+	preload("res://actors/npc_life.gd").attach(self,presentation,captive_id)
 
 func restore(is_released: bool, is_assembled: bool) -> void:
 	var just_released := is_released and not released

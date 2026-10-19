@@ -14,19 +14,32 @@ var search_path := PackedVector3Array()
 var search_result := "idle"
 
 func _ready() -> void:
-	# Complete outfit-only heads before the combat unit initializes sockets.
 	var guard: Node3D = get_node("Model")
-	var rig: Skeleton3D = guard.find_child("Skeleton3D", true, false)
-	preload("res://ranger_head_assembly.gd").assemble(rig)
-	# Other encounters retain their Ranger palette. The E02 tunic keeps its
-	# own authored cloth/leather materials rather than inheriting Ranger armor.
-	if guard.scene_file_path != "res://assets/guards/melee_guard.glb":
+	# Only outfit-only human rigs need the Ranger head and cloth palette.
+	# Complete monster atlas rigs already have faces and painted skin/armour.
+	var ranger_source := "res://Characters/QuaterniusRanger/Male_Ranger.gltf"
+	var outfit_only: bool = guard.scene_file_path in [ranger_source,"res://assets/guards/melee_guard.glb"]
+	if outfit_only:
+		var rig: Skeleton3D = guard.find_child("Skeleton3D", true, false)
+		preload("res://ranger_head_assembly.gd").assemble(rig)
+	if guard.scene_file_path == ranger_source:
 		var dresser := preload("res://actors/npc_presentation.gd").new()
 		dresser.character_model = guard
 		dresser.appearance = preload("res://assets/guards/e02_melee_appearance.tres")
 		dresser._apply_appearance()
 		dresser.free()
+	# The route has long sightlines. Retain engagement across small distance
+	# fluctuations instead of oscillating between patrol and pursuit at 5m.
+	acquisition_distance = 8.0
+	pursuit_distance = 10.0
+	leash_distance = 10.0
+	navigation_radius_cells = 14
 	super()
+	if remembered_search_enabled:
+		acquisition_distance = 5.0
+		pursuit_distance = 5.0
+		leash_distance = 6.0
+		navigation_radius_cells = 8
 	ground_query = func(point: Vector3):
 		var excluded: Array[RID] = [get_rid(), target.get_rid()]
 		# A remembered route belongs on terrain, not on top of its rock obstacle.

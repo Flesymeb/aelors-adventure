@@ -25,3 +25,10 @@ audible comparison and product mix acceptance still require Host/Tester.
 
 Existing effects remain the licensed Kenney sounds under assets/dialogue and
 assets/training; their original licenses and acquisition receipts are retained.
+
+## Veyne creature voice and elemental skills
+
+The Veyne pack uses CC0 recordings by Darsycho (Monster snarls and Big scary troll sounds) and AntumDeluge (Fire Crackling), edited and layered with original procedural electric, wind and stone effects. Exact URLs, source checksums, generated-clip checksums and processing are in `veyne/SOURCE.json`; author credits and CC0 terms are in `veyne/LICENSES.md`.
+
+## World and sword effects (2026-10-19)
+Original deterministic DSP in world_effects/: portal_hum, chapter_farewell, chapter_passage, sword_whirl. CC0-1.0. Rebuild and hashes: tools/build_world_audio.py, world_effects/SOURCE.json.

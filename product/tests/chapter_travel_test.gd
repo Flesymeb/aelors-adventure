@@ -6,6 +6,7 @@ const BRIDGE = preload("res://tests/bridge_actions_test.gd")
 
 class DiagnosticState extends "res://dialogue_state.gd":
 	var diagnostic_save_requests := 0
+	var diagnostic_commits: Array[Dictionary] = []
 	func _ready() -> void:
 		# No preferences, histories or file writes in this opt-in fixture.
 		inventory = preload("res://inventory/product_inventory.gd").new()
@@ -13,6 +14,7 @@ class DiagnosticState extends "res://dialogue_state.gd":
 		add_child(inventory)
 	func save_progress(_position: Vector3, _yaw: float, _slot := 0) -> Error:
 		diagnostic_save_requests += 1
+		diagnostic_commits.append(training_snapshot().duplicate(true))
 		return OK
 	func load_progress(_slot := 0) -> Dictionary:
 		return {}
@@ -204,7 +206,7 @@ static func resource_checks() -> Dictionary:
 			duration += float(slide.duration_seconds)
 	checks.three_distinct_beats = referenced == ["farewell.png", "passage.png", "arrival.png"]
 	checks.provenance_references = source is Dictionary and source.get("files", []).map(func(record): return record.get("file", "")) == referenced
-	checks.bounded_playback = is_equal_approx(duration,11.4)
+	checks.bounded_playback = is_equal_approx(duration,21.6) # Two real 10s films and a 1.4s arrival boundary.
 	checks.moving_departure_beats = storyboard.slides[0].get("video","") == "farewell.ogv" and storyboard.slides[1].get("video","") == "passage.ogv" and ResourceLoader.exists(transition.ART+"farewell.ogv") and ResourceLoader.exists(transition.ART+"passage.ogv")
 	for file in ["farewell.png", "passage.png", "arrival.png"]:
 		var texture := load(transition.ART + file) as Texture2D

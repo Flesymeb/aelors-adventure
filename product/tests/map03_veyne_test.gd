@@ -162,8 +162,8 @@ static func camera_owner_checks(world: Node3D, move := "dive") -> Dictionary:
 	var started: bool = boss.actor.dragon_actions.begin(move)
 	p._update_archery(0.016)
 	p.arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
-	var checks := {"started":started,"player_owns_framing":p.encounter_camera_active,"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.encounter_camera_look.is_equal_approx(old_rotation),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
-	checks.corrective_orbit_keeps_controls = p.movement_camera_basis(p.camera.global_basis,p.encounter_camera_active,p.encounter_camera_look).is_equal_approx(Basis(Vector3.UP,old_rotation.y))
+	var checks := {"started":started,"player_owns_framing":not p.encounter_camera_active and p.arm.rotation.is_equal_approx(old_rotation),"child_rotation_neutral":p.camera.rotation.is_zero_approx(),"mouse_orientation_preserved":p.arm.rotation.is_equal_approx(old_rotation),"native_collision_active":p.arm.collision_mask!=0 and p.arm.get_hit_length()<=p.arm.spring_length,"distance_preference_preserved":p.free_camera_distance==old_distance,"shoulder_preserved":p.shoulder_side==old_shoulder,"preferences_preserved":preferences==world.dialogue_state.preference_snapshot()}
+	checks.ordinary_movement_reference_preserved = p.movement_camera_basis(p.camera.global_basis,p.encounter_camera_active,p.encounter_camera_look).is_equal_approx(p.camera.global_basis)
 	if move == "charge":
 		var action: Node3D = boss.actor.dragon_actions
 		var danger: Array[Vector3] = boss.flight_camera_danger_targets()
@@ -174,7 +174,7 @@ static func camera_owner_checks(world: Node3D, move := "dive") -> Dictionary:
 			p._update_archery(0.016)
 			var viewport_size: Vector2 = p.get_viewport().get_visible_rect().size
 			var aspect: float = viewport_size.x/viewport_size.y
-			checks[str(side)+"_charge_subjects_fit"] = p.subject_camera_points_fit(boss.flight_camera_subjects(),p.camera.global_position,p.camera.global_basis,p.camera.fov,aspect)
+			checks[str(side)+"_charge_retains_player_orbit"] = p.arm.rotation.is_equal_approx(old_rotation) and not p.encounter_camera_active
 			checks[str(side)+"_charge_player_unobscured"] = true
 			for height in [0.2,1.0,1.8]:
 				var target: Vector3 = p.global_position+Vector3.UP*height
@@ -194,9 +194,9 @@ static func camera_owner_checks(world: Node3D, move := "dive") -> Dictionary:
 	p._update_archery(0.016)
 	checks.interruption_releases = not p.encounter_camera_active and p.camera.rotation.is_zero_approx() and is_equal_approx(p.arm.spring_length,p.smooth_camera_distance)
 	checks.look_restored = p.arm.rotation.is_equal_approx(old_rotation)
-	checks.tracked_body_filter_released = not p.encounter_camera_exclusion.is_valid()
+	checks.tracked_body_filter_retained_between_skills = p.encounter_camera_exclusion==boss.actor.get_rid()
 	p.prepare_restored_camera(old_rotation.y)
-	checks.restored_camera_neutral = not p.encounter_camera_active and p.camera.rotation.is_zero_approx() and is_equal_approx(p.arm.rotation.y,old_rotation.y)
+	checks.restored_camera_neutral = not p.encounter_camera_active and not p.encounter_camera_exclusion.is_valid() and p.camera.rotation.is_zero_approx() and is_equal_approx(p.arm.rotation.y,old_rotation.y)
 	p.global_position = old_player
 	boss.actor.global_position = old_actor
 	return checks

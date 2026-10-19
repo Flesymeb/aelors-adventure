@@ -24,6 +24,10 @@ var animator: AnimationPlayer
 var model_height = 0.0
 var returning = false
 var lost_time = 0.0
+var acquisition_distance := 5.0
+var pursuit_distance := 5.0
+var leash_distance := 6.0
+var navigation_radius_cells := 8
 var patrol_index = 0
 var patrol_wait = 0.0
 var patrol_point = Vector3.ZERO
@@ -134,8 +138,8 @@ func build_navigation() -> void:
 	var mesh = NavigationMesh.new()
 	var vertices = PackedVector3Array()
 	var cells: Dictionary = {}
-	for z in range(-8, 9):
-		for x in range(-8, 9):
+	for z in range(-navigation_radius_cells, navigation_radius_cells + 1):
+		for x in range(-navigation_radius_cells, navigation_radius_cells + 1):
 			var sample: Dictionary = ground_query.call(home + Vector3(x * 0.75, 0, z * 0.75))
 			if sample.is_empty(): continue
 			var point: Vector3 = sample.position
@@ -143,8 +147,8 @@ func build_navigation() -> void:
 			cells[Vector2i(x, z)] = vertices.size()
 			vertices.append(point + Vector3.UP * 0.04)
 	mesh.vertices = vertices
-	for z in range(-8, 8):
-		for x in range(-8, 8):
+	for z in range(-navigation_radius_cells, navigation_radius_cells):
+		for x in range(-navigation_radius_cells, navigation_radius_cells):
 			var keys = [Vector2i(x, z), Vector2i(x + 1, z), Vector2i(x + 1, z + 1), Vector2i(x, z + 1)]
 			if not (cells.has(keys[0]) and cells.has(keys[1]) and cells.has(keys[2]) and cells.has(keys[3])): continue
 			var a: int = cells[keys[0]]
@@ -294,7 +298,7 @@ func _physics_process(delta: float) -> void:
 	_sample_contact()
 
 func perceives_target(distance: float) -> bool:
-	return distance <= 5.0 and target.global_position.distance_to(home) <= 6.0 and line_clear(target.global_position)
+	return distance <= (pursuit_distance if engaged else acquisition_distance) and target.global_position.distance_to(home) <= leash_distance and line_clear(target.global_position)
 
 func update_perception(_distance: float, perceives: bool, delta: float) -> void:
 	# Default policy remains unchanged for every non-opted-in melee user.
@@ -307,7 +311,7 @@ func update_perception(_distance: float, perceives: bool, delta: float) -> void:
 			if acquired_cue.is_valid(): acquired_cue.call()
 	else:
 		lost_time += delta
-		if engaged and (lost_time > 1.1 or target.global_position.distance_to(home) > 6.0):
+		if engaged and (lost_time > 1.1 or target.global_position.distance_to(home) > leash_distance):
 			engaged = false
 			returning = true
 			interrupt_action()

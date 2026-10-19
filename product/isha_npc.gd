@@ -12,6 +12,7 @@ var idle_player: AnimationPlayer
 func _ready() -> void:
 	add_to_group("isha")
 	_normalize_model()
+	if idle_player: preload("res://actors/npc_life.gd").attach(self,$Model,"isha")
 	var collision := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = 0.30
@@ -61,7 +62,7 @@ func _pose_idle() -> void:
 			var angle := -1.28 if "LeftArm_" in bone_name else 1.28
 			var desired := Basis(Vector3.FORWARD, -angle) * rest_basis
 			skeleton.set_bone_pose_rotation(i, (parent_basis.inverse() * desired).get_rotation_quaternion())
-		if "Spine1_" in bone_name or "Head_" in bone_name:
+		if "Spine1_" in bone_name or "Head_" in bone_name or "LeftArm_" in bone_name or "RightArm_" in bone_name:
 			idle_bases[i] = skeleton.get_bone_pose_rotation(i)
 
 func _build_idle_clip() -> void:
@@ -69,18 +70,24 @@ func _build_idle_clip() -> void:
 	idle_player = AnimationPlayer.new()
 	idle_player.name = "IdleAnimation"
 	add_child(idle_player)
-	var clip := Animation.new()
-	clip.length = 3.5
-	clip.loop_mode = Animation.LOOP_LINEAR
-	for i in idle_bases:
-		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
-		clip.track_set_path(track, NodePath(str(get_path_to(skeleton)) + ":" + skeleton.get_bone_name(i)))
-		var amplitude := 0.009 if "Spine1_" in skeleton.get_bone_name(i) else 0.012
-		for frame in 9:
-			var time := float(frame) / 8.0 * clip.length
-			clip.rotation_track_insert_key(track, time, idle_bases[i] * Quaternion(Vector3.RIGHT, sin(float(frame) / 8.0 * TAU) * amplitude))
 	var library := AnimationLibrary.new()
-	library.add_animation("Isha_Idle", clip)
+	for talking in [false,true]:
+		var clip := Animation.new()
+		clip.length = 3.5 if not talking else 4.2
+		clip.loop_mode = Animation.LOOP_LINEAR
+		for i in idle_bases:
+			var bone_name := skeleton.get_bone_name(i)
+			var arm: bool = "Arm_" in bone_name
+			var head: bool = "Head_" in bone_name
+			var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+			clip.track_set_path(track, NodePath(str(get_path_to(skeleton)) + ":" + bone_name))
+			var amplitude := (0.14 if arm else 0.065) if talking else (0.018 if arm else 0.035)
+			var axis := Vector3.FORWARD if arm else Vector3.UP if head else Vector3.RIGHT
+			for frame in 17:
+				var time := float(frame) / 16.0 * clip.length
+				var wave := sin(float(frame)/16.0*TAU)
+				clip.rotation_track_insert_key(track,time,idle_bases[i]*Quaternion(axis,wave*amplitude))
+		library.add_animation("Isha_Talk" if talking else "Isha_Idle",clip)
 	idle_player.add_animation_library("", library)
 	idle_player.play("Isha_Idle")
 

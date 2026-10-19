@@ -3,11 +3,13 @@
 shader_type spatial;
 render_mode depth_draw_opaque,cull_disabled,diffuse_burley,specular_schlick_ggx;
 uniform vec4 albedo : source_color;
-uniform sampler2D texture_albedo : source_color,filter_linear_mipmap,repeat_enable;
+uniform sampler2D texture_albedo : source_color,filter_linear_mipmap_anisotropic,repeat_enable;
 uniform float alpha_scissor_threshold;
 uniform float point_size : hint_range(0,128);
-uniform sampler2D texture_orm : hint_roughness_g,filter_linear_mipmap,repeat_enable;
-uniform sampler2D texture_normal : hint_roughness_normal,filter_linear_mipmap,repeat_enable;
+uniform sampler2D texture_orm : hint_roughness_g,filter_linear_mipmap_anisotropic,repeat_enable;
+uniform sampler2D texture_normal : hint_normal,filter_linear_mipmap_anisotropic,repeat_enable;
+uniform bool roughness_only = false;
+uniform float leaf_transmission : hint_range(0.0,0.3) = 0.0;
 uniform float normal_scale : hint_range(-16,16);
 uniform float ao_light_affect = 0.;
 uniform vec2 uv1_scale;
@@ -38,12 +40,13 @@ void fragment() {
 	vec4 albedo_tex = texture(texture_albedo,base_uv);
 	ALBEDO = albedo.rgb * albedo_tex.rgb;
 	vec4 orm_tex = texture(texture_orm,base_uv);
-	ROUGHNESS = orm_tex.g;
-	METALLIC = orm_tex.b;
+	ROUGHNESS = clamp(roughness_only ? orm_tex.r : orm_tex.g,0.45,1.0);
+	METALLIC = 0.0; // Bark and leaves are dielectrics, including grey rough maps.
+	BACKLIGHT = ALBEDO * leaf_transmission;
 	NORMAL_MAP = texture(texture_normal,base_uv).rgb;
 	NORMAL_MAP_DEPTH = normal_scale;
-	ALPHA *= albedo.a * albedo_tex.a;
+	ALPHA = albedo.a * albedo_tex.a;
 	ALPHA_SCISSOR_THRESHOLD = alpha_scissor_threshold;
-	AO = orm_tex.r;
+	AO = roughness_only ? 1.0 : orm_tex.r;
 	AO_LIGHT_AFFECT = ao_light_affect;
 }

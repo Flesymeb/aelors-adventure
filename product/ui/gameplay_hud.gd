@@ -12,7 +12,7 @@ var life_row: HBoxContainer
 var life_icons: Array[TextureRect] = []
 var life_textures: Array[AtlasTexture] = []
 var tracker: PanelContainer
-var tracker_text: Label
+var tracker_text: RichTextLabel
 var tracker_title: Label
 var prompt: Label
 var notices: VBoxContainer
@@ -31,6 +31,7 @@ var notifications: Array[Dictionary] = []
 var equipment_back: PanelContainer
 var shortcut_row: HBoxContainer
 var shortcut_slots: Dictionary = {}
+var whirlwind_icon: Control
 var map_page: Control
 var journal: Control
 
@@ -85,7 +86,12 @@ func _ready() -> void:
 	track_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tracker.add_child(track_rows)
 	tracker_title = label(track_rows)
-	tracker_text = label(track_rows)
+	tracker_text = RichTextLabel.new()
+	tracker_text.fit_content = true
+	tracker_text.scroll_active = false
+	tracker_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preload("res://ui/quest_markup.gd").configure(tracker_text,root.theme.default_font)
+	track_rows.add_child(tracker_text)
 	tracker_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prompt = label(root)
 	prompt.name = "ContextualInteraction"
@@ -138,6 +144,8 @@ func _ready() -> void:
 		var key = label(column)
 		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		shortcut_slots[pair[0]] = {"panel":slot,"icon":icon,"key":key}
+	whirlwind_icon = preload("res://ui/whirlwind_icon.gd").new()
+	root.add_child(whirlwind_icon)
 	shortcut_slots.bag.key.text = "I 背包"
 	shortcut_slots.ability.key.text = "K 能力"
 	shortcut_slots.journal.key.text = "J 日志"
@@ -285,10 +293,20 @@ func _process(delta: float) -> void:
 	tracker_title.text = "地图 [M] · 日志 [J]    " + ("展开 [H]" if state.tracker_collapsed else "收起 [H]")
 	tracker_title.add_theme_font_size_override("font_size", int(14 * scale_now))
 	tracker_text.visible = not state.tracker_collapsed
-	tracker_text.text = short_action(state.tracked_entry().action)
+	var action := short_action(state.tracked_entry().action)
+	if not world.meadow_slice:
+		var destination: Node3D
+		if action.contains("伊莎"): destination = world.isha
+		elif action.contains("蓝色洞口") or action.contains("蓝色柱群"): destination = world.chapter_pillar
+		if is_instance_valid(destination) and is_instance_valid(world.player):
+			action += "\n距目标 %.0f 米 · 靠近后按 E" % world.player.global_position.distance_to(destination.global_position)
+	var marked_action := preload("res://ui/quest_markup.gd").format_text(action)
+	if tracker_text.text != marked_action: tracker_text.text = marked_action
+	tracker_text.add_theme_font_size_override("normal_font_size", int(18 * scale_now))
+	tracker_text.add_theme_font_size_override("bold_font_size", int(18 * scale_now))
 	# Release the retained expanded height after text/visibility changes.
 	tracker.size = Vector2(tracker.custom_minimum_size.x, 0)
-	tracker.visible = not state.tracked_entry().complete
+	tracker.visible = not state.tracked_entry().complete or (not world.meadow_slice and not state.homecoming_completed)
 	var hint := ""
 	if active:
 		var target: Node3D = world.contextual_interaction_target()
@@ -303,6 +321,7 @@ func _process(delta: float) -> void:
 		slot.key.text = pair[0] + (" ◆" if world.player.weapon_mode == pair[1] else "")
 		slot.panel.tooltip_text = pair[2]
 		slot.icon.modulate = Color(1,0.85,0.4) if world.player.weapon_mode == pair[1] else Color(0.72,0.67,0.53)
+	whirlwind_icon.refresh(world.training.whirlwind, world.player, world.training.whirlwind.unlocked(), scale_now, view)
 	for pair in [["4","fire","火焰"],["5","lightning","雷电"]]:
 		var cd = world.element_abilities.cooldowns[pair[1]] if world.element_abilities else 0.0
 		var slot: Dictionary = shortcut_slots[pair[1]]
@@ -340,6 +359,9 @@ func _process(delta: float) -> void:
 	notices.position = Vector2(20, prompt.position.y - maxf(notices.size.y, notices.get_combined_minimum_size().y) - 12)
 
 func short_action(text: String) -> String:
+	# A completed bow lesson used to keep saying "return to Isha" even when
+	# the authoritative next action was the blue passage.
+	if state.bow_training_complete and not world.meadow_slice: return state.objective()
 	return {"rescue": "与广场边的伊莎交谈" if not state.q01_accepted else _next_action(), "sword": _next_action(), "bow": "返回伊莎处" if state.bow_training_complete else ("找草地边的罗恩" if not state.bow_owned else "瞄准草靶 · 蓄力后松开")}.get(state.tracked_quest, text)
 
 func _next_action() -> String:
@@ -352,7 +374,7 @@ func _next_action() -> String:
 	return "瞄准罗恩前方草靶" if not state.bow_training_complete else state.objective()
 
 func _mcp_state() -> Dictionary:
-	var observation := {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.text, "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
+	var observation := {"tracker_rect": str(tracker.get_global_rect()), "tracker_minimum": str(tracker.get_combined_minimum_size()), "hud_visible": root.visible, "lives": state.lives, "lit_lanterns": state.lives, "health": hp.value, "xp_target": state.experience, "tracked": state.tracked_quest, "collapsed": state.tracker_collapsed, "objective": tracker_text.get_parsed_text(), "prompt": prompt.text, "notice": notice_text.text if notices.visible else "", "notice_remaining": notice_time, "retry_slot": failed_slot, "journal_open": journal.visible}
 	# Read-only correlation for external captures. Layout may still be queued;
 	observation.merge({"notice_event_id": notice_event_id, "notice_active_elapsed": notice_active_elapsed, "sword_acquisition_emissions": sword_acquisition_emissions, "sword_acquisition_active_elapsed": sword_acquisition_active_elapsed, "notice_visible_in_tree": notice_text.is_visible_in_tree()})
 	# successive snapshots and ordinary frames establish settling externally.
@@ -388,7 +410,7 @@ func _mcp_state() -> Dictionary:
 		"objective_visible": tracker_text.visible,
 		"objective_visible_in_tree": tracker_text.is_visible_in_tree(),
 		"tracker_title": tracker_title.text,
-		"objective_font_size": tracker_text.get_theme_font_size("font_size"),
+		"objective_font_size": tracker_text.get_theme_font_size("normal_font_size"),
 		"objective_line_count": tracker_text.get_line_count(),
 		"life_backplate_geometry": {"x": life_rect.position.x, "y": life_rect.position.y, "w": life_rect.size.x, "h": life_rect.size.y, "minimum_w": life_minimum.x, "minimum_h": life_minimum.y},
 		"tracker_geometry": {"x": rect.position.x, "y": rect.position.y, "w": rect.size.x, "h": rect.size.y, "minimum_w": minimum.x, "minimum_h": minimum.y, "custom_minimum_w": tracker.custom_minimum_size.x, "custom_minimum_h": tracker.custom_minimum_size.y}

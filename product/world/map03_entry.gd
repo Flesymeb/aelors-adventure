@@ -15,7 +15,21 @@ var collision_meshes := 0
 class TombQuality extends Node:
 	var enhanced := true
 	var developer_lamp_overlay := false
-	func toggle_quality() -> void: enhanced = not enhanced
+	var world: Node3D
+	func configure(owner_world: Node3D) -> void:
+		world = owner_world
+		world.dialogue_state.preferences_changed.connect(apply_quality)
+		apply_quality()
+	func apply_quality() -> void:
+		var profile: String = world.dialogue_state.graphics_quality
+		enhanced = profile != "low"
+		var env: Environment = world.village.get_node("WorldEnvironment").environment
+		preload("res://world/render_quality.gd").apply(get_viewport(), env, profile)
+		preload("res://world/render_quality.gd").lights(world.village, profile == "high", 100.0 if profile == "high" else 55.0)
+		preload("res://world/render_quality.gd").materials(world.village)
+	func toggle_quality() -> void:
+		world.dialogue_state.graphics_quality = "normal" if world.dialogue_state.graphics_quality == "high" else "high"
+		apply_quality()
 	func toggle_developer_lamps() -> void: pass
 	func set_dusk(_enabled: bool) -> void: pass
 
@@ -55,6 +69,7 @@ func _ready() -> void:
 	player.traversal.step_height_limit = 0.65
 	quality = TombQuality.new()
 	add_child(quality)
+	quality.configure(self)
 	menu_audio = entry_router.audio
 	dialogue = preload("res://IshaDialogue.tscn").instantiate()
 	dialogue.state = dialogue_state

@@ -40,14 +40,14 @@ const CONTROL_DEFAULTS := {
 	"roll": KEY_B, "dodge": KEY_ALT, "shoulder": KEY_TAB,
 	"jump": KEY_SPACE, "sprint": KEY_SHIFT, "forward": KEY_W,
 	"back": KEY_S, "left": KEY_A, "right": KEY_D,
-	"crouch": KEY_C, "prone": KEY_Z, "perspective": KEY_V, "heavy": KEY_T,
+	"crouch": KEY_C, "prone": KEY_Z, "perspective": KEY_V, "heavy": KEY_T, "whirlwind": KEY_X,
 }
 const CONTROL_LABELS := {
 	"roll": "Roll", "dodge": "Dodge", "shoulder": "Switch shoulder",
 	"jump": "Jump", "sprint": "Sprint (hold)", "forward": "Move forward",
 	"back": "Move back", "left": "Move left", "right": "Move right",
 	"crouch": "Crouch", "prone": "Prone", "perspective": "First / third person",
-	"heavy": "Sword finisher (late light / parry)",
+	"heavy": "Sword finisher (late light / parry)", "whirlwind": "Two-turn whirlwind slash",
 }
 # E/F retain interaction/lamp ownership, including while their systems are locked.
 const RESERVED_KEYS := [KEY_E, KEY_F, KEY_H, KEY_Q, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_I, KEY_K,
@@ -487,6 +487,10 @@ func _input(event: InputEvent) -> void:
 		# focused GUI buttons to receive unconsumed keyboard and pointer input.
 		# Gameplay actions and unhandled input remain gated by controls_open.
 		return
+	if event is InputEventKey and event.keycode == effective_bindings["whirlwind"]:
+		if event.pressed and not event.echo and _control_pressed(event,"whirlwind") and combat and combat.whirlwind and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			combat.whirlwind.request()
+		return
 	if event is InputEventKey and event.keycode == effective_bindings["heavy"]:
 		if event.pressed and not event.echo and not heavy_press_held and _control_pressed(event, "heavy"):
 			heavy_press_held = true
@@ -706,74 +710,28 @@ static func movement_camera_basis(ordinary_basis: Basis, encounter_active: bool,
 	return Basis(Vector3.UP,user_look.y) if encounter_active else ordinary_basis
 
 
-func _update_encounter_camera(delta: float, ordinary_pivot: Vector3) -> void:
+func _update_encounter_camera(_delta: float, ordinary_pivot: Vector3) -> void:
+	# Combat never takes the player's third-person orbit. Charge and dive keep
+	# the ordinary shoulder, pitch, zoom and native SpringArm collision owner.
+	# In particular, do not pick a new discrete yaw/pitch from posed Boss bounds
+	# every tick: even a tiny occlusion change made that view alternate abruptly.
+	var releasing := encounter_camera_active
+	if releasing: arm.rotation = encounter_camera_look
+	# The tracked dragon must not collapse the spring arm into its moving
+	# body. Keep authored wall/stone sweeps, without taking over orientation.
 	var owner = get_parent().get("veyne_encounter")
-	var state: Node = get_parent().get("dialogue_state")
-	var points: Array[Vector3] = []
-	# Explicit aim and first-person retain their existing camera contract.
-	if is_instance_valid(owner) and not aim_requested and aim_blend < 0.01 and not first_person and perspective_blend < 0.01:
-		points = owner.flight_camera_subjects()
-	if points.is_empty():
-		var releasing := encounter_camera_active
-		if releasing: arm.rotation = encounter_camera_look
+	var subject := RID()
+	if is_instance_valid(owner) and owner.phase == "battle" and is_instance_valid(owner.actor):
+		subject = owner.actor.get_rid()
+	if subject != encounter_camera_exclusion:
 		_clear_encounter_camera_filter()
-		encounter_camera_pivot = ordinary_pivot
-		if releasing:
-			arm.force_update_transform()
-			arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
-		return
-	var box := AABB(points[0],Vector3.ZERO)
-	for point in points: box = box.expand(point)
-	var center := box.get_center()
-	if not encounter_camera_active: encounter_camera_look = arm.rotation
-	if not encounter_camera_active or (state and state.reduced_motion): encounter_camera_pivot = center
-	else: encounter_camera_pivot = encounter_camera_pivot.lerp(center,1.0-exp(-6.0*delta))
-	encounter_camera_active = true
-	# The tracked creature is a subject, just as the player is. Its moving
-	# body must not collapse the camera sweep into its own foreground skin.
-	# Authored stone, stairs and walls retain the native mask/shape/margin.
-	var subject_rid: RID = owner.actor.get_rid()
-	if subject_rid != encounter_camera_exclusion:
-		_clear_encounter_camera_filter()
-		encounter_camera_active = true
-		encounter_camera_exclusion = subject_rid
-		arm.add_excluded_object(subject_rid)
-	arm.position = encounter_camera_pivot - global_position
-	var viewport_size := get_viewport().get_visible_rect().size
-	var aspect := viewport_size.x/maxf(viewport_size.y,1.0)
-	var ordinary_length := arm.spring_length
-	var best_rotation := encounter_camera_look
-	var best_score := -INF
-	var player_targets: Array[Vector3] = []
-	for x in [-0.3,0.3]:
-		for y in [0.2,1.0,1.8]: player_targets.append(global_position+Vector3(x,y,0))
-	var landing_targets: Array[Vector3] = owner.flight_camera_danger_targets()
-	var occluders: Array = owner.flight_camera_occluders()
-	# Test the user's yaw first, then a bounded orbit when a stone-clear view
-	# still hides the player behind the creature. Every candidate uses the
-	# same native collision-backed arm and the same committed danger area.
-	for yaw_offset in [0.0,-0.45,0.45,-0.9,0.9,-PI*0.5,PI*0.5]:
-		for step in 6:
-			var rotation := encounter_camera_look
-			rotation.y += yaw_offset
-			rotation.x = lerpf(rotation.x,minf(rotation.x,-1.25),float(step)/5.0)
-			_apply_subject_camera_pose(points,rotation,ordinary_length,aspect)
-			var player_clear := 0
-			var landing_clear := 0
-			for target in player_targets:
-				var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
-				if get_world_3d().direct_space_state.intersect_ray(ray).is_empty() and not subject_camera_occluded(camera.global_position,target,occluders): player_clear += 1
-			for target in landing_targets:
-				var ray := PhysicsRayQueryParameters3D.create(camera.global_position,target,arm.collision_mask,[get_rid(),subject_rid])
-				if get_world_3d().direct_space_state.intersect_ray(ray).is_empty() and not subject_camera_occluded(camera.global_position,target,occluders): landing_clear += 1
-			var fits := subject_camera_points_fit(points,camera.global_position,camera.global_basis,camera.fov,aspect)
-			var player_visible := player_clear == player_targets.size()
-			var all_clear := player_visible and landing_clear == landing_targets.size() and fits
-			# Rank every candidate. Prefer a shallow readable flank over the
-			# first clear overhead view; keep stored mouse-look authoritative.
-			var score: float = (100000.0 if all_clear else 0.0) + (10000.0 if player_visible else 0.0) + player_clear*1000.0 + landing_clear*100.0 + (1000.0 if fits else 0.0) - absf(rotation.x-encounter_camera_look.x)*100.0 - absf(yaw_offset)
-			if score > best_score: best_score = score; best_rotation = rotation
-	_apply_subject_camera_pose(points,best_rotation,ordinary_length,aspect)
+		encounter_camera_exclusion = subject
+		if subject.is_valid(): arm.add_excluded_object(subject)
+	encounter_camera_active = false
+	encounter_camera_pivot = ordinary_pivot
+	if releasing:
+		arm.force_update_transform()
+		arm.notification(Node.NOTIFICATION_INTERNAL_PHYSICS_PROCESS)
 
 
 func _apply_subject_camera_pose(points: Array[Vector3], rotation: Vector3, ordinary_length: float, aspect: float) -> void:

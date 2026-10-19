@@ -3,9 +3,9 @@
 shader_type spatial;
 render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx;
 
-uniform sampler2DArray textures_albedo : source_color, hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform sampler2DArray textures_ormh : hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform sampler2DArray textures_normal : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform sampler2DArray textures_albedo : source_color, hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray textures_ormh : hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray textures_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 
 uniform vec4 albedo : source_color;
 uniform float normal_scale : hint_range(-16,16);

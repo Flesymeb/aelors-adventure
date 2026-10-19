@@ -41,25 +41,23 @@ func _process(delta: float) -> void:
 	environment.sky.sky_material.set_shader_parameter("presentation_time", sky_clock)
 	sky_elapsed = 0.0
 func toggle_quality() -> void:
-	enhanced = not enhanced
+	if state:
+		state.graphics_quality = "normal" if state.graphics_quality == "high" else "high"
 	apply_quality()
 func apply_quality() -> void:
-	if state: enhanced = state.graphics_quality == "normal"
-	get_viewport().msaa_3d = Viewport.MSAA_DISABLED
-	get_viewport().scaling_3d_scale = 1.0 if enhanced else 0.7
-	sun.directional_shadow_max_distance = 25.0 if enhanced else 20.0
-	# Keep authored near-ground textures; avoid a second far-distance texture
-	# evaluation on the integrated GPU. No terrain/collision or foliage removal.
-	village.get_node("Terrain3D").material.dual_scaling = false
-	environment.ssao_enabled = false
-	environment.ssil_enabled = false
-	environment.sdfgi_enabled = false
-	environment.volumetric_fog_enabled = false
+	var profile: String = state.graphics_quality if state else "high"
+	enhanced = profile != "low"
+	var high := profile == "high"
+	preload("res://world/render_quality.gd").apply(get_viewport(), environment, profile)
+	# No full-scene fog veil: retain sky/clouds and precision, not haze.
+	environment.fog_enabled = false
+	world.set("fog_enabled", false) # Also disable Sky3D's separate fog overlay.
+	preload("res://world/render_quality.gd").lights(village, high, 25.0 if enhanced else 20.0)
+	village.get_node("Terrain3D").material.dual_scaling = high
+	village.get_node("Terrain3D").material.set_shader_param("mipmap_bias", 0.0 if high else 1.0)
 	village.get_node("Terrain3D").set("mesh_lods", 7 if enhanced else 5)
-
-	# Keep authored transforms/density and long tree silhouettes; restrict the
-	# cost of small foliage and avoid casting thousands of grass shadows.
+	preload("res://world/render_quality.gd").materials(village)
 	for asset in village.get_node("Terrain3D").assets.mesh_list:
 		var tall: bool = "pine" in asset.name or "maple" in asset.name
-		asset.cast_shadows = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if tall else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		asset.lod0_range = (96.0 if enhanced else 90.0) if tall else ((60.0 if enhanced else 35.0) if "bush" in asset.name else (40.0 if enhanced else 25.0))
+		asset.cast_shadows = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if high or tall else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		asset.lod0_range = (180.0 if tall else (100.0 if "bush" in asset.name else 65.0)) if high else ((96.0 if enhanced else 90.0) if tall else ((60.0 if enhanced else 35.0) if "bush" in asset.name else (40.0 if enhanced else 25.0)))

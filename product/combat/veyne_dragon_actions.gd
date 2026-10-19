@@ -106,7 +106,7 @@ func begin(move: String) -> bool:
 	elif kind == "charge": update_charge_warning()
 	warning.show()
 	entity.character.play("Cast" if kind == "fire_breath" else ("Takeoff" if kind == "dive" else "Reveal"),1,true)
-	entity.encounter.play_effect("beam" if kind == "fire_breath" else "melee")
+	entity.encounter.play_effect("fire_warning" if kind == "fire_breath" else ("charge_warning" if kind == "charge" else "dive_warning"))
 	return true
 
 func tick(delta: float) -> void:
@@ -129,7 +129,10 @@ func tick(delta: float) -> void:
 		entity.phase = "attack"
 		source.can_damage = true
 		entity.character.play("Cast" if kind == "fire_breath" else "Charge",1,true)
-		if kind == "fire_breath": breath.show(); breath_core.show()
+		if kind == "fire_breath":
+			breath.show(); breath_core.show()
+			entity.encounter.begin_breath_audio()
+		else: entity.encounter.play_effect("charge")
 		# Charge wind-up owns this tick. Do not also spend a full motion tick;
 		# retain the breath action's existing transition/contact timing.
 		if kind == "charge": return
@@ -398,6 +401,7 @@ func tick_dive(delta: float) -> void:
 		if not travel((destination-entity.global_position)*minf(1.0,delta*2.5),true): stopped_by_wall = true; recover(); return
 		if elapsed >= 1.2:
 			stage = "active"; elapsed = 0; entity.phase = "attack"
+			entity.encounter.play_effect("dive")
 			entity.character.play("Dive",1,true)
 	elif stage == "active":
 		var remaining := landing-entity.global_position
@@ -463,6 +467,7 @@ func contact(point: Vector3, element: String) -> Dictionary:
 	return result
 
 func recover() -> void:
+	entity.encounter.end_breath_audio()
 	source.can_damage = false
 	breath.hide(); breath_core.hide(); warning.hide()
 	stage = "recovery"; elapsed = 0; entity.phase = "recovery"
@@ -479,6 +484,7 @@ func finish() -> void:
 	entity._attack_finished()
 
 func interrupt() -> void:
+	if entity and is_instance_valid(entity.encounter): entity.encounter.end_breath_audio()
 	if source: source.can_damage = false
 	if warning: warning.hide()
 	if breath: breath.hide()

@@ -57,6 +57,7 @@ func _place_player() -> void:
 	for attempt in 120:
 		await get_tree().physics_frame
 		if not ground.place(self, player, xz): xz = ground.ENTRY; continue
+		if route_patrols == null or not route_patrols.grounded: continue
 		if not training.grounded or not bow_training.grounded or not bridge_encounter.grounded or not chapter_pillar.grounded or not pressure_encounter.grounded or not route_clue.grounded or not ambush_encounter.grounded or not line_encounter.grounded or not line_record.grounded or not barrier.grounded: continue
 		# Qualify support and standing volume along the scoped approach, not an
 		# invisible replacement floor. The retained collision remains authoritative.

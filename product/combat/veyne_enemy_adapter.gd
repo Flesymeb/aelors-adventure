@@ -163,6 +163,7 @@ func _cast_stage(stage: String) -> void:
 		"anticipation":
 			phase = "telegraph"
 			character.play("Cast",0.5/cast_action.ANTICIPATION,true)
+			encounter.play_effect("beam_warning")
 		"active":
 			phase = "attack"
 			character.set_speed(1.0)

@@ -1,0 +1,11 @@
+{
+  "origin": "Original deterministic DSP created for this project; no external recordings",
+  "builder": "tools/build_world_audio.py",
+  "license": "CC0-1.0",
+  "files": {
+    "chapter_farewell.ogg": "0f6bde78c74c7a849dc76e7da34b02fc1826689d0c35320c555c08923561005b",
+    "chapter_passage.ogg": "24a7da89995e03527aae18c3d83576ea8425403f88b9b6bb585a30e4ee64bc97",
+    "portal_hum.ogg": "63190839b8b3baa8142491d9d29e647a1c247d5c0837c39156c6d54f4a2a1ee4",
+    "sword_whirl.ogg": "06c69443ea0501021e9381b45b637abf6daa0f93cbb0f5db8d1a9f47e3eb1831"
+  }
+}

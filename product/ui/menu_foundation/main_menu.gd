@@ -237,13 +237,13 @@ func _ready() -> void:
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var cinematic_heading := "抵达暂停" if cinematic and cinematic.revealing else "开场暂停"
-	var column := create_page(self, cinematic_heading if cinematic else ("暂停" if pause_world else "艾洛的冒险"), pause_world != null or cinematic != null, source_column, source_heading)
+	var column := create_page(self, cinematic_heading if cinematic else ("暂停" if pause_world else "Aelor's Adventure"), pause_world != null or cinematic != null, source_column, source_heading)
 	menu_buttons_box_container = column
 	var subtitle := source_subtitle
 	subtitle.reparent(get_meta("header_column") as VBoxContainer)
 	subtitle.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	subtitle.remove_theme_font_size_override("font_size")
-	subtitle.text = "AELOR’S ADVENTURE"
+	subtitle.text = "艾洛的冒险"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if cinematic:
 		background.hide()

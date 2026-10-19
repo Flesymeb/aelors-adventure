@@ -70,6 +70,11 @@ func _physics_process(delta: float) -> void:
 		blackboard.set_value("perform_action", false)
 	super(delta)
 
+func minimum_shot_range() -> float:
+	# A 4m withdrawal leash cannot establish the old 6m firing distance from
+	# point blank. Permit a readable close shot after creating 3m clearance.
+	return 6.0 if stable_id == "map02_e02_ranged" else 3.0
+
 func lost_sight_timeout() -> float:
 	return COVER_SEARCH_LIMIT if stable_id == "map02_e02_ranged" and cover_search_active else super()
 

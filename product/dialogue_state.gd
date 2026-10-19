@@ -24,11 +24,11 @@ var confirmed_choices: Array[String] = []
 var text_scale := 1.0
 var mouse_sensitivity := 1.0
 signal preferences_changed
-const PREFERENCE_DEFAULTS := {"text_scale": 1.0, "reveal_speed": 30.0, "instant_text": false, "reduced_motion": false, "muted_sound": false, "mouse_sensitivity": 1.0, "master_volume": 1.0, "music_volume": 0.65, "effects_volume": 1.0, "graphics_quality": "normal", "camera_shake": 0.5, "damage_numbers": true}
+const PREFERENCE_DEFAULTS := {"text_scale": 1.0, "reveal_speed": 30.0, "instant_text": false, "reduced_motion": false, "muted_sound": false, "mouse_sensitivity": 1.0, "master_volume": 1.0, "music_volume": 0.65, "effects_volume": 1.0, "graphics_quality": "high", "camera_shake": 0.5, "damage_numbers": true}
 var master_volume := 1.0
 var music_volume := 0.65
 var effects_volume := 1.0
-var graphics_quality := "normal"
+var graphics_quality := "high"
 var camera_shake := 0.5
 var damage_numbers := true
 var preference_error := ""
@@ -41,6 +41,7 @@ var instant_text := false
 var save_feedback := ""
 var reward_feedback := ""
 # Versioned, independent facts. Q02 remains incomplete in this sword increment.
+const ROUTE_PATROL_IDS := ["map02_route_1","map02_route_2","map02_route_3","map02_route_4","map02_route_5","map02_route_6","map02_route_7","map02_route_8","map02_route_9"]
 const POST_DEFAULTS := {"lamp_owned": false, "trace_revealed": false, "trace_investigated": false, "lamp_reward_committed": false, "element_practice_complete": false, "bridge_briefing_acknowledged": false, "guard_briefing_acknowledged": false, "guard_interlude_seen": false, "bridge_resident_rescued": false, "bridge_lamp_lit": false, "bridge_first_action": "", "bridge_supply_claimed": false, "bridge_later_supply_due": false, "skills": {}, "reward_history": {}, "bag_history": {}, "quick_item": "healing", "dynamic_serial": 0, "dynamic_remaining": 120.0, "dynamic_instances": {}, "meadow_dynamic_serial": 0, "meadow_dynamic_remaining": 120.0, "meadow_dynamic_groups": 0, "meadow_dynamic_instances": {}, "departure_confirmed": false, "current_map": "forest-885de576-v1", "cp02_claimed": false, "pressure_supply_claimed": false, "meadow_branch_supply_claimed": false, "mf01_acquired": false, "e03_revealed": false, "mf02_acquired": false, "line_supply_claimed": false, "ln01_revealed": false, "ln01_supply_cut": false, "ln01_location_purified": false, "cp03_claimed": false, "ritual_record_read": false, "sq02_record_found": false, "sq02_completed": false, "veyne_node_closed": false, "ln02_revealed": false, "ln02_north_cut": false, "ln02_south_cut": false, "ln02_purified": false, "warden_defeated": false, "warden_lock_released": false, "emergency_release_tool": false, "veyne_defeated": false, "veyne_release_key": false, "rescue_released": {}, "rescue_assembled": false, "rescue_supply_claimed": false, "rescue_order": "", "core_closed": false, "homecoming_completed": false}
 var lamp_owned := false
 var trace_revealed := false
@@ -730,6 +731,7 @@ func restore_config(config: ConfigFile) -> Dictionary:
 	for key in TRAINING_KEYS:
 		if key not in PREFERENCE_DEFAULTS: set(key, config.get_value("training", key, defaults[key]))
 	for key in POST_DEFAULTS: set(key, config.get_value("post_bow", key, POST_DEFAULTS[key]).duplicate(true) if POST_DEFAULTS[key] is Dictionary else config.get_value("post_bow", key, POST_DEFAULTS[key]))
+	if ambush_defeated(): e03_revealed = true
 	if inventory: inventory.restore()
 	arrows = clampi(arrows, 0, 12) if bow_owned else 0
 	if (selected_equipment == "bow" and not bow_owned) or (selected_equipment == "sword" and not sword_owned) or (selected_equipment == "lamp" and not lamp_owned): selected_equipment = "unarmed"
@@ -771,7 +773,7 @@ func objective() -> String:
 	if not remnant_collected: return "初战获胜 · 靠近金色残响自动拾取经验"
 	if not bow_owned: return "巡路弓 · 找草地边的罗恩"
 	if not bow_training_complete: return "弓练习 · 瞄准罗恩前方草靶，蓄力后松开；罗恩处免费补箭"
-	if not lamp_owned: return "奥伦的旧灯 · 返回伊莎处领取"
+	if not lamp_owned: return "返回交谈 · 请返回村庄广场，寻找伊莎并按 E 对话，领取奥伦的旧灯"
 	if not trace_revealed: return "旧灯练习 · 伊莎旁的路碑，3 装备后按 F 显形"
 	if not trace_investigated: return "旧灯线索 · 靠近显形路碑按 E 调查"
 	if skills.is_empty(): return "首次升级 · 按 K 选择火焰或雷电"
@@ -782,9 +784,9 @@ func objective() -> String:
 	return guard_objective()
 
 func guard_objective() -> String:
-	if not guard_briefing_acknowledged: return "桥头已恢复 · 返回伊莎处听取柱群守卫信息"
-	if not guards_defeated(): return "通道守卫 · 过石桥沿对岸林路到蓝色柱群；两名近战、一名弓守，可用岩石挡箭"
-	return "离村准备已确认 · 过桥前往蓝色柱群，按 E 出发" if departure_confirmed else "通道守卫已击败 · 返回伊莎处确认离村"
+	if not guard_briefing_acknowledged: return "返回交谈 · 桥头已恢复；请返回村庄广场寻找伊莎，按 E 听取蓝色洞口（蓝色柱群）的守卫信息"
+	if not guards_defeated(): return "通道守卫 · 请前往蓝色洞口（蓝色柱群）：过石桥，沿对岸林路前行；击败两名近战和一名弓守，岩石可挡箭"
+	return "离村确认已完成 · 请前往蓝色洞口（蓝色柱群），靠近蓝光后按 E 出发" if departure_confirmed else "返回交谈 · 通道守卫已击败；请返回村庄广场寻找伊莎，按 E 确认离村；确认后再前往蓝色洞口"
 
 func _mcp_state() -> Dictionary:
 	var observation := {"opening_completed": opening_completed, "logical_node": logical_node, "conversation_active": conversation_active, "q01_accepted": q01_accepted, "reward_committed": q01_reward_committed, "experience": experience, "confirmed_choices": confirmed_choices, "objective": objective(), "save_feedback": save_feedback, "training": training_snapshot(), "preferences": preference_snapshot()}
@@ -1000,7 +1002,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	if saved_skills.size() > earned_points(int(xp)): return "存档技能点无效"
 	var rewards: Dictionary = config.get_value("post_bow", "reward_history", {})
 	for id in rewards:
-		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS + GUARD_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
+		if id not in ["bridge_patrol_a","bridge_patrol_b"] + E01_IDS + PRESSURE_IDS + AMBUSH_IDS + LINE_IDS + GUARD_IDS + ROUTE_PATROL_IDS or not rewards[id] is Dictionary: return "存档掉落无效"
 		var reward: Dictionary = rewards[id]
 		if reward.get("xp",0) != 10 or not reward.get("collected",false) is bool: return "存档掉落无效"
 		var position: Variant = reward.get("position",Vector3.INF)
@@ -1039,6 +1041,7 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	for record in meadow_records.values():
 		if record.status == "collected": collected_xp += int(record.xp)
 	if xp < rewards.size() * 10 + collected_xp: return "存档草甸动态奖励无效"
+	if ROUTE_PATROL_IDS.any(func(id): return rewards.has(id)) and (not departure or not claimed): return "存档巡逻队前置无效"
 	var e02_earned: bool = PRESSURE_IDS.any(func(id): return rewards.has(id))
 	var e02_complete: bool = PRESSURE_IDS.all(func(id): return rewards.has(id))
 	var e01_complete: bool = E01_IDS.all(func(id): return rewards.has(id))
@@ -1052,6 +1055,9 @@ func config_unavailable_reason(config: ConfigFile, allow_depleted := false) -> S
 	var revealed: Variant = config.get_value("post_bow", "e03_revealed", false)
 	if not revealed is bool: return "存档伏击显形无效"
 	if (revealed or AMBUSH_IDS.any(func(id): return rewards.has(id))) and (not claimed or not e02_complete or not config.get_value("post_bow", "mf01_acquired", false)): return "存档伏击前置无效"
+	# Old death recovery could clear the transient marker after both durable
+	# E03 kills. Reconstruct only this implied fact, after validating rewards.
+	revealed = revealed or AMBUSH_IDS.all(func(id): return rewards.has(id))
 	var line_earned: bool = LINE_IDS.any(func(id): return rewards.has(id))
 	var line_complete: bool = LINE_IDS.all(func(id): return rewards.has(id))
 	var e03_complete: bool = AMBUSH_IDS.all(func(id): return rewards.has(id))
@@ -1132,7 +1138,7 @@ func load_preferences() -> void:
 				if value is bool: set(key, value)
 			elif PREFERENCE_DEFAULTS[key] is float:
 				if (value is float or value is int) and is_finite(float(value)): set(key, float(value))
-			elif key == "graphics_quality" and value in ["low", "normal"]: set(key, value)
+			elif key == "graphics_quality" and value in ["low", "normal", "high"]: set(key, value)
 	mouse_sensitivity = clampf(mouse_sensitivity, 0.25, 2.5)
 	text_scale = 1.0 if text_scale < 1.25 else (1.5 if text_scale < 1.75 else 2.0)
 	reveal_speed = clampf(reveal_speed, 15, 60)

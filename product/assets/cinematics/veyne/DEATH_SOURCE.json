@@ -1,0 +1,66 @@
+{
+  "kind": "generated_dragon_death_cinematic_with_audio",
+  "provider": "Alibaba Cloud Model Studio",
+  "model": "wan3.0-video",
+  "task_id": "5a31918b-9786-4bc3-b327-d2de4851b7d7",
+  "runtime_media": "death.ogv",
+  "source_video": "death-source.mp4",
+  "duration_seconds": 10.031043,
+  "dimensions": [
+    1280,
+    720
+  ],
+  "audio": {
+    "codec": "vorbis",
+    "channels": 2,
+    "sample_rate": "44100",
+    "ownership": "Embedded synchronized movie audio, played once on Effects bus at linear volume 1.0. Separate death roar only for Reduced Motion/missing/failed decoder fallback."
+  },
+  "visual_review": {
+    "frames_seconds": [
+      2,
+      5,
+      9
+    ],
+    "observed": "Same bronze dragon in the moonlit courtyard; buckles and lands with dust, purple energy dissipates, ends lying motionless. One stable chest-height cinematic shot."
+  },
+  "first_frame_reference": "first_frame.png",
+  "qualification": {
+    "distribution_terms_reviewed": true,
+    "terms_reference": "https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html",
+    "reviewed_sections": [
+      "7.4",
+      "7.5",
+      "7.6"
+    ],
+    "service_notes_url": "https://help.aliyun.com/zh/model-studio/bailian-service-notes",
+    "review_basis": "API-generated output under the conditional provider agreement; lawful input rights, third-party attribution and customer-use obligations retained. Interactive model-experience restrictions are distinct from the recorded API route. No exclusivity, noninfringement, MIT or CC0 claim.",
+    "input_attribution": {
+      "title": "European Dragon",
+      "author": "Regina Cachoa (ReginaCachoa)",
+      "source_url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "changes": "game-scene visual reference and generated cinematic adaptation"
+    }
+  },
+  "rights_basis": "Provider-generated output under applicable service terms; preserve lawful input rights and existing attribution obligations; no MIT/CC0 or exclusivity assertion",
+  "terms_reference": "https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html",
+  "input_dragon_attribution": {
+    "title": "European Dragon",
+    "author": "Regina Cachoa (ReginaCachoa)",
+    "source_url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "game-scene visual reference and generated cinematic adaptation"
+  },
+  "conversion": {
+    "tool": "GStreamer 1.24.2 system binary",
+    "video": "Theora quality 42, 30 FPS, 1280x720 with 1px side padding",
+    "audio": "Existing generated audio preserved and encoded to stereo Vorbis quality 0.5, 44100Hz",
+    "temporal_interpolation": false
+  },
+  "sha256": "7ea210100b608090dd9e271ad477c9505d4c4025b3240da83dbdcb01736c7323",
+  "source_sha256": "dbd37bfd2d0b904a25fd701a30ba8fa6d256c209cbe5c27c08bc891e501f7355",
+  "acceptance": "Prepared Developer artifact; independent runtime/visual/audio QA remains required."
+}

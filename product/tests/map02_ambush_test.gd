@@ -94,12 +94,13 @@ static func recovery_checks(world: Node3D) -> Dictionary:
 	var encounter: Node = world.ambush_encounter
 	var before: Dictionary = state.reward_history.duplicate(true)
 	var xp: int = state.experience
+	var revealed: bool = state.e03_revealed
 	state.health = 0
 	state.recovery_pending = true
 	world.training.recover_at_checkpoint()
 	return {"recovered":not state.recovery_pending and state.health == 100,
 		"checkpoint":Vector2(world.player.global_position.x,world.player.global_position.z).distance_to(world.checkpoint_xz()) < 0.1,
 		"facts_preserved":state.reward_history == before and state.experience == xp,
-		"retry_concealed":not state.e03_revealed and encounter.registry().is_empty(),
+		"retry_preserves_revelation_and_checkpoint_safety":state.e03_revealed == (revealed or state.ambush_defeated()) and encounter.registry().is_empty(),
 		"pending_preserved":state.AMBUSH_IDS.all(func(id): return not before.has(id) or before[id].collected or encounter.pickups.has(id)),
 		"motion_cleared":encounter.enemies.all(func(actor): return not actor.melee.attacking and not actor.source.can_damage)}

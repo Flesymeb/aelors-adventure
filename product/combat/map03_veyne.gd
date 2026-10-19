@@ -22,6 +22,8 @@ var reveal_camera: Camera3D
 var music: AudioStreamPlayer
 var cue: AudioStreamPlayer
 var effects: AudioStreamPlayer3D
+var creature_audio: Node3D
+var battle_vfx: Node3D
 var owns_score := false
 var prior_exploration_paused := false
 var victory_pending := false
@@ -77,6 +79,14 @@ func configure(owner_world: Node3D) -> void:
 	effects.volume_db = -10
 	effects.max_distance = 15
 	actor.add_child(effects)
+	creature_audio = preload("res://combat/veyne_audio.gd").new()
+	creature_audio.name = "CreatureAudio"
+	actor.add_child(creature_audio)
+	creature_audio.configure(self)
+	battle_vfx = preload("res://combat/veyne_battle_vfx.gd").new()
+	battle_vfx.name = "BattleAtmosphere"
+	add_child(battle_vfx)
+	battle_vfx.configure(self)
 	var layer := CanvasLayer.new()
 	layer.layer = 6
 	add_child(layer)
@@ -444,18 +454,25 @@ func claim_score() -> void:
 
 func release_score() -> void:
 	music.stop(); cue.stop(); effects.stop()
+	if is_instance_valid(creature_audio): creature_audio.stop_all()
+	if is_instance_valid(battle_vfx): battle_vfx.clear()
 	if owns_score and is_instance_valid(world.menu_audio) and is_instance_valid(world.menu_audio.music): world.menu_audio.music.stream_paused = prior_exploration_paused
 	owns_score = false
 
 func play_cue(kind: String) -> void:
-	cue.stream = preload("res://assets/dialogue/sounds/Audio/confirmation_001.ogg") if kind == "victory" else preload("res://assets/training/impact.ogg")
-	cue.pitch_scale = 0.6 if kind == "reveal" else (0.7 if kind == "phase" else 1.0)
-	cue.play()
+	# The victory film owns its final roar; never double it with an UI jingle.
+	if kind == "victory": return
+	if is_instance_valid(creature_audio): creature_audio.play_event(kind)
 
 func play_effect(kind: String) -> void:
-	effects.stream = preload("res://assets/training/impact.ogg") if kind in ["beam","rift_warning"] else preload("res://assets/training/soft_impact.ogg")
-	effects.pitch_scale = 0.65 if kind == "beam" else (1.2 if kind == "rift_warning" else 0.9)
-	effects.play()
+	if is_instance_valid(creature_audio): creature_audio.play_event(kind)
+
+func begin_breath_audio() -> void:
+	if is_instance_valid(creature_audio): creature_audio.begin_breath()
+
+func end_breath_audio() -> void:
+	if is_instance_valid(creature_audio): creature_audio.stop_breath()
+
 
 func settle_defeat() -> void:
 	if state.veyne_defeated or actor.health > 0: return

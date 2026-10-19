@@ -16,6 +16,9 @@ func bind(arena: Node3D) -> void:
 		sky_material.set_shader_parameter("moon_direction",moon.global_basis.z.normalized())
 	var world := environment_root.get_parent()
 	state = world.get("dialogue_state")
+	# The arena replaces WorldEnvironment after the chapter quality owner ran.
+	# Reapply that owner now so the boss keeps fog, glow and the same tonemapper.
+	if is_instance_valid(world.get("quality")): world.quality.apply_quality()
 	var original: Node3D = preload("res://assets/maps/map03/crypt.glb").instantiate()
 	var wall: MeshInstance3D = original.find_child("Wall_004_Wall_Tiles_0",true,false)
 	var pillar: MeshInstance3D = original.find_child("Pillar_001_Pillar_Texture_0",true,false)

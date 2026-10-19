@@ -14,6 +14,8 @@ var bursts := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	ring.material_override = ring.material_override.duplicate()
+	dust.mesh = dust.mesh.duplicate()
+	dust.mesh.material = dust.mesh.material.duplicate()
 	clear()
 
 func configure(owner_world: Node3D, state: Node) -> void:
@@ -60,6 +62,7 @@ func _process(delta: float) -> void:
 	if paused: return
 	age += delta
 	ring.material_override.set_shader_parameter("effect_age", age)
+	dust.mesh.material.set_shader_parameter("effect_clock", age)
 	if age >= LIFETIME: clear()
 
 func clear() -> void:

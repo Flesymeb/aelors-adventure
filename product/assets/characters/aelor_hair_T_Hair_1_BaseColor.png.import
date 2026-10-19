@@ -3,10 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bqbwky0io15wg"
-path.s3tc="res://.godot/imported/aelor_hair_T_Hair_1_BaseColor.png-b29045fac7c4ce87eae70ae8b52c25a9.s3tc.ctex"
+path="res://.godot/imported/aelor_hair_T_Hair_1_BaseColor.png-b29045fac7c4ce87eae70ae8b52c25a9.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 generator_parameters={
 "md5": "f30cc84cd1ee4fa1c40e16f1acadff7b"
@@ -15,11 +14,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/characters/aelor_hair_T_Hair_1_BaseColor.png"
-dest_files=["res://.godot/imported/aelor_hair_T_Hair_1_BaseColor.png-b29045fac7c4ce87eae70ae8b52c25a9.s3tc.ctex"]
+dest_files=["res://.godot/imported/aelor_hair_T_Hair_1_BaseColor.png-b29045fac7c4ce87eae70ae8b52c25a9.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -41,4 +40,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

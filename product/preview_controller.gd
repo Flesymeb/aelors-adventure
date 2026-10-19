@@ -42,6 +42,7 @@ var intelligence_interaction: Node3D
 var route_clue: Node3D
 var ambush_encounter: Node3D
 var line_encounter: Node3D
+var route_patrols: Node3D
 var line_record: Node3D
 var barrier: Node3D
 var pressure_encounter: Node3D
@@ -184,6 +185,11 @@ func _ready() -> void:
 		barrier.name = "LN01Barrier"
 		add_child(barrier)
 		barrier.configure(self)
+		route_patrols = preload("res://combat/map02_route_patrols.gd").new()
+		route_patrols.name = "Map02RoutePatrols"
+		route_patrols.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(route_patrols)
+		route_patrols.configure(self)
 		dynamic_encounters = preload("res://combat/map02_dynamic_encounters.gd").new()
 		dynamic_encounters.name = "MeadowDynamicEncounters"
 		dynamic_encounters.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -366,6 +372,7 @@ func _set_pause_owner(owner_id: String, enabled: bool) -> void:
 	_sync_dialogue_world_labels()
 	if now_paused != was_paused:
 		if now_paused and is_instance_valid(line_encounter): line_encounter.interrupt()
+		if now_paused and is_instance_valid(route_patrols): route_patrols.interrupt()
 		player.set_controls_open(now_paused)
 		get_tree().paused = now_paused
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if now_paused else Input.MOUSE_MODE_CAPTURED

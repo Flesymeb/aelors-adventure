@@ -1,18 +1,13 @@
 [gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://combat/veyne_landing_presentation.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/bosses/landing/dust.png" id="2"]
-[ext_resource type="AudioStream" path="res://assets/bosses/landing/impact.ogg" id="3"]
+[ext_resource type="Shader" path="res://assets/shaders/veyne_dust.gdshader" id="2"]
+[ext_resource type="AudioStream" path="res://assets/audio/veyne/landing.ogg" id="3"]
 [ext_resource type="Shader" path="res://assets/shaders/landing_impact.gdshader" id="4"]
 
-[sub_resource type="StandardMaterial3D" id="DustMaterial"]
-transparency = 1
-shading_mode = 0
-vertex_color_use_as_albedo = true
-albedo_color = Color(0.55, 0.46, 0.34, 0.4)
-albedo_texture = ExtResource("2")
-billboard_mode = 1
-no_depth_test = false
+[sub_resource type="ShaderMaterial" id="DustMaterial"]
+shader = ExtResource("2")
+shader_parameter/dust_tint = Color(0.53, 0.48, 0.41, 0.42)
 
 [sub_resource type="QuadMesh" id="DustMesh"]
 material = SubResource("DustMaterial")
@@ -61,6 +56,7 @@ cast_shadow = 0
 [node name="Impact" type="AudioStreamPlayer3D" parent="."]
 stream = ExtResource("3")
 bus = &"Effects"
-volume_db = -8.0
-pitch_scale = 0.72
-max_distance = 24.0
+volume_db = -3.0
+pitch_scale = 1.0
+unit_size = 12.0
+max_distance = 100.0

@@ -67,6 +67,18 @@ func _ready() -> void:
 	source.remove_child(animation_player)
 	character_model.add_child(animation_player)
 	source.free()
+	# Sword_Idle in the imported library is a one-shot: it used to finish after
+	# 1.67 seconds and leave the village guard frozen indefinitely. Keep these
+	# edits actor-local; Aelor and combat animations retain their source clips.
+	var idle_library: AnimationLibrary = animation_player.get_animation_library("").duplicate()
+	for idle_name in ["Idle","Sword_Idle","Idle_Talking"]:
+		if not idle_library.has_animation(idle_name): continue
+		var idle_clip: Animation = idle_library.get_animation(idle_name).duplicate(true)
+		idle_clip.loop_mode = Animation.LOOP_LINEAR
+		idle_library.remove_animation(idle_name)
+		idle_library.add_animation(idle_name,idle_clip)
+	animation_player.remove_animation_library("")
+	animation_player.add_animation_library("",idle_library)
 	var extra = load(SWORD_ANIMATION_PATH).instantiate()
 	animation_player.add_animation_library("sword", extra.get_node("AnimationPlayer").get_animation_library("").duplicate(true))
 	extra.free()

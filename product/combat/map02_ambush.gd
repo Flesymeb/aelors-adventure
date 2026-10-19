@@ -106,7 +106,9 @@ func show_pickup(id: String) -> void:
 
 func restore_history() -> void:
 	if not grounded: return
-	if state.recovery_pending: state.e03_revealed = false
+	# A completed ambush is durable history. Clearing revelation after death
+	# made E04 disappear; dead E03 actors could no longer be revealed again.
+	if state.ambush_defeated(): state.e03_revealed = true
 	recognition_remaining = 0.8 if state.e03_revealed and not state.ambush_defeated() else 0.0
 	warning_seen = false
 	super()

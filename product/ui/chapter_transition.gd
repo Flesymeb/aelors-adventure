@@ -58,8 +58,10 @@ static func motion_spec(storyboard: Dictionary) -> Dictionary:
 
 func _stop_video() -> void:
 	video_active = false
+	if is_instance_valid(cue): cue.stop()
 	if is_instance_valid(video):
 		video.stop()
+		video.stream = null
 		video.hide()
 
 func _start_arrival_video() -> void:
@@ -102,7 +104,8 @@ func _start_story_video() -> void:
 	video_failed = false
 	video_clock = 0
 	video_stall = 0
-	video.volume = 0
+	video.volume = 1.0
+	cue.stop()
 	video.play()
 	video.paused = paused
 	video.hide()
@@ -232,7 +235,9 @@ func _show_beat() -> void:
 		picture.hide()
 		world.get_viewport().disable_3d = false
 	if beat < 2: _start_story_video()
-	if beat == 1: cue.play()
+	if beat < 2 and not video_active:
+		cue.stream = preload("res://assets/audio/world_effects/chapter_farewell.ogg") if beat == 0 else preload("res://assets/audio/world_effects/chapter_passage.ogg")
+		cue.play()
 	if beat == 2: _start_arrival_video()
 
 func _layout() -> void:

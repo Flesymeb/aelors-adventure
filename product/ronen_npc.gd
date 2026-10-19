@@ -29,6 +29,7 @@ func _ready() -> void:
 	marker.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	add_child(marker)
 	idle()
+	preload("res://actors/npc_life.gd").attach(self,actor,"ronen")
 
 func idle() -> void:
 	demonstration = false

@@ -1,28 +1,39 @@
-; Engine configuration file.
-; It's best edited using the editor UI and not directly,
-; since the parameters that go here are not all obvious.
-;
-; Format:
-;   [section] ; section goes between []
-;   param=value ; assign values to parameters
-
 config_version=5
 
 [application]
 
-config/name="艾洛的冒险"
+config/name="Aelor's Adventure"
 run/main_scene="res://ui/title_menu.tscn"
-config/features=PackedStringArray("4.7")
+config/use_custom_user_dir=true
+config/custom_user_dir_name="godot/app_userdata/艾洛的冒险"
 config/icon="res://icon.svg"
+config/custom_user_dir_name.windows="Godot/app_userdata/艾洛的冒险"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/stretch/mode="canvas_items"
 
 [rendering]
 
+renderer/rendering_method.mobile="forward_plus"
+lights_and_shadows/directional_shadow/size=8192
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=5
+lights_and_shadows/positional_shadow/soft_shadow_filter_quality=5
+textures/default_filters/anisotropic_filtering_level=4
+environment/ssao/quality=4
+environment/ssao/half_size=false
+environment/ssao/adaptive_target=1.0
+environment/ssil/quality=4
+environment/ssil/half_size=false
+environment/ssil/adaptive_target=1.0
+anti_aliasing/quality/msaa_3d=3
+environment/screen_space_reflection/half_size=false
+environment/volumetric_fog/volume_size=128
+environment/volumetric_fog/volume_depth=128
 occlusion_culling/use_occlusion_culling=true
+lights_and_shadows/positional_shadow/atlas_size=8192
 
 [shader_globals]
 

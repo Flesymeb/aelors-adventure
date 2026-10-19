@@ -63,6 +63,7 @@ static func stage_profile(combo: int) -> Dictionary:
 		1: return {"tint": Vector3(0.79, 0.86, 0.74), "strength": 0.8, "lifetime": 0.095}
 		2: return {"tint": Vector3(1.0, 0.83, 0.49), "strength": 1.15, "lifetime": 0.12}
 		3: return {"tint": Vector3(0.90, 0.88, 0.67), "strength": 1.05, "lifetime": 0.11}
+		5: return {"tint": Vector3(0.35,1.0,0.80), "strength": 1.6, "lifetime": 0.17}
 		4: return {"tint": Vector3(1.0, 0.87, 0.56), "strength": 1.4, "lifetime": 0.135}
 		_: return {"tint": Vector3(0.94, 0.88, 0.68), "strength": 0.72, "lifetime": 0.09}
 

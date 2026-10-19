@@ -1,8 +1,8 @@
 shader_type spatial;
 
-uniform sampler2D base_texture : source_color, filter_linear_mipmap;
-uniform sampler2D normal_texture : hint_normal, filter_linear_mipmap;
-uniform sampler2D orm_texture : filter_linear_mipmap;
+uniform sampler2D base_texture : source_color, filter_linear_mipmap_anisotropic;
+uniform sampler2D normal_texture : hint_normal, filter_linear_mipmap_anisotropic;
+uniform sampler2D orm_texture : filter_linear_mipmap_anisotropic;
 uniform vec4 dye_color : source_color = vec4(0.42, 0.70, 1.0, 1.0);
 
 void fragment() {

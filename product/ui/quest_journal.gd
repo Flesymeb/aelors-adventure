@@ -54,7 +54,7 @@ func _ready() -> void:
 	spread.add_child(right)
 	detail_heading = paragraph(right, "")
 	details = RichTextLabel.new()
-	details.bbcode_enabled = false
+	preload("res://ui/quest_markup.gd").configure(details,preload("res://ui/gameplay_theme.tres").default_font,true)
 	details.fit_content = false
 	details.scroll_active = true
 	details.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -173,6 +173,7 @@ func _select_entry(id: String) -> void:
 		if row.steps.is_empty(): details.text += "尚未完成步骤。"
 		else:
 			for step in row.steps: details.text += "✓ " + step + "\n"
+		details.text = preload("res://ui/quest_markup.gd").format_text(details.text,true)
 		track_button.disabled = row.complete or id == state.tracked_quest
 		track_button.text = "正在追踪" if id == state.tracked_quest else "追踪此任务"
 		_layout_details.call_deferred()

@@ -6,9 +6,9 @@ render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlic
 uniform sampler2D splatMap_0 : filter_linear_mipmap;
 uniform sampler2D splatMap_1 : filter_linear_mipmap;
 
-uniform sampler2DArray textures_albedo : source_color, hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform sampler2DArray textures_ormh : hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform sampler2DArray textures_normal : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform sampler2DArray textures_albedo : source_color, hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray textures_ormh : hint_default_white, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray textures_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 
 uniform vec4 albedo : source_color;
 uniform float normal_scale : hint_range(-16,16);
@@ -20,6 +20,20 @@ uniform int heightmap_max_layers;
 uniform vec2 heightmap_flip;
 uniform vec2 uv1_scale;
 uniform vec2 uv1_offset;
+uniform float macro_variation : hint_range(0.0, 0.3) = 0.0;
+uniform float detail_scale : hint_range(0.25, 2.0) = 1.0;
+varying vec2 ground_world_xz;
+
+float ground_noise(vec2 p) {
+	vec2 cell = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	vec4 h = fract(sin(vec4(dot(cell, vec2(127.1,311.7)),
+		dot(cell+vec2(1.0,0.0),vec2(127.1,311.7)),
+		dot(cell+vec2(0.0,1.0),vec2(127.1,311.7)),
+		dot(cell+vec2(1.0),vec2(127.1,311.7)))) * 43758.5453);
+	return mix(mix(h.x,h.y,f.x),mix(h.z,h.w,f.x),f.y);
+}
 
 //https://github.com/Zylann/godot_heightmap_plugin/blob/master/addons/zylann.hterrain/shaders/simple4.shader
 // Blends weights according to the bump of detail textures,
@@ -48,7 +62,7 @@ vec4 textureBlend(vec4 vcol, vec2 uv, vec4 blendMask, sampler2DArray texs, float
 	vec4 blend = vec4(colK, vcol.r, vcol.g, vcol.b);
 	
 	vec4 w = get_depth_blended_weights(blend, blendMask);
-	float w_sum = (w.r + w.g + w.b + w.a);
+	float w_sum = max(w.r + w.g + w.b + w.a, 0.0001);
 	
 	float off = offset * 4.;
 	vec4 texK = texture(texs, vec3(uv, 0. + off));
@@ -70,7 +84,7 @@ float valueBlend(vec4 vcol, vec4 blendMask, vec4 vals)
 	vec4 blend = vec4(colK, vcol.r, vcol.g, vcol.b);
 	
 	vec4 w = get_depth_blended_weights(blend, blendMask);
-	float w_sum = (w.r + w.g + w.b + w.a);
+	float w_sum = max(w.r + w.g + w.b + w.a, 0.0001);
 	
 	float texK = vals.x;
 	float texR = vals.y;
@@ -86,7 +100,8 @@ float valueBlend(vec4 vcol, vec4 blendMask, vec4 vals)
 }
 
 void vertex() {
-	UV=UV*uv1_scale.xy+uv1_offset.xy;
+	ground_world_xz = (MODEL_MATRIX * vec4(VERTEX,1.0)).xz;
+	UV=UV*uv1_scale.xy*detail_scale+uv1_offset.xy;
 }
 
 void fragment() {
@@ -110,7 +125,7 @@ void fragment() {
 	vec2 base_uv = UV;
 	{
 		vec3 view_dir = normalize(normalize(-VERTEX)*mat3(TANGENT*heightmap_flip.x,-BINORMAL*heightmap_flip.y,NORMAL));
-		float depth = 1.0 - valueBlend(COLOR, blendMask, vec4(blendMask.x*heightmap_scale.x, blendMask.y*heightmap_scale.y, blendMask.z*heightmap_scale.z, blendMask.a*heightmap_scale.a));
+		float depth = 1.0 - valueBlend(splat0, blendMask, vec4(blendMask.x*heightmap_scale.x, blendMask.y*heightmap_scale.y, blendMask.z*heightmap_scale.z, blendMask.a*heightmap_scale.a));
 		vec2 ofs = base_uv - view_dir.xy * depth * 0.01;
 		base_uv=ofs;
 	}
@@ -140,11 +155,16 @@ void fragment() {
 	
 	ALBEDO = textureBlend(splat0, base_uv, blendMask, textures_albedo, 0).rgb;
 	ALBEDO = mix(ALBEDO, textureBlend(splat1, base_uv, blendMask1, textures_albedo, 1).rgb, splat1.a);
-	vec4 orm_tex = textureBlend(COLOR, base_uv, blendMask, textures_ormh, 0);
+	// Metre-scale variation hides repeat patterns; never per-pixel grain or TIME.
+	float macro = ground_noise(ground_world_xz * 0.075) - 0.5;
+	ALBEDO *= 1.0 + macro * macro_variation;
+	// PBR channels must use the SAME painted weights as albedo. Vertex COLOR
+	// mixed unrelated material normals/roughness into the ground and shimmered.
+	vec4 orm_tex = textureBlend(splat0, base_uv, blendMask, textures_ormh, 0);
 	orm_tex = mix(orm_tex, textureBlend(splat1, base_uv, blendMask1, textures_ormh, 1), splat1.a);
 	ROUGHNESS = orm_tex.g;
 	METALLIC = orm_tex.b;
-	NORMAL_MAP = textureBlend(COLOR, base_uv, blendMask, textures_normal, 0).rgb;
+	NORMAL_MAP = textureBlend(splat0, base_uv, blendMask, textures_normal, 0).rgb;
 	NORMAL_MAP = mix(NORMAL_MAP, textureBlend(splat1, base_uv, blendMask1, textures_normal, 1).rgb, splat1.a);
 	NORMAL_MAP_DEPTH = normal_scale;
 	AO = orm_tex.r;

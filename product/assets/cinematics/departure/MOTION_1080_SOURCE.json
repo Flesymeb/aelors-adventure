@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-19",
+  "origin": "generated",
+  "tool": "video-sprite-pipeline Bailian image-to-video API adapter",
+  "usage_terms": "Provider service terms govern generated video. First-frame illustration rights and constraints retained from SOURCE.json. No independent CC0/MIT grant for videos observed.",
+  "conversion": "System GStreamer Theora quality56 with one-pixel left/right padding to 1920x1080; stereo Vorbis quality0.6 44100Hz; no upscaling, looping or slow-motion stretch.",
+  "developer_visual_review": "Frames at 0,4,8 seconds inspected: animated map handover and departure, then walking through blue passage to meadow. Ranger and Isha costumes retained. No rescue grant, subtitles or interface baked in.",
+  "discarded_generation": {
+    "task_id": "e357da04-d7af-4d92-a4a1-e7fe92c61d3c",
+    "reason": "Four extra background villagers risk contradicting the unresolved captive story; not integrated."
+  },
+  "files": [
+    {
+      "file": "farewell.ogv",
+      "task_id": "9f9617a2-9db0-42b1-8ef7-b746c04a5040",
+      "model": "wan3.0-video",
+      "requested_resolution": "1080P",
+      "duration_seconds": 10.0,
+      "video": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "codec": "theora"
+        }
+      ],
+      "audio": [
+        {
+          "channels": 2,
+          "sample_rate": "44100",
+          "codec": "vorbis"
+        }
+      ],
+      "source_sha256": "ab32e5300f817dee7c31eec75faee2f3acbc0c322abbb739e523770084341009",
+      "sha256": "45ab69ec5304c44a4a365ab8bbef52ef535dc4072378419fc417754947f63fdd",
+      "bytes": 51257242,
+      "first_frame": "farewell.png",
+      "first_frame_sha256": "5da6c03bae8dde1bfd215c896c3908379851abc186736a6aed5380976b92e6b4"
+    },
+    {
+      "file": "passage.ogv",
+      "task_id": "c0cbdc1b-c190-4f08-9047-1ece8f1b2739",
+      "model": "wan3.0-video",
+      "requested_resolution": "1080P",
+      "duration_seconds": 10.0,
+      "video": [
+        {
+          "width": 1920,
+          "height": 1080,
+          "codec": "theora"
+        }
+      ],
+      "audio": [
+        {
+          "channels": 2,
+          "sample_rate": "44100",
+          "codec": "vorbis"
+        }
+      ],
+      "source_sha256": "ae7dc32685f7ed9092f5f67a2df3bb73573c3a87b5e32883783b68bed1b5ec60",
+      "sha256": "674937722af1b166bddd93998971f1526593ffb8e069c0d8cc16c97c28d2615f",
+      "bytes": 59486939,
+      "first_frame": "passage.png",
+      "first_frame_sha256": "27b2fcd01a8f0c7ebe544775a96d3f115638dde810cbef17666ec9756ee9c9c7"
+    }
+  ],
+  "independent_tester_pending": true
+}

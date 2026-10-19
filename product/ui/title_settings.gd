@@ -10,7 +10,7 @@ var capturing := ""
 var capture_button: Button
 var column: BoxContainer
 const GROUPS := {"audio": "声音", "graphics": "画面", "controls": "操作", "reading": "阅读与反馈"}
-const KEY_LABELS := {"roll": "翻滚", "dodge": "闪避", "shoulder": "切换肩位", "jump": "跳跃", "sprint": "奔跑（按住）", "forward": "前进", "back": "后退", "left": "向左", "right": "向右", "crouch": "蹲伏", "prone": "俯卧", "perspective": "切换视角", "heavy": "剑终结技（轻击收招末段）"}
+const KEY_LABELS := {"roll": "翻滚", "dodge": "闪避", "shoulder": "切换肩位", "jump": "跳跃", "sprint": "奔跑（按住）", "forward": "前进", "back": "后退", "left": "向左", "right": "向右", "crouch": "蹲伏", "prone": "俯卧", "perspective": "切换视角", "heavy": "剑终结技（轻击收招末段）", "whirlwind": "回旋斩（旋转两圈）"}
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if host.pause_world:
@@ -49,8 +49,8 @@ func build() -> void:
 				slider("音效音量", "effects_volume", 0, 1, 0.05, true)
 				toggle("静音", "muted_sound")
 			"graphics":
-				cycle("画质", "graphics_quality", ["normal", "low"], ["标准", "低"])
-				host.paragraph(column, "低画质降低三维渲染分辨率、阴影距离与植被细节；界面保持清晰。")
+				cycle("画质", "graphics_quality", ["high", "normal", "low"], ["极高（默认）", "标准", "低"])
+				host.paragraph(column, "极高：原生分辨率、8× 抗锯齿、高精度阴影、环境光遮蔽、间接光与体积雾；适合独立显卡。更改立即生效。")
 				toggle("减少动态", "reduced_motion")
 			"controls":
 				slider("鼠标灵敏度", "mouse_sensitivity", 0.25, 2.5, 0.05)

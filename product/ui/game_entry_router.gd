@@ -29,6 +29,7 @@ var recovery_id := ""
 var replaying_opening := false
 var homeward := false
 var homecoming: CanvasLayer
+var chapter_shortcuts: Node
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -51,6 +52,9 @@ func _ready() -> void:
 	canvas.layer = 100
 	add_child(canvas)
 	_show_title()
+	chapter_shortcuts = preload("res://ui/chapter_shortcuts.gd").new()
+	chapter_shortcuts.router = self
+	add_child(chapter_shortcuts)
 
 func create_adventure_state() -> Node:
 	return preload("res://dialogue_state.gd").new()
@@ -126,17 +130,19 @@ func _start_loading() -> void:
 func _begin_entry() -> void:
 	await get_tree().process_frame
 	if route != "loading": return
-	if entry_kind != "new":
+	if entry_kind not in ["new","chapter_preview"]:
 		var reason: String = state.slot_unavailable_reason(selected_slot, selected_slot == 0)
 		if reason != "":
 			_entry_failed(reason + "。请返回标题选择另一存档。")
 			return
-	loader.load_scene("res://world.tscn", true)
+	loader.load_scene(destination_resource(state.current_map) if entry_kind == "chapter_preview" else "res://world.tscn", true)
 
 func _construct_world(_resource: PackedScene) -> void:
 	if route != "loading": return
 	var restored: Dictionary = {}
-	if entry_kind == "new":
+	if entry_kind == "chapter_preview":
+		restored = arrival_position(state.current_map,"")
+	elif entry_kind == "new":
 		state.reset_adventure()
 		state.opening_completed = true
 		state.opening_recovery_id = recovery_id
@@ -291,6 +297,7 @@ func return_to_title() -> void:
 	route = "returning"
 	# Wait for the old world/audio to leave the tree before drawing title.
 	await get_tree().process_frame
+	if is_instance_valid(chapter_shortcuts): chapter_shortcuts.restore_original()
 	_show_title()
 	audio.play_cue("back")
 

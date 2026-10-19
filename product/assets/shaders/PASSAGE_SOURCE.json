@@ -1,0 +1,13 @@
+{
+  "source": "https://godotshaders.com/shader/ring-of-power/",
+  "title": "Ring of Power",
+  "author": "CasualGarageCoder",
+  "license": "CC0-1.0",
+  "source_checked": "2026-10-19",
+  "adaptation": "Polar UV and seamless-noise radial band adapted from canvas_item to a depth-tested spatial material; source_color; explicit pause-aware effect_clock in place of TIME; low alpha and bounded emission.",
+  "bindings": [
+    "world/chapter_pillar.gd:PassageEnergyRing",
+    "combat/sword_whirlwind.gd:WhirlwindSwordWake"
+  ],
+  "textures": "Native seeded FastNoiseLite NoiseTexture2D; source page preview media not used."
+}

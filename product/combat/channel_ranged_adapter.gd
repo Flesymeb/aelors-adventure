@@ -138,20 +138,23 @@ func _physics_process(delta: float) -> void:
 		direction.y = 0
 		# Face while drawing; the arrow snapshots a single direction on release.
 		presentation.rotation.y = atan2(direction.x,direction.z)
-		if distance >= 6 and distance <= 12 and sees:
+		if distance >= minimum_shot_range() and distance <= 12 and sees:
 			if not action.executing_action and encounter.attack_slot_available(self): blackboard.set_value("perform_action",true)
 		elif not action.executing_action:
-			var destination := target.global_position + direction.normalized() * -7 if distance < 6 else target.global_position
+			var destination := target.global_position + direction.normalized() * -7 if distance < minimum_shot_range() else target.global_position
 			# Bounded withdrawal; no endless pursuit outside the encounter.
 			destination = home + (destination-home).limit_length(4)
-			_move(destination,"retreat" if distance < 6 else "reposition")
-	action.tick(delta, hurt_remaining <= 0 and engaged and sees and distance >= 5.5 and distance <= 12)
+			_move(destination,"retreat" if distance < minimum_shot_range() else "reposition")
+	action.tick(delta, hurt_remaining <= 0 and engaged and sees and distance >= minimum_shot_range() - 0.5 and distance <= 12)
 	presentation._update_archery(delta)
 	if phase not in ["hurt","telegraph","attack","recovery"]:
 		presentation._play_animation("Walk" if Vector2(velocity.x,velocity.z).length() > 0.1 else "Idle")
 	if not is_on_floor(): velocity.y -= 20 * delta
 	else: velocity.y = 0
 	move_and_slide()
+
+func minimum_shot_range() -> float:
+	return 6.0
 
 func lost_sight_timeout() -> float:
 	# Encounters may retain a bounded search; shared CH01 behavior stays intact.

@@ -217,6 +217,7 @@ func lightning_target() -> Node3D:
 	if world.pressure_encounter: candidates.append_array(world.pressure_encounter.enemies)
 	if world.get("ambush_encounter"): candidates.append_array(world.ambush_encounter.enemies)
 	if world.get("line_encounter"): candidates.append_array(world.line_encounter.enemies)
+	if world.get("route_patrols"): candidates.append_array(world.route_patrols.enemies)
 	if world.channel_guards: candidates.append_array(world.channel_guards.enemies)
 	for name in ["warden_encounter", "veyne_encounter"]:
 		var encounter = world.get(name)

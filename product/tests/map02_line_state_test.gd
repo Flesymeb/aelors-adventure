@@ -39,6 +39,11 @@ static func run() -> Dictionary:
 	checks.mf02_restore = restored.mf02_acquired and restored.mf02_information().contains("结界") and restored.quest_entries().any(func(row): return row.id == "line_record" and row.complete)
 	var invalid: ConfigFile = HISTORY.history(restored)
 	invalid.set_value("post_bow","e03_revealed",false)
+	# Completed kills imply revelation; old death recovery erased this marker.
+	checks.legacy_revelation_repaired = restored.config_unavailable_reason(invalid) == ""
+	var impossible_rewards: Dictionary = invalid.get_value("post_bow","reward_history",{}).duplicate(true)
+	impossible_rewards.erase(restored.AMBUSH_IDS[0])
+	invalid.set_value("post_bow","reward_history",impossible_rewards)
 	checks.impossible_rejected = restored.config_unavailable_reason(invalid) != ""
 	invalid = HISTORY.history(state)
 	invalid.set_value("post_bow","mf02_acquired",true)
