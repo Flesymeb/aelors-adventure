@@ -149,23 +149,21 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `village-building-uv-degeneracy` | [#125](https://github.com/Flesymeb/aelors-adventure/issues/125) | OPEN | Clean native mesh validation does not complete the original village surface and reload acceptance. |
 | `opening-live-cast-discontinuity` | [#126](https://github.com/Flesymeb/aelors-adventure/issues/126) | CLOSED | Independently verified resolved at loop 84. |
 | `title-resize-clips-focused-setting` | [#127](https://github.com/Flesymeb/aelors-adventure/issues/127) | CLOSED | Independently verified resolved at loop 83. |
-| `qa.formal-collection-incomplete` | [#128](https://github.com/Flesymeb/aelors-adventure/issues/128) | OPEN | Independent full milestone closeout remains incomplete. |
-| `adjacent-opening-cinematic` | [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | OPEN | Next-phase opening cinematic continuity remains absent. |
+| `qa.formal-collection-incomplete` | [#128](https://github.com/Flesymeb/aelors-adventure/issues/128) | OPEN | Independent full milestone collection and scheduled case finalization remain incomplete. |
+| `adjacent-opening-cinematic` | [#5](https://github.com/Flesymeb/aelors-adventure/issues/5) | OPEN | Opening playback is present, but transition collection failures prevent complete opening qualification. |
 | `camera-lamp-obstruction` | [#6](https://github.com/Flesymeb/aelors-adventure/issues/6) | CLOSED | Historical closure; current-version verification is not asserted. |
-| `combat-continue-history-unavailable` | [#129](https://github.com/Flesymeb/aelors-adventure/issues/129) | OPEN | The scheduled combat Continue case lacks compatible qualified history. |
 | `finding-adjacent-return-to-title` | [#15](https://github.com/Flesymeb/aelors-adventure/issues/15) | OPEN | Return to Title remains a message-only placeholder outside this increment. |
 | `finding-failure-focus-hover-ambiguity` | [#16](https://github.com/Flesymeb/aelors-adventure/issues/16) | OPEN | Recovery hover/focus distinction remains insufficiently evidenced; the existing issue cannot be closed. |
 | `finding-failure-keyboard-navigation` | [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `finding-failure-screen-readability` | [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve clothing bands remain visible. |
-| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dialogue portraits remain absent in independently captured conversation states. |
+| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Isha portraits are visibly bound, but the complete dialogue presentation and recovery matrix remains unqualified. |
 | `issue:milestone01-camera-environment` | [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | OPEN | Current shipped camera and environment remain blockout-level and leave the actor partially occluded. |
 | `issue:milestone01-missing-loop` | [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | BLOCKED | MAP01 milestone is only a locomotion shell; required narrative, combat, equipment, progression, and persistence loop is absent. |
 | `issue:r02-actor-animation-falloff` | [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | BLOCKED | R02 actor states are visually static and ordinary traversal can fall off the authored route without recovery. |
 | `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | OPEN | Sword and bow progression are independently demonstrated; full connected-slice and chapter acceptance remain unverified. |
-| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | Settings and save controls retain unfinished demo presentation. |
+| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | The themed Chinese menu hierarchy is present; complete settings and recovery acceptance remains unverified. |
 | `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Historical closure; current-version verification is not asserted. |
-| `r19-preservation-incomplete` | [#130](https://github.com/Flesymeb/aelors-adventure/issues/130) | OPEN | The R19-owned restoration and village-preservation prerequisites remain unqualified. |
 | `rpg.combat.audio_quality_unverified` | [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | OPEN | Captured combat audio establishes output causality, but perceptual quality remains unverified. |
 | `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | OPEN | The enabled Game Over Return to title action stops at an unavailable-title message. |
 | `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | OPEN | Required dialogue portraits are unbound in the reachable narrative interface. |
@@ -174,6 +172,8 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | OPEN | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
 | `runtime-exit-during-look` | [#131](https://github.com/Flesymeb/aelors-adventure/issues/131) | OPEN | The live village exited during ordinary camera input; cause remains unresolved. |
 | `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | OPEN | The authored-village grass texture dependency remains broken. |
+| `combat-continue-history-unavailable` | [#129](https://github.com/Flesymeb/aelors-adventure/issues/129) | OPEN | untitled issue |
+| `r19-preservation-incomplete` | [#130](https://github.com/Flesymeb/aelors-adventure/issues/130) | OPEN | untitled issue |
 
 ### HoH-managed GitHub issues across runs
 
@@ -192,7 +192,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-87-0e7f12aaa69b` | `development_snapshot:attempt-d1f332e8bfd52c8ac738f8c9` | DEVELOPER REPORT READY |
+| `loop-87-0e7f12aaa69b` | `development_snapshot:attempt-d1f332e8bfd52c8ac738f8c9` | BLOCKED |
 
 ### Project Planner
 
@@ -219,7 +219,21 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | FAIL |
+| Candidate | `loop-87-0e7f12aaa69b` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 5 (5 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `opening-qualification-incomplete` | MAJOR | INTERNAL | HIGH | Opening playback is present, but transition collection failures prevent complete opening qualification. |
+| `dialogue-qualification-incomplete` | MAJOR | INTERNAL | HIGH | Isha portraits are visibly bound, but the complete dialogue presentation and recovery matrix remains unqualified. |
+| `settings-qualification-incomplete` | MAJOR | INTERNAL | HIGH | The themed Chinese menu hierarchy is present; complete settings and recovery acceptance remains unverified. |
+| `formal-schedule-incomplete` | MAJOR | INTERNAL | HIGH | Independent full milestone collection and scheduled case finalization remain incomplete. |
+| `tester.mcp_coverage_incomplete` | MAJOR | unlabelled | unlabelled | Tester did not complete every required live MCP, source, state, log, and screenshot probe after bounded same-session corrections. |
 
 ---
 
@@ -4767,5 +4781,5 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 - Latest attempted: `loop-87-0e7f12aaa69b`
 - Latest warm start: `loop-87-9c944973fd71`
 - Last published: `loop-87-0e7f12aaa69b`
-- Best verified: `loop-86-9c944973fd71`
+- Best verified: `loop-87-0e7f12aaa69b`
 - Generated by the HoH host from immutable run evidence.
