@@ -2,6 +2,7 @@ extends Node
 var test_results: Dictionary = {}
 var inspection: CanvasLayer
 var inspection_state: Node
+const ENTRY_NODES := {"isha": "D01", "hers": "H01", "ronen": "R01"}
 func _ready() -> void:
 	test_results = await run(self)
 	inspection_state = preload("res://dialogue_state.gd").new()
@@ -11,7 +12,7 @@ func _ready() -> void:
 	show_case("hers",1.0)
 func show_case(kind: String, scale: float) -> void:
 	inspection_state.dialogue_kind = kind
-	inspection_state.logical_node = "H01" if kind == "hers" else "R01"
+	inspection_state.logical_node = ENTRY_NODES[kind]
 	inspection_state.text_scale = scale
 	inspection.opened = true
 	inspection.root.show()
@@ -35,9 +36,9 @@ static func run(holder: Node) -> Dictionary:
 	checks.clipped_regions = hers.filter_clip and ronen.filter_clip
 	checks.native_alpha = hers.atlas.get_image().detect_alpha() != Image.ALPHA_NONE
 	var views: Array = []
-	for kind in ["hers", "ronen"]:
+	for kind in ["isha", "hers", "ronen"]:
 		state.dialogue_kind = kind
-		state.logical_node = "H01" if kind == "hers" else "R01"
+		state.logical_node = ENTRY_NODES[kind]
 		dialogue.opened = true
 		dialogue.root.show()
 		for scale in [1.0, 1.5, 2.0]:
