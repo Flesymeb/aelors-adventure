@@ -23,8 +23,8 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 78 |
-| Closed | 53 |
+| Open | 73 |
+| Closed | 58 |
 | All | 131 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
@@ -33,9 +33,9 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 78 |
+| Active | 73 |
 | Verified closed | 41 |
-| Policy invalidated | 12 |
+| Policy invalidated | 17 |
 | Waived | 0 |
 | All in this run | 131 |
 
@@ -165,13 +165,13 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | Settings and save controls retain unfinished demo presentation. |
 | `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `rpg.combat.audio_quality_unverified` | [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | OPEN | Captured combat audio establishes output causality, but perceptual quality remains unverified. |
-| `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | BLOCKED | The enabled Game Over Return to title action stops at an unavailable-title message. |
-| `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | OPEN | Portraits now render, but Hers' illustrated appearance does not match his live actor. |
-| `rpg.pause.inherited_control_inventory` | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | BLOCKED | The pause/settings panel retains a dense English demo-style control inventory. |
-| `rpg.recovery.ammunition_not_restored` | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | BLOCKED | Checkpoint recovery restores health but leaves spent ammunition unchanged. |
+| `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `rpg.pause.inherited_control_inventory` | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `rpg.recovery.ammunition_not_restored` | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | OPEN | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
 | `runtime-exit-during-look` | [#131](https://github.com/Flesymeb/aelors-adventure/issues/131) | OPEN | The live village exited during ordinary camera input; cause remains unresolved. |
-| `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | BLOCKED | The authored-village grass texture dependency remains broken. |
+| `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `combat-continue-history-unavailable` | [#129](https://github.com/Flesymeb/aelors-adventure/issues/129) | OPEN | untitled issue |
 | `r19-preservation-incomplete` | [#130](https://github.com/Flesymeb/aelors-adventure/issues/130) | OPEN | untitled issue |
 
@@ -181,8 +181,40 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 78 | 53 | 131 |
+| GitHub HoH namespace | 73 | 58 | 131 |
 | Outside this run's table | 0 | 0 | 0 |
+
+---
+
+## Loop 98
+
+> A host-derived record of one Planner → Developer → QA Tester cycle.
+
+| Candidate | Base | Current state |
+| --- | --- | --- |
+| `loop-89-8ecd6f0561b9` | `warm_start:loop-88-8ecd6f0561b9` | PLANNED |
+
+### Project Planner
+
+| Field | Value |
+| --- | --- |
+| Status | PLANNED |
+| Focus | phase / milestone_05 |
+| Objective | Make the five pinned early-village UI issues independently closure-ready on candidate 8ecd6f0561b9aa019834d3fbd3959a8c2df3e132332630dcf28b3142f5f120ac. Qualify existing portrait/settings fixes, repair any remaining production-owner label or modal/control defect, and resolve or honestly retain the post-dialogue exit. Preserve complete frozen R03/R15 acceptance; this increment cannot establish whole-chapter PASS. |
+| Strategy | `verify-original-ui-symptoms-at-production-owners` |
+| Tasks | 1 |
+
+### Developer
+
+| Field | Value |
+| --- | --- |
+| Status | NOT STARTED |
+
+### QA Tester
+
+| Field | Value |
+| --- | --- |
+| Status | UNTESTED |
 
 ---
 
@@ -4830,10 +4862,10 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 ## Current pointers
 
-- Latest candidate: `loop-88-8ecd6f0561b9`
+- Latest candidate: `loop-89-8ecd6f0561b9`
 - Accepted candidate: `none`
-- Latest attempted: `loop-88-8ecd6f0561b9`
-- Latest warm start: `loop-88-0e7f12aaa69b`
+- Latest attempted: `loop-89-8ecd6f0561b9`
+- Latest warm start: `loop-89-8ecd6f0561b9`
 - Last published: `loop-88-8ecd6f0561b9`
 - Best verified: `loop-88-8ecd6f0561b9`
 - Generated by the HoH host from immutable run evidence.
