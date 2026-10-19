@@ -23,9 +23,9 @@ The current issue table is generated from the run-local persistent ledger. Per-l
 
 | Field | Value |
 | --- | --- |
-| Open | 10 |
-| Closed | 121 |
-| All | 131 |
+| Open | 3 |
+| Closed | 130 |
+| All | 133 |
 
 GitHub Closed includes verified fixes, waived issues and policy-invalidated issues; it is not a product-fix count.
 
@@ -33,11 +33,11 @@ GitHub Closed includes verified fixes, waived issues and policy-invalidated issu
 
 | Field | Value |
 | --- | --- |
-| Active | 10 |
-| Verified closed | 41 |
-| Policy invalidated | 80 |
+| Active | 3 |
+| Verified closed | 42 |
+| Policy invalidated | 88 |
 | Waived | 0 |
-| All in this run | 131 |
+| All in this run | 133 |
 
 The rows below cover this run. Per-loop QA findings are historical observations, not current issue states.
 
@@ -80,7 +80,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `fps.runtime.candidate-error-7766310b3778` | [#57](https://github.com/Flesymeb/aelors-adventure/issues/57) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `restored_briefing_camera_clipping` | [#59](https://github.com/Flesymeb/aelors-adventure/issues/59) | CLOSED | Independently verified resolved at loop 22. |
 | `tester.mcp_coverage_incomplete` | [#4](https://github.com/Flesymeb/aelors-adventure/issues/4) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | OPEN | Hers and Ronen equipment dialogue still omit their counterpart portraits. |
+| `hers_portrait_continuity_missing` | [#61](https://github.com/Flesymeb/aelors-adventure/issues/61) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `initialization_observation_nil_access` | [#62](https://github.com/Flesymeb/aelors-adventure/issues/62) | CLOSED | Independently verified resolved at loop 25. |
 | `practice_obstruction_movement_trap` | [#63](https://github.com/Flesymeb/aelors-adventure/issues/63) | CLOSED | Independently verified resolved at loop 23. |
 | `reference_adoption_unverified` | [#58](https://github.com/Flesymeb/aelors-adventure/issues/58) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -88,7 +88,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `dynamic_encounter_matrix_incomplete` | [#64](https://github.com/Flesymeb/aelors-adventure/issues/64) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `retained_texture_dependencies_missing` | [#66](https://github.com/Flesymeb/aelors-adventure/issues/66) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `guard_closeout_evidence_incomplete` | [#65](https://github.com/Flesymeb/aelors-adventure/issues/65) | CLOSED | Independently verified resolved at loop 29. |
-| `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | REGRESSED | Tree-trunk occlusion remains at the earned eligible pillar stance. |
+| `pillar_approach_camera_occluded` | [#67](https://github.com/Flesymeb/aelors-adventure/issues/67) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-3c0e1afbfbb2` | [#69](https://github.com/Flesymeb/aelors-adventure/issues/69) | CLOSED | Independently verified resolved at loop 28. |
 | `earned_travel_matrix_unverified` | [#68](https://github.com/Flesymeb/aelors-adventure/issues/68) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `earned_departure_unverified` | [#70](https://github.com/Flesymeb/aelors-adventure/issues/70) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -104,7 +104,7 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `qa.channel-threat-label-overlap` | [#80](https://github.com/Flesymeb/aelors-adventure/issues/80) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `fps.runtime.candidate-error-3917fc09324e` | [#82](https://github.com/Flesymeb/aelors-adventure/issues/82) | CLOSED | Independently verified resolved at loop 42. |
 | `qa.e04-supply-earned-gap` | [#81](https://github.com/Flesymeb/aelors-adventure/issues/81) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | OPEN | An oversized element-practice label intrudes into the ordinary Ronen dialogue view. |
+| `qa.training-label-dialogue-obstruction` | [#83](https://github.com/Flesymeb/aelors-adventure/issues/83) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `ss-ln01-r13` | [#84](https://github.com/Flesymeb/aelors-adventure/issues/84) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `ss-ln01-r21` | [#85](https://github.com/Flesymeb/aelors-adventure/issues/85) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `tomb_entry_acceptance_unverified` | [#86](https://github.com/Flesymeb/aelors-adventure/issues/86) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
@@ -157,23 +157,25 @@ The rows below cover this run. Per-loop QA findings are historical observations,
 | `finding-failure-keyboard-navigation` | [#13](https://github.com/Flesymeb/aelors-adventure/issues/13) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `finding-failure-screen-readability` | [#14](https://github.com/Flesymeb/aelors-adventure/issues/14) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `isha-clothing-deformation` | [#11](https://github.com/Flesymeb/aelors-adventure/issues/11) | OPEN | Isha's shoulder-to-sleeve clothing bands remain visible. |
-| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | OPEN | Required dialogue portraits remain absent in independently captured conversation states. |
+| `isha-dialogue-finished-presentation` | [#12](https://github.com/Flesymeb/aelors-adventure/issues/12) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `issue:milestone01-camera-environment` | [#1](https://github.com/Flesymeb/aelors-adventure/issues/1) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `issue:milestone01-missing-loop` | [#2](https://github.com/Flesymeb/aelors-adventure/issues/2) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `issue:r02-actor-animation-falloff` | [#3](https://github.com/Flesymeb/aelors-adventure/issues/3) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `milestone-01-connected-slice-unavailable` | [#7](https://github.com/Flesymeb/aelors-adventure/issues/7) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | OPEN | Settings and save controls retain unfinished demo presentation. |
+| `milestone-01-demo-overlay-presentation` | [#10](https://github.com/Flesymeb/aelors-adventure/issues/10) | CLOSED | Independently verified resolved at loop 89. |
 | `r02-input-bindings` | [#8](https://github.com/Flesymeb/aelors-adventure/issues/8) | CLOSED | Historical closure; current-version verification is not asserted. |
 | `rpg.combat.audio_quality_unverified` | [#17](https://github.com/Flesymeb/aelors-adventure/issues/17) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `rpg.continuity.return_to_title_stub` | [#18](https://github.com/Flesymeb/aelors-adventure/issues/18) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `rpg.dialogue.portraits_unbound` | [#19](https://github.com/Flesymeb/aelors-adventure/issues/19) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `rpg.pause.inherited_control_inventory` | [#20](https://github.com/Flesymeb/aelors-adventure/issues/20) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `rpg.recovery.ammunition_not_restored` | [#21](https://github.com/Flesymeb/aelors-adventure/issues/21) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
-| `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | OPEN | The shipped village runs at approximately 16.5 FPS, below the PRD's 30 FPS target. |
-| `runtime-exit-during-look` | [#131](https://github.com/Flesymeb/aelors-adventure/issues/131) | OPEN | The live village exited during ordinary camera input; cause remains unresolved. |
+| `rpg.village.performance_below_target` | [#22](https://github.com/Flesymeb/aelors-adventure/issues/22) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `runtime-exit-during-look` | [#131](https://github.com/Flesymeb/aelors-adventure/issues/131) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `village-grass-import-dependency` | [#9](https://github.com/Flesymeb/aelors-adventure/issues/9) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `combat-continue-history-unavailable` | [#129](https://github.com/Flesymeb/aelors-adventure/issues/129) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 | `r19-preservation-incomplete` | [#130](https://github.com/Flesymeb/aelors-adventure/issues/130) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `dialogue-coverage-remaining` | [#132](https://github.com/Flesymeb/aelors-adventure/issues/132) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
+| `menu-control-coverage-remaining` | [#133](https://github.com/Flesymeb/aelors-adventure/issues/133) | POLICY_INVALIDATED | Policy-invalidated; this closure does not assert a product repair. |
 
 ### HoH-managed GitHub issues across runs
 
@@ -181,7 +183,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Scope | Open | Closed | All |
 | --- | --- | --- | --- |
-| GitHub HoH namespace | 10 | 121 | 131 |
+| GitHub HoH namespace | 3 | 130 | 133 |
 | Outside this run's table | 0 | 0 | 0 |
 
 ---
@@ -192,7 +194,7 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Candidate | Base | Current state |
 | --- | --- | --- |
-| `loop-89-f12124560a6d` | `development_snapshot:attempt-b76b24b1942b2d08b7d9104f` | NEEDS VISUAL QA |
+| `loop-89-f12124560a6d` | `development_snapshot:attempt-b76b24b1942b2d08b7d9104f` | BLOCKED |
 
 ### Project Planner
 
@@ -219,7 +221,19 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 
 | Field | Value |
 | --- | --- |
-| Status | UNTESTED |
+| Status | BLOCKED |
+| Candidate | `loop-89-f12124560a6d` |
+| Product completion | IN PROGRESS |
+| Review scope | `phase` |
+| Findings | 3 (3 blocking focus items) |
+
+### Evidence / QA findings
+
+| ID | Severity | Impact | Release risk | Summary |
+| --- | --- | --- | --- | --- |
+| `dialogue-coverage-remaining` | MAJOR | INTERNAL | HIGH | Dialogue acceptance remains incomplete despite observed portrait and production save/load improvements. |
+| `menu-control-coverage-remaining` | MAJOR | INTERNAL | HIGH | The local menu presentation repair is verified, while the complete interaction and recovery matrix remains unmeasured. |
+| `post-ronen-exit-unresolved` | MAJOR | INTERNAL | HIGH | The prior post-Ronen runtime exit remains open; its exact branch and process diagnostics were not verified. |
 
 ---
 
@@ -4872,5 +4886,5 @@ Snapshot from the last successful issue sync. These counts include earlier runs;
 - Latest attempted: `loop-89-f12124560a6d`
 - Latest warm start: `loop-89-8ecd6f0561b9`
 - Last published: `loop-89-f12124560a6d`
-- Best verified: `loop-88-8ecd6f0561b9`
+- Best verified: `loop-89-f12124560a6d`
 - Generated by the HoH host from immutable run evidence.
