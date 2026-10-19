@@ -78,25 +78,43 @@ static func label_ownership_checks() -> Dictionary:
 	var world: Node3D = preload("res://preview_controller.gd").new()
 	world.training = Node3D.new()
 	world.bow_training = Node3D.new()
+	world.element_abilities = Node3D.new()
 	world.add_child(world.training)
 	world.add_child(world.bow_training)
+	world.add_child(world.element_abilities)
 	var visible_cue := Label3D.new()
 	var hidden_cue := Label3D.new()
 	world.training.add_child(visible_cue)
 	world.bow_training.add_child(hidden_cue)
 	hidden_cue.hide()
+	# Element practice cues are grandchildren, like the live fire/lightning
+	# labels. Include a contextually hidden cue to guard against blanket show().
+	var practice_target := StaticBody3D.new()
+	world.element_abilities.add_child(practice_target)
+	var element_cue := Label3D.new()
+	var hidden_element_cue := Label3D.new()
+	practice_target.add_child(element_cue)
+	practice_target.add_child(hidden_element_cue)
+	hidden_element_cue.hide()
 	world.pause_owners = {"dialogue": true}
 	world._sync_dialogue_world_labels()
 	var suppressed: bool = not visible_cue.visible and not hidden_cue.visible
+	var elements_suppressed: bool = not element_cue.visible and not hidden_element_cue.visible
 	world.pause_owners["controls"] = true
 	world._sync_dialogue_world_labels()
+	var elements_under_menu: bool = not element_cue.visible and not hidden_element_cue.visible
 	world.pause_owners.erase("controls")
 	world._sync_dialogue_world_labels()
 	var nested: bool = not visible_cue.visible and not hidden_cue.visible
+	var elements_after_child: bool = not element_cue.visible and not hidden_element_cue.visible
 	world.pause_owners.erase("dialogue")
 	world._sync_dialogue_world_labels()
 	var restored: bool = visible_cue.visible and not hidden_cue.visible
+	var elements_restored: bool = element_cue.visible and not hidden_element_cue.visible
 	world._sync_dialogue_world_labels()
 	var repeated: bool = visible_cue.visible and not hidden_cue.visible and not visible_cue.has_meta("dialogue_cue_visibility")
+	var elements_repeated: bool = element_cue.visible and not hidden_element_cue.visible and not element_cue.has_meta("dialogue_cue_visibility") and not hidden_element_cue.has_meta("dialogue_cue_visibility")
 	world.free()
-	return {"labels_suppressed": suppressed, "nested_labels_stay_suppressed": nested, "contextual_visibility_restored": restored, "label_restoration_idempotent": repeated}
+	return {"labels_suppressed": suppressed, "nested_labels_stay_suppressed": nested, "contextual_visibility_restored": restored, "label_restoration_idempotent": repeated,
+		"element_labels_suppressed": elements_suppressed, "element_labels_under_menu": elements_under_menu, "element_labels_after_child": elements_after_child,
+		"element_contextual_visibility_restored": elements_restored, "element_restoration_idempotent": elements_repeated}

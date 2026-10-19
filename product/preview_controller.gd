@@ -407,7 +407,7 @@ func _sync_dialogue_world_labels() -> void:
 	# open. Suspend nearby training cues at their presentation owner; pausing a
 	# Label3D's process does not stop its rendering through transparent portraits.
 	var hidden_by_dialogue := pause_owners.has("dialogue")
-	for module in [training, bow_training]:
+	for module in [training, bow_training, element_abilities]:
 		if not is_instance_valid(module): continue
 		for label in module.find_children("*", "Label3D", true, false):
 			if hidden_by_dialogue:
